@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Water Telemetry Receiver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">ESP-NOW Receiver Dashboard</p>
+        <h1>Water Quality Telemetry</h1>
+        <p class="subhead">
+          Connect this page to the receiver ESP32 over USB serial and watch live sensor
+          values streamed from ESP-NOW packets.
+        </p>
+      </section>
+
+      <section class="control-panel">
+        <button id="connectButton" class="button">Connect Serial</button>
+        <button id="disconnectButton" class="button button-secondary" disabled>
+          Disconnect
+        </button>
+        <div id="statusPill" class="status status-idle">Idle</div>
+      </section>
+
+      <p id="envHint" class="env-hint" aria-live="polite"></p>
+
+      <section class="meta-grid">
+        <article class="meta-card">
+          <h2>Last Sender MAC</h2>
+          <p id="senderMac" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Last Sequence</h2>
+          <p id="sequence" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Last RSSI</h2>
+          <p id="rssi" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Updated</h2>
+          <p id="updatedAt" class="mono">-</p>
+        </article>
+      </section>
+
+      <section class="metric-grid">
+        <article class="metric-card">
+          <h2>Temperature</h2>
+          <p id="temperature" class="value">-</p>
+          <p class="unit">C</p>
+        </article>
+        <article class="metric-card">
+          <h2>pH</h2>
+          <p id="ph" class="value">-</p>
+          <p class="unit">pH</p>
+        </article>
+        <article class="metric-card">
+          <h2>Flow</h2>
+          <p id="flow" class="value">-</p>
+          <p class="unit">L/min</p>
+        </article>
+        <article class="metric-card">
+          <h2>Turbidity</h2>
+          <p id="turbidity" class="value">-</p>
+          <p class="unit">NTU</p>
+        </article>
+        <article class="metric-card">
+          <h2>TDS</h2>
+          <p id="tds" class="value">-</p>
+          <p class="unit">ppm</p>
+        </article>
+      </section>
+
+      <section class="logs">
+        <h2>Log</h2>
+        <pre id="logOutput"></pre>
+      </section>
+    </main>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
