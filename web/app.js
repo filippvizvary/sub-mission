@@ -2,6 +2,7 @@ const connectButton = document.getElementById("connectButton");
 const disconnectButton = document.getElementById("disconnectButton");
 const statusPill = document.getElementById("statusPill");
 const envHint = document.getElementById("envHint");
+const signalFill = document.getElementById("signalFill");
 
 const fields = {
   temperature: document.getElementById("temperature"),
@@ -11,20 +12,34 @@ const fields = {
   tds: document.getElementById("tds"),
   senderMac: document.getElementById("senderMac"),
   sequence: document.getElementById("sequence"),
+  signalPercent: document.getElementById("signalPercent"),
   rssi: document.getElementById("rssi"),
   updatedAt: document.getElementById("updatedAt"),
 };
 
 const logOutput = document.getElementById("logOutput");
 const kMaxLogLines = 220;
+const kLinkLossThresholdMs = 4500;
+const kStartupSyncWindowMs = 3500;
+const kNoiseLogInterval = 20;
+const kEstimateHoldMs = 1500;
+const kSignalSmoothingAlpha = 0.28;
 
 let port;
 let reader;
 let keepReading = false;
 let textBuffer = "";
 let readableClosed;
+let linkWatchdogId;
 const logLines = [];
 let ignoredBootLines = 0;
+let malformedDuringSync = 0;
+let serialSyncUntilMs = 0;
+let lastTelemetryMs = 0;
+let linkLost = false;
+let hasSeenSender = false;
+let serialSynced = false;
+let smoothedSignalPercent = 0;
 
 const kBootNoisePrefixes = [
   "rst:",
@@ -43,6 +58,136 @@ function isBootNoise(line) {
   }
 
   return kBootNoisePrefixes.some((prefix) => trimmed.startsWith(prefix));
+}
+
+function isLikelySerialNoise(line) {
+  const trimmed = line.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  let printable = 0;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const code = trimmed.charCodeAt(i);
+    if ((code >= 32 && code <= 126) || code === 9) {
+      printable += 1;
+    }
+  }
+
+  return printable / trimmed.length < 0.65;
+}
+
+function sanitizeChunk(text) {
+  if (!text) {
+    return "";
+  }
+
+  return text
+    .replace(/\u0000/g, "")
+    .replace(/[\uFFFD]/g, "")
+    .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F]/g, "");
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function rssiToPercent(rssi) {
+  if (typeof rssi !== "number" || Number.isNaN(rssi)) {
+    return null;
+  }
+
+  const mapped = ((rssi + 100) / 55) * 100;
+  return Math.round(clamp(mapped, 0, 100));
+}
+
+function freshnessToPercent(ageMs) {
+  if (ageMs <= kEstimateHoldMs) {
+    return 100;
+  }
+
+  const effectiveAge = ageMs - kEstimateHoldMs;
+  const effectiveWindow = Math.max(1, kLinkLossThresholdMs - kEstimateHoldMs);
+  const mapped = 100 - (effectiveAge / effectiveWindow) * 100;
+  return Math.round(clamp(mapped, 0, 100));
+}
+
+function smoothSignal(targetPercent) {
+  const target = clamp(Number(targetPercent) || 0, 0, 100);
+  smoothedSignalPercent =
+    smoothedSignalPercent + (target - smoothedSignalPercent) * kSignalSmoothingAlpha;
+  return Math.round(clamp(smoothedSignalPercent, 0, 100));
+}
+
+function resetSignalSmoothing(percent = 0) {
+  smoothedSignalPercent = clamp(Number(percent) || 0, 0, 100);
+}
+
+function updateSignal(percent, rssiValue, options = {}) {
+  const { skipSmoothing = false } = options;
+  const clamped = skipSmoothing
+    ? clamp(Number(percent) || 0, 0, 100)
+    : smoothSignal(percent);
+  fields.signalPercent.textContent = `${clamped}%`;
+  if (signalFill) {
+    signalFill.style.width = `${clamped}%`;
+  }
+
+  if (typeof rssiValue === "number" && Number.isFinite(rssiValue)) {
+    fields.rssi.textContent = `RSSI: ${rssiValue} dBm`;
+    return;
+  }
+
+  fields.rssi.textContent = "RSSI: Estimated";
+}
+
+function setLinkLost(active, reason) {
+  if (linkLost === active) {
+    return;
+  }
+
+  linkLost = active;
+  document.body.classList.toggle("link-lost", active);
+  if (active) {
+    setStatus("status-error", "ESP-NOW Lost");
+    log(reason || "ESP-NOW telemetry signal lost.");
+  } else {
+    setStatus("status-connected", "Connected");
+    log("ESP-NOW telemetry signal restored.");
+  }
+}
+
+function startWatchdog() {
+  if (linkWatchdogId) {
+    clearInterval(linkWatchdogId);
+  }
+
+  linkWatchdogId = setInterval(() => {
+    if (!keepReading || !hasSeenSender || lastTelemetryMs === 0) {
+      return;
+    }
+
+    const ageMs = Date.now() - lastTelemetryMs;
+    updateSignal(freshnessToPercent(ageMs), null);
+
+    if (ageMs > kLinkLossThresholdMs) {
+      setLinkLost(true, "No telemetry received recently. Waiting for ESP-NOW link...");
+      updateSignal(0, null, { skipSmoothing: true });
+      resetSignalSmoothing(0);
+      return;
+    }
+
+    if (linkLost) {
+      setLinkLost(false);
+    }
+  }, 500);
+}
+
+function stopWatchdog() {
+  if (linkWatchdogId) {
+    clearInterval(linkWatchdogId);
+    linkWatchdogId = undefined;
+  }
 }
 
 function log(message) {
@@ -84,6 +229,13 @@ function setControls(connected) {
 }
 
 function updateTelemetry(data) {
+  hasSeenSender = true;
+  lastTelemetryMs = Date.now();
+  setStatus("status-connected", "Connected");
+  if (linkLost) {
+    setLinkLost(false);
+  }
+
   fields.temperature.textContent = Number(data.temperature).toFixed(2);
   fields.ph.textContent = Number(data.ph).toFixed(2);
   fields.flow.textContent = Number(data.flow).toFixed(2);
@@ -91,7 +243,19 @@ function updateTelemetry(data) {
   fields.tds.textContent = Number(data.tds).toFixed(2);
   fields.senderMac.textContent = data.mac || "-";
   fields.sequence.textContent = data.sequence ?? "-";
-  fields.rssi.textContent = data.rssi ?? "-";
+
+  const rssiNumeric =
+    typeof data.rssi === "number" && Number.isFinite(data.rssi) ? data.rssi : null;
+  const quality =
+    rssiNumeric !== null ? rssiToPercent(rssiNumeric) : freshnessToPercent(0);
+  if (rssiNumeric !== null) {
+    // Real RSSI should reflect quickly, so bypass smoothing.
+    updateSignal(quality, rssiNumeric, { skipSmoothing: true });
+    resetSignalSmoothing(quality);
+  } else {
+    updateSignal(quality, rssiNumeric);
+  }
+
   fields.updatedAt.textContent = new Date().toLocaleTimeString();
 }
 
@@ -112,9 +276,26 @@ function processLine(line) {
   try {
     payload = JSON.parse(line);
   } catch {
+    if (
+      !serialSynced ||
+      Date.now() < serialSyncUntilMs ||
+      isLikelySerialNoise(line)
+    ) {
+      malformedDuringSync += 1;
+      if (
+        malformedDuringSync === 1 ||
+        malformedDuringSync % kNoiseLogInterval === 0
+      ) {
+        log(`Serial startup sync: filtered ${malformedDuringSync} malformed lines.`);
+      }
+      return;
+    }
+
     log(`Ignored malformed JSON line: ${line.slice(0, 120)}`);
     return;
   }
+
+  serialSynced = true;
 
   if (payload.type === "telemetry") {
     updateTelemetry(payload);
@@ -123,13 +304,36 @@ function processLine(line) {
 
   if (payload.type === "receiver_ready") {
     log(`Receiver ready on ${payload.receiverMac}`);
+    if (!hasSeenSender) {
+      setStatus("status-idle", "Waiting for Sender");
+    }
     return;
   }
 
   if (payload.type === "receiver_stats") {
+    const lastPacketAgeMs =
+      typeof payload.lastPacketAgeMs === "number" ? payload.lastPacketAgeMs : null;
+
+    if (lastPacketAgeMs !== null) {
+      hasSeenSender = true;
+      lastTelemetryMs = Date.now() - lastPacketAgeMs;
+      updateSignal(freshnessToPercent(lastPacketAgeMs), null);
+
+      if (lastPacketAgeMs > kLinkLossThresholdMs) {
+        setLinkLost(true, "Sender appears offline. Waiting for ESP-NOW telemetry...");
+      } else if (linkLost) {
+        setLinkLost(false);
+      }
+    }
+
     log(
-      `Stats total=${payload.total} valid=${payload.valid} invalid=${payload.invalid} dropped=${payload.dropped}`
+      `Stats total=${payload.total} valid=${payload.valid} invalid=${payload.invalid} dropped=${payload.dropped} recentValid=${payload.recentValid ?? "-"}`
     );
+
+    if (!hasSeenSender) {
+      setStatus("status-idle", "Waiting for Sender");
+    }
+
     return;
   }
 
@@ -147,7 +351,7 @@ async function readLoop() {
         break;
       }
 
-      textBuffer += value;
+      textBuffer += sanitizeChunk(value);
       const lines = textBuffer.split("\n");
       textBuffer = lines.pop() || "";
 
@@ -194,9 +398,21 @@ async function connectSerial() {
     });
     reader = textDecoder.readable.getReader();
 
+    malformedDuringSync = 0;
+    ignoredBootLines = 0;
+    textBuffer = "";
+    lastTelemetryMs = 0;
+    hasSeenSender = false;
+    serialSynced = false;
+    serialSyncUntilMs = Date.now() + kStartupSyncWindowMs;
+
     keepReading = true;
     setControls(true);
-    setStatus("status-connected", "Connected");
+    setStatus("status-idle", "Syncing Serial");
+    document.body.classList.remove("link-lost");
+    updateSignal(0, null);
+    resetSignalSmoothing(0);
+    startWatchdog();
     log("Connected to serial port.");
 
     await readLoop();
@@ -204,6 +420,7 @@ async function connectSerial() {
       keepReading = false;
       setControls(false);
       setStatus("status-idle", "Idle");
+      stopWatchdog();
       log("Serial stream ended.");
     }
   } catch (error) {
@@ -226,6 +443,8 @@ async function connectSerial() {
 
 async function disconnectSerial(silent = false) {
   keepReading = false;
+  stopWatchdog();
+  setLinkLost(false);
 
   try {
     if (reader) {
@@ -246,6 +465,12 @@ async function disconnectSerial(silent = false) {
 
     setControls(false);
     setStatus("status-idle", "Idle");
+    document.body.classList.remove("link-lost");
+    hasSeenSender = false;
+    serialSynced = false;
+    lastTelemetryMs = 0;
+    updateSignal(0, null, { skipSmoothing: true });
+    resetSignalSmoothing(0);
     if (!silent) {
       log("Disconnected from serial port.");
     }
@@ -278,5 +503,6 @@ if ("serial" in navigator) {
 }
 
 setStatus("status-idle", "Idle");
+updateSignal(0, null);
 updateEnvironmentHint();
 log("Dashboard ready. Click Connect Serial to start.");

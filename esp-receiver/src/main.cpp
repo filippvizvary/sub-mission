@@ -43,6 +43,8 @@ uint32_t g_sequenceGaps = 0;
 uint32_t g_lastSequence = 0;
 bool g_hasSequence = false;
 uint32_t g_lastStatsMs = 0;
+uint32_t g_lastValidPacketMs = 0;
+uint32_t g_recentValidPackets = 0;
 
 portMUX_TYPE g_queueMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -103,15 +105,29 @@ void emitTelemetryJson(const ReceivedFrame &frame) {
 }
 
 void emitStatsJson() {
+  const bool hasValid = g_validPackets > 0;
+  const uint32_t lastPacketAgeMs = hasValid ? (millis() - g_lastValidPacketMs) : 0;
+
   Serial.printf(
       "{\"type\":\"receiver_stats\",\"total\":%lu,\"valid\":%lu,\"invalid\":%lu,"
-      "\"dropped\":%lu,\"sequenceGaps\":%lu,\"queueDepth\":%u,\"uptimeMs\":%lu}\n",
+      "\"dropped\":%lu,\"sequenceGaps\":%lu,\"queueDepth\":%u,\"uptimeMs\":%lu,"
+      "\"recentValid\":%lu,\"lastPacketAgeMs\":",
       static_cast<unsigned long>(g_totalPackets),
       static_cast<unsigned long>(g_validPackets),
       static_cast<unsigned long>(g_invalidPackets),
       static_cast<unsigned long>(g_droppedPackets),
       static_cast<unsigned long>(g_sequenceGaps), static_cast<unsigned int>(g_count),
-      static_cast<unsigned long>(millis()));
+      static_cast<unsigned long>(millis()),
+      static_cast<unsigned long>(g_recentValidPackets));
+
+  if (hasValid) {
+    Serial.printf("%lu", static_cast<unsigned long>(lastPacketAgeMs));
+  } else {
+    Serial.print("null");
+  }
+
+  Serial.println("}");
+  g_recentValidPackets = 0;
 }
 
 void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int len) {
@@ -145,6 +161,8 @@ void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int 
   frame.rssi = 0;
 
   g_validPackets++;
+  g_recentValidPackets++;
+  g_lastValidPacketMs = frame.receivedMs;
   enqueueFrame(frame);
 }
 
