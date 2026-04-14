@@ -42,7 +42,7 @@ Notes:
 ### 1. Flash Receiver
 
 ```bash
-cd /home/filip/submission/esp-receiver
+cd /submission/esp-receiver
 pio run -t upload
 pio device monitor -b 115200
 ```
@@ -58,7 +58,7 @@ Expected startup line includes receiver MAC:
 Set receiver MAC in `esp-sender/src/main.cpp` (`kReceiverMac`) to match receiver startup output.
 
 ```bash
-cd /home/filip/submission/esp-sender
+cd /submission/esp-sender
 pio run -t upload
 pio device monitor -b 115200
 ```
@@ -72,7 +72,7 @@ Expected sender logs include:
 ### 3. Run Dashboard
 
 ```bash
-cd /home/filip/submission/web
+cd /submission/web
 python3 -m http.server 8080
 ```
 
