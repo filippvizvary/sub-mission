@@ -41,7 +41,7 @@ Detailed setup: `docs/SETUP_GUIDE.md`
 1. Flash receiver first:
 
 ```bash
-cd /home/filip/sub-mission/esp-receiver
+cd /sub-mission/esp-receiver
 pio run -t upload
 pio device monitor -b 115200
 ```
@@ -55,7 +55,7 @@ Expected startup message:
 2. Copy receiver MAC into sender `kReceiverMac` in `esp-sender/src/main.cpp`, then flash sender:
 
 ```bash
-cd /home/filip/sub-mission/esp-sender
+cd /sub-mission/esp-sender
 pio run -t upload
 pio device monitor -b 115200
 ```
@@ -63,7 +63,7 @@ pio device monitor -b 115200
 3. Run dashboard:
 
 ```bash
-cd /home/filip/sub-mission/web
+cd /sub-mission/web
 python3 -m http.server 8080
 ```
 
