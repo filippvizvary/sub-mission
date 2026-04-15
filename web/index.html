@@ -33,6 +33,11 @@
 
       <p id="envHint" class="env-hint" aria-live="polite"></p>
 
+      <!--<section class="view-tabs" aria-label="Telemetry views">
+        <button id="liveTab" class="tab-button is-active" type="button">Live</button>
+        <button id="rawTab" class="tab-button" type="button">RAW</button>
+      </section>-->
+
       <section class="meta-grid">
         <article class="meta-card">
           <h2>Last Sender MAC</h2>
@@ -56,7 +61,7 @@
         </article>
       </section>
 
-      <section class="metric-grid">
+      <section id="livePanel" class="metric-grid panel-view">
         <article class="metric-card">
           <h2>Temperature</h2>
           <p id="temperature" class="value">-</p>
@@ -81,6 +86,59 @@
           <h2>TDS</h2>
           <p id="tds" class="value">-</p>
           <p class="unit">ppm</p>
+        </article>
+      </section>
+
+      <section id="rawPanel" class="metric-grid panel-view raw-grid" hidden>
+        <article class="metric-card">
+          <h2>Temp ADC</h2>
+          <p id="rawTempAdc" class="mono">-</p>
+          <p class="unit">0 - 4095</p>
+        </article>
+        <article class="metric-card">
+          <h2>Temp Voltage</h2>
+          <p id="rawTempVoltage" class="mono">-</p>
+          <p class="unit">V</p>
+        </article>
+        <article class="metric-card">
+          <h2>pH ADC</h2>
+          <p id="rawPhAdc" class="mono">-</p>
+          <p class="unit">0 - 4095</p>
+        </article>
+        <article class="metric-card">
+          <h2>pH Voltage</h2>
+          <p id="rawPhVoltage" class="mono">-</p>
+          <p class="unit">V</p>
+        </article>
+        <article class="metric-card">
+          <h2>TDS ADC</h2>
+          <p id="rawTdsAdc" class="mono">-</p>
+          <p class="unit">0 - 4095</p>
+        </article>
+        <article class="metric-card">
+          <h2>TDS Voltage</h2>
+          <p id="rawTdsVoltage" class="mono">-</p>
+          <p class="unit">V</p>
+        </article>
+        <article class="metric-card">
+          <h2>Turbidity ADC</h2>
+          <p id="rawTurbidityAdc" class="mono">-</p>
+          <p class="unit">0 - 4095</p>
+        </article>
+        <article class="metric-card">
+          <h2>Turbidity Voltage</h2>
+          <p id="rawTurbidityVoltage" class="mono">-</p>
+          <p class="unit">V</p>
+        </article>
+        <article class="metric-card">
+          <h2>Flow Pulses</h2>
+          <p id="rawFlowPulses" class="mono">-</p>
+          <p class="unit">count / window</p>
+        </article>
+        <article class="metric-card">
+          <h2>Flow Window</h2>
+          <p id="rawFlowWindowMs" class="mono">-</p>
+          <p class="unit">ms</p>
         </article>
       </section>
 

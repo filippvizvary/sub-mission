@@ -6,7 +6,7 @@
 namespace {
 
 constexpr uint32_t kBaudRate = 115200;
-constexpr uint8_t kPacketVersion = 1;
+constexpr uint8_t kPacketVersion = 2;
 constexpr uint8_t kEspNowChannel = 1;
 constexpr size_t kQueueSize = 16;
 constexpr uint32_t kStatsIntervalMs = 5000;
@@ -20,6 +20,16 @@ struct __attribute__((packed)) TelemetryPacket {
   float turbidity;
   float tds;
   uint32_t senderUptimeMs;
+  uint16_t tempAdc;
+  uint16_t phAdc;
+  uint16_t tdsAdc;
+  uint16_t turbidityAdc;
+  float tempVoltage;
+  float phVoltage;
+  float tdsVoltage;
+  float turbidityVoltage;
+  uint32_t flowPulseCount;
+  uint32_t flowWindowMs;
 };
 
 struct ReceivedFrame {
@@ -101,7 +111,18 @@ void emitTelemetryJson(const ReceivedFrame &frame) {
     Serial.print("null");
   }
 
-  Serial.println("}");
+  Serial.printf(
+      ",\"raw\":{\"tempAdc\":%u,\"phAdc\":%u,\"tdsAdc\":%u,\"turbidityAdc\":%u,"
+      "\"tempVoltage\":%.3f,\"phVoltage\":%.3f,\"tdsVoltage\":%.3f,"
+      "\"turbidityVoltage\":%.3f,\"flowPulseCount\":%lu,\"flowWindowMs\":%lu}}\n",
+      static_cast<unsigned int>(frame.packet.tempAdc),
+      static_cast<unsigned int>(frame.packet.phAdc),
+      static_cast<unsigned int>(frame.packet.tdsAdc),
+      static_cast<unsigned int>(frame.packet.turbidityAdc),
+      frame.packet.tempVoltage, frame.packet.phVoltage, frame.packet.tdsVoltage,
+      frame.packet.turbidityVoltage,
+      static_cast<unsigned long>(frame.packet.flowPulseCount),
+      static_cast<unsigned long>(frame.packet.flowWindowMs));
 }
 
 void emitStatsJson() {

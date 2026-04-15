@@ -3,6 +3,10 @@ const disconnectButton = document.getElementById("disconnectButton");
 const statusPill = document.getElementById("statusPill");
 const envHint = document.getElementById("envHint");
 const signalFill = document.getElementById("signalFill");
+const liveTab = document.getElementById("liveTab");
+const rawTab = document.getElementById("rawTab");
+const livePanel = document.getElementById("livePanel");
+const rawPanel = document.getElementById("rawPanel");
 
 const fields = {
   temperature: document.getElementById("temperature"),
@@ -15,6 +19,16 @@ const fields = {
   signalPercent: document.getElementById("signalPercent"),
   rssi: document.getElementById("rssi"),
   updatedAt: document.getElementById("updatedAt"),
+  rawTempAdc: document.getElementById("rawTempAdc"),
+  rawTempVoltage: document.getElementById("rawTempVoltage"),
+  rawPhAdc: document.getElementById("rawPhAdc"),
+  rawPhVoltage: document.getElementById("rawPhVoltage"),
+  rawTdsAdc: document.getElementById("rawTdsAdc"),
+  rawTdsVoltage: document.getElementById("rawTdsVoltage"),
+  rawTurbidityAdc: document.getElementById("rawTurbidityAdc"),
+  rawTurbidityVoltage: document.getElementById("rawTurbidityVoltage"),
+  rawFlowPulses: document.getElementById("rawFlowPulses"),
+  rawFlowWindowMs: document.getElementById("rawFlowWindowMs"),
 };
 
 const logOutput = document.getElementById("logOutput");
@@ -228,6 +242,39 @@ function setControls(connected) {
   disconnectButton.disabled = !connected;
 }
 
+function setActiveView(viewName) {
+  const isRaw = viewName === "raw";
+
+  if (liveTab) {
+    liveTab.classList.toggle("is-active", !isRaw);
+  }
+  if (rawTab) {
+    rawTab.classList.toggle("is-active", isRaw);
+  }
+  if (livePanel) {
+    livePanel.hidden = isRaw;
+  }
+  if (rawPanel) {
+    rawPanel.hidden = !isRaw;
+  }
+}
+
+function formatRawInt(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return Math.round(value).toString();
+}
+
+function formatRawVoltage(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return value.toFixed(3);
+}
+
 function updateTelemetry(data) {
   hasSeenSender = true;
   lastTelemetryMs = Date.now();
@@ -257,6 +304,18 @@ function updateTelemetry(data) {
   }
 
   fields.updatedAt.textContent = new Date().toLocaleTimeString();
+
+  const raw = data.raw || {};
+  fields.rawTempAdc.textContent = formatRawInt(raw.tempAdc);
+  fields.rawTempVoltage.textContent = formatRawVoltage(raw.tempVoltage);
+  fields.rawPhAdc.textContent = formatRawInt(raw.phAdc);
+  fields.rawPhVoltage.textContent = formatRawVoltage(raw.phVoltage);
+  fields.rawTdsAdc.textContent = formatRawInt(raw.tdsAdc);
+  fields.rawTdsVoltage.textContent = formatRawVoltage(raw.tdsVoltage);
+  fields.rawTurbidityAdc.textContent = formatRawInt(raw.turbidityAdc);
+  fields.rawTurbidityVoltage.textContent = formatRawVoltage(raw.turbidityVoltage);
+  fields.rawFlowPulses.textContent = formatRawInt(raw.flowPulseCount);
+  fields.rawFlowWindowMs.textContent = formatRawInt(raw.flowWindowMs);
 }
 
 function processLine(line) {
@@ -488,6 +547,18 @@ disconnectButton.addEventListener("click", () => {
   disconnectSerial();
 });
 
+if (liveTab) {
+  liveTab.addEventListener("click", () => {
+    setActiveView("live");
+  });
+}
+
+if (rawTab) {
+  rawTab.addEventListener("click", () => {
+    setActiveView("raw");
+  });
+}
+
 if ("serial" in navigator) {
   navigator.serial.addEventListener("disconnect", (event) => {
     if (port && event.target === port) {
@@ -504,5 +575,6 @@ if ("serial" in navigator) {
 
 setStatus("status-idle", "Idle");
 updateSignal(0, null);
+setActiveView("live");
 updateEnvironmentHint();
 log("Dashboard ready. Click Connect Serial to start.");
