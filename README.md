@@ -1,114 +1,88 @@
 # Water Telemetry Monorepo
 
-End-to-end ESP32 telemetry system for water-quality style metrics using ESP-NOW, with a local browser dashboard over Web Serial.
+ESP32 sender/receiver telemetry system for water-quality style sensors.
+The sender publishes sensor data over ESP-NOW, the receiver bridges it to USB serial NDJSON, and the web dashboard visualizes both processed metrics and RAW diagnostics.
 
-## Current Architecture
+## Prerequisites
 
-Data flow:
+You must install PlatformIO before any `pio ...` command will work.
 
-1. `esp-sender` (ESP32) generates random telemetry values every 1000 ms.
-2. Sender transmits a packed `TelemetryPacket` over ESP-NOW (channel 1).
-3. `esp-receiver` (ESP32) receives packets, validates them, and emits NDJSON over USB serial (115200 baud).
-4. `web` dashboard reads serial with Web Serial API and renders live values.
+1. Python 3.9+ installed.
+2. PlatformIO Core installed and available in PATH.
+3. Chrome/Edge/Brave for Web Serial dashboard.
+
+Quick install example:
+
+```bash
+python3 -m pip install --user platformio
+python3 -m platformio --version
+```
+
+If `pio` is not found after install, use `python3 -m platformio` or add the user scripts path to PATH.
+
+Detailed setup: `docs/SETUP_GUIDE.md`
 
 ## Repository Structure
 
-- `esp-sender/`: Sender firmware (simulated telemetry)
+- `esp-sender/`: Sender firmware (real sensor read + calibration)
 - `esp-receiver/`: Receiver firmware (ESP-NOW -> NDJSON bridge)
 - `web/`: Browser dashboard (Web Serial)
-- `docs/`: Architecture and backend roadmap
+- `docs/`: Setup, flashing, calibration, troubleshooting, backend roadmap
 
-## Protocol Contract
+## Current Protocol (v2)
 
-Sender and receiver share this packed payload:
-
-- `uint8_t version`
-- `uint32_t sequence`
-- `float temperature`
-- `float ph`
-- `float flow`
-- `float turbidity`
-- `float tds`
-- `uint32_t senderUptimeMs`
-
-Notes:
-
-- `version` must be `1`
-- Sender currently transmits every `1000 ms`
-- Receiver emits JSON lines with `type=telemetry` and periodic `type=receiver_stats`
+- Packet version: `2`
+- Sender interval: `2000 ms`
+- Shared packed payload includes processed values and RAW diagnostics.
+- Receiver emits `type=telemetry` and periodic `type=receiver_stats` JSON lines.
 
 ## Quick Start
 
-### 1. Flash Receiver
+1. Flash receiver first:
 
 ```bash
-cd /submission/esp-receiver
+cd /home/filip/sub-mission/esp-receiver
 pio run -t upload
 pio device monitor -b 115200
 ```
 
-Expected startup line includes receiver MAC:
+Expected startup message:
 
 ```json
-{"type":"receiver_ready","packetVersion":1,"receiverMac":"..","baud":115200}
+{"type":"receiver_ready","packetVersion":2,"receiverMac":"..","baud":115200}
 ```
 
-### 2. Flash Sender
-
-Set receiver MAC in `esp-sender/src/main.cpp` (`kReceiverMac`) to match receiver startup output.
+2. Copy receiver MAC into sender `kReceiverMac` in `esp-sender/src/main.cpp`, then flash sender:
 
 ```bash
-cd /submission/esp-sender
+cd /home/filip/sub-mission/esp-sender
 pio run -t upload
 pio device monitor -b 115200
 ```
 
-Expected sender logs include:
-
-- `type=sender_ready`
-- `type=sender_packet`
-- `type=sender_send` with mostly `status=ok`
-
-### 3. Run Dashboard
+3. Run dashboard:
 
 ```bash
-cd /submission/web
+cd /home/filip/sub-mission/web
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080` in Chrome/Edge/Brave and click Connect Serial.
+Open `http://localhost:8080` and click Connect Serial.
 
-## Current Stability Status
+Detailed flash workflow: `docs/FLASHING_GUIDE.md`
 
-From current validation:
+## Calibration And Diagnostics
 
-- Sender and receiver are communicating successfully.
-- Receiver stats are increasing with `invalid=0`, `dropped=0`, `sequenceGaps=0` in healthy runs.
-- Dashboard is receiving and rendering live values.
+- pH is calibrated from RAW voltage in sender firmware.
+- Dashboard shows RAW ADC/voltage fields for all analog sensors.
+- Use RAW values as calibration reference before trusting processed values.
 
-## Known Limitations
+Calibration guide: `docs/CALIBRATION_GUIDE.md`
 
-1. Sender uses simulated random values (real sensors not integrated yet).
-2. Receiver currently accepts any sender MAC.
-3. RSSI is currently `null` in telemetry output.
-4. Web dashboard has no persistent history (live-only).
-5. No backend/API/database yet.
+Troubleshooting guide: `docs/TROUBLESHOOTING.md`
 
-## Stability Recommendations
+## Notes
 
-1. Add sender retry/re-init logic if repeated send failures occur.
-2. Add optional sender MAC allowlist on receiver.
-3. Add stricter payload sanity checks before forwarding to dashboard.
-4. Add health counters and alert thresholds (fail ratio, stale data, queue depth).
-5. Add long-duration soak tests (12-24h) to validate sustained operation.
-
-## Next Architecture (Server + Database)
-
-Recommended production direction:
-
-1. Run a local PC collector service reading receiver serial NDJSON.
-2. Collector writes telemetry into a database (PostgreSQL recommended).
-3. Expose REST/WebSocket API from backend service.
-4. Dashboard reads from API instead of direct Web Serial.
-
-Detailed plan: `docs/BACKEND_ROADMAP.md`
+1. Sender and receiver firmware versions must match (coordinated update).
+2. Receiver should be flashed before sender when protocol changes.
+3. Backend/API roadmap remains in `docs/BACKEND_ROADMAP.md`.

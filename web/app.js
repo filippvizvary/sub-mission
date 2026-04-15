@@ -3,10 +3,6 @@ const disconnectButton = document.getElementById("disconnectButton");
 const statusPill = document.getElementById("statusPill");
 const envHint = document.getElementById("envHint");
 const signalFill = document.getElementById("signalFill");
-const liveTab = document.getElementById("liveTab");
-const rawTab = document.getElementById("rawTab");
-const livePanel = document.getElementById("livePanel");
-const rawPanel = document.getElementById("rawPanel");
 
 const fields = {
   temperature: document.getElementById("temperature"),
@@ -38,6 +34,7 @@ const kStartupSyncWindowMs = 3500;
 const kNoiseLogInterval = 20;
 const kEstimateHoldMs = 1500;
 const kSignalSmoothingAlpha = 0.28;
+const kExpectedPacketVersion = 2;
 
 let port;
 let reader;
@@ -54,6 +51,7 @@ let linkLost = false;
 let hasSeenSender = false;
 let serialSynced = false;
 let smoothedSignalPercent = 0;
+let hasWarnedRawMissing = false;
 
 const kBootNoisePrefixes = [
   "rst:",
@@ -242,23 +240,6 @@ function setControls(connected) {
   disconnectButton.disabled = !connected;
 }
 
-function setActiveView(viewName) {
-  const isRaw = viewName === "raw";
-
-  if (liveTab) {
-    liveTab.classList.toggle("is-active", !isRaw);
-  }
-  if (rawTab) {
-    rawTab.classList.toggle("is-active", isRaw);
-  }
-  if (livePanel) {
-    livePanel.hidden = isRaw;
-  }
-  if (rawPanel) {
-    rawPanel.hidden = !isRaw;
-  }
-}
-
 function formatRawInt(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return "-";
@@ -275,6 +256,14 @@ function formatRawVoltage(value) {
   return value.toFixed(3);
 }
 
+function formatMetric(value, digits = 2) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return value.toFixed(digits);
+}
+
 function updateTelemetry(data) {
   hasSeenSender = true;
   lastTelemetryMs = Date.now();
@@ -283,11 +272,11 @@ function updateTelemetry(data) {
     setLinkLost(false);
   }
 
-  fields.temperature.textContent = Number(data.temperature).toFixed(2);
-  fields.ph.textContent = Number(data.ph).toFixed(2);
-  fields.flow.textContent = Number(data.flow).toFixed(2);
-  fields.turbidity.textContent = Number(data.turbidity).toFixed(2);
-  fields.tds.textContent = Number(data.tds).toFixed(2);
+  fields.temperature.textContent = formatMetric(data.temperature, 2);
+  fields.ph.textContent = formatMetric(data.ph, 2);
+  fields.flow.textContent = formatMetric(data.flow, 2);
+  fields.turbidity.textContent = formatMetric(data.turbidity, 2);
+  fields.tds.textContent = formatMetric(data.tds, 2);
   fields.senderMac.textContent = data.mac || "-";
   fields.sequence.textContent = data.sequence ?? "-";
 
@@ -306,6 +295,10 @@ function updateTelemetry(data) {
   fields.updatedAt.textContent = new Date().toLocaleTimeString();
 
   const raw = data.raw || {};
+  if ((!data.raw || typeof data.raw !== "object") && !hasWarnedRawMissing) {
+    log("Receiver is not sending raw diagnostics fields yet.");
+    hasWarnedRawMissing = true;
+  }
   fields.rawTempAdc.textContent = formatRawInt(raw.tempAdc);
   fields.rawTempVoltage.textContent = formatRawVoltage(raw.tempVoltage);
   fields.rawPhAdc.textContent = formatRawInt(raw.phAdc);
@@ -357,6 +350,11 @@ function processLine(line) {
   serialSynced = true;
 
   if (payload.type === "telemetry") {
+    if (payload.version !== kExpectedPacketVersion) {
+      log(
+        `Protocol version mismatch: expected ${kExpectedPacketVersion}, got ${payload.version}.`
+      );
+    }
     updateTelemetry(payload);
     return;
   }
@@ -462,6 +460,7 @@ async function connectSerial() {
     textBuffer = "";
     lastTelemetryMs = 0;
     hasSeenSender = false;
+    hasWarnedRawMissing = false;
     serialSynced = false;
     serialSyncUntilMs = Date.now() + kStartupSyncWindowMs;
 
@@ -547,18 +546,6 @@ disconnectButton.addEventListener("click", () => {
   disconnectSerial();
 });
 
-if (liveTab) {
-  liveTab.addEventListener("click", () => {
-    setActiveView("live");
-  });
-}
-
-if (rawTab) {
-  rawTab.addEventListener("click", () => {
-    setActiveView("raw");
-  });
-}
-
 if ("serial" in navigator) {
   navigator.serial.addEventListener("disconnect", (event) => {
     if (port && event.target === port) {
@@ -575,6 +562,5 @@ if ("serial" in navigator) {
 
 setStatus("status-idle", "Idle");
 updateSignal(0, null);
-setActiveView("live");
 updateEnvironmentHint();
 log("Dashboard ready. Click Connect Serial to start.");

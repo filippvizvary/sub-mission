@@ -32,6 +32,10 @@ struct __attribute__((packed)) TelemetryPacket {
   uint32_t flowWindowMs;
 };
 
+// Keep receiver and sender packet layouts byte-for-byte identical.
+static_assert(sizeof(TelemetryPacket) == 61,
+              "TelemetryPacket size mismatch between receiver and sender");
+
 struct ReceivedFrame {
   TelemetryPacket packet;
   uint8_t mac[6];
@@ -68,6 +72,9 @@ void enqueueFrame(const ReceivedFrame &frame) {
   if (g_count >= kQueueSize) {
     g_droppedPackets++;
     portEXIT_CRITICAL(&g_queueMux);
+    Serial.printf(
+        "{\"type\":\"error\",\"message\":\"receiver_queue_full\",\"dropped\":%lu}\n",
+        static_cast<unsigned long>(g_droppedPackets));
     return;
   }
 
@@ -154,9 +161,18 @@ void emitStatsJson() {
 void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int len) {
   g_totalPackets++;
 
-  if (macAddress == nullptr || incomingData == nullptr ||
-      len != static_cast<int>(sizeof(TelemetryPacket))) {
+  if (macAddress == nullptr || incomingData == nullptr) {
     g_invalidPackets++;
+    Serial.println(
+        "{\"type\":\"error\",\"message\":\"packet_invalid_null_pointers\"}");
+    return;
+  }
+
+  if (len != static_cast<int>(sizeof(TelemetryPacket))) {
+    g_invalidPackets++;
+    Serial.printf(
+        "{\"type\":\"error\",\"message\":\"packet_size_mismatch\",\"expected\":%u,\"received\":%d}\n",
+        static_cast<unsigned int>(sizeof(TelemetryPacket)), len);
     return;
   }
 
@@ -165,6 +181,10 @@ void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int 
 
   if (packet.version != kPacketVersion) {
     g_invalidPackets++;
+    Serial.printf(
+        "{\"type\":\"error\",\"message\":\"packet_version_mismatch\",\"expected\":%u,\"received\":%u}\n",
+        static_cast<unsigned int>(kPacketVersion),
+        static_cast<unsigned int>(packet.version));
     return;
   }
 

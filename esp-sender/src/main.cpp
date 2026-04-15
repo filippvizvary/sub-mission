@@ -24,7 +24,16 @@ constexpr float kNominalTempC = 25.0f;
 constexpr float kBCoefficient = 3950.0f;
 constexpr float kAdcMax = 4095.0f;
 constexpr float kVcc = 3.3f;
+// YF-style flow sensors are commonly calibrated as frequency / 6.5 ~= L/min.
 constexpr float kFlowCalibrationFactor = 6.5f;
+constexpr float kPhCalibrationSlope = -5.48f;
+constexpr float kPhCalibrationOffset = 14.67f;
+constexpr float kPhMin = 0.0f;
+constexpr float kPhMax = 14.0f;
+constexpr float kTdsMin = 0.0f;
+constexpr float kTdsMax = 2000.0f;
+constexpr float kTurbidityMin = 0.0f;
+constexpr float kTurbidityMax = 3000.0f;
 
 // Replace with the receiver MAC printed in receiver_ready.
 constexpr uint8_t kReceiverMac[6] = {0xE4, 0x65, 0xB8, 0x7A, 0x7C, 0x68};
@@ -49,6 +58,10 @@ struct __attribute__((packed)) TelemetryPacket {
   uint32_t flowPulseCount;
   uint32_t flowWindowMs;
 };
+
+// Keep sender and receiver packet layouts byte-for-byte identical.
+static_assert(sizeof(TelemetryPacket) == 61,
+              "TelemetryPacket size mismatch between sender and receiver");
 
 struct AnalogReading {
   uint16_t adc;
@@ -126,7 +139,12 @@ TemperatureReading readTemperatureC() {
 
 PhReading readPh() {
   const AnalogReading raw = readAnalogPin(kPhPin);
-  return {14.0f - (3.5f * raw.voltage + 0.5f), raw};
+  const float calibratedPh =
+      kPhCalibrationSlope * raw.voltage + kPhCalibrationOffset;
+  const float clampedPh =
+      calibratedPh < kPhMin ? kPhMin
+                            : (calibratedPh > kPhMax ? kPhMax : calibratedPh);
+  return {clampedPh, raw};
 }
 
 TdsReading readTds() {
@@ -136,14 +154,18 @@ TdsReading readTds() {
       (133.42f * voltage * voltage * voltage - 255.86f * voltage * voltage +
        857.39f * voltage) *
       0.5f;
-  return {ppm, raw};
+  const float clampedPpm = ppm < kTdsMin ? kTdsMin : (ppm > kTdsMax ? kTdsMax : ppm);
+  return {clampedPpm, raw};
 }
 
 TurbidityReading readTurbidity() {
   const AnalogReading raw = readAnalogPin(kTurbidityPin);
-  return {-1120.4f * raw.voltage * raw.voltage + 5742.3f * raw.voltage -
-              4352.9f,
-          raw};
+  const float ntu =
+      -1120.4f * raw.voltage * raw.voltage + 5742.3f * raw.voltage - 4352.9f;
+  const float clampedNtu =
+      ntu < kTurbidityMin ? kTurbidityMin
+                          : (ntu > kTurbidityMax ? kTurbidityMax : ntu);
+  return {clampedNtu, raw};
 }
 
 FlowReading updateAndReadFlowRate() {
@@ -158,10 +180,10 @@ FlowReading updateAndReadFlowRate() {
     return {g_flowRate, g_lastFlowWindowPulseCount, g_lastFlowWindowMs};
   }
 
-  detachInterrupt(digitalPinToInterrupt(kFlowPin));
+  noInterrupts();
   const uint32_t pulseCount = g_flowPulseCount;
   g_flowPulseCount = 0;
-  attachInterrupt(digitalPinToInterrupt(kFlowPin), onFlowPulse, RISING);
+  interrupts();
 
   g_lastFlowWindowPulseCount = pulseCount;
   g_lastFlowWindowMs = elapsed;
@@ -199,6 +221,11 @@ bool initEspNowSender() {
 
   esp_now_register_send_cb(onDataSent);
 
+  Serial.printf(
+      "{\"type\":\"sender_peer_target\",\"receiverMac\":\"%02X:%02X:%02X:%02X:%02X:%02X\"}\n",
+      kReceiverMac[0], kReceiverMac[1], kReceiverMac[2], kReceiverMac[3],
+      kReceiverMac[4], kReceiverMac[5]);
+
   esp_now_peer_info_t peerInfo{};
   memcpy(peerInfo.peer_addr, kReceiverMac, sizeof(kReceiverMac));
   peerInfo.channel = kEspNowChannel;
@@ -208,6 +235,8 @@ bool initEspNowSender() {
     Serial.println("{\"type\":\"error\",\"message\":\"esp_now_add_peer_failed\"}");
     return false;
   }
+
+  Serial.println("{\"type\":\"sender_peer_added\",\"status\":\"ok\"}");
 
   return true;
 }
@@ -219,6 +248,20 @@ SensorReadings readSensors() {
   readings.flow = updateAndReadFlowRate();
   readings.turbidity = readTurbidity();
   readings.tds = readTds();
+
+  if (!isfinite(readings.temperature.celsius)) {
+    Serial.printf(
+        "{\"type\":\"error\",\"message\":\"temperature_sensor_fault\",\"tempAdc\":%u,\"tempVoltage\":%.3f}\n",
+        static_cast<unsigned int>(readings.temperature.raw.adc),
+        readings.temperature.raw.voltage);
+  }
+
+  if (readings.ph.raw.adc == 0 || readings.ph.raw.adc >= static_cast<uint16_t>(kAdcMax)) {
+    Serial.printf(
+        "{\"type\":\"warn\",\"message\":\"ph_signal_rail\",\"phAdc\":%u,\"phVoltage\":%.3f}\n",
+        static_cast<unsigned int>(readings.ph.raw.adc), readings.ph.raw.voltage);
+  }
+
   return readings;
 }
 

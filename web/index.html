@@ -33,11 +33,6 @@
 
       <p id="envHint" class="env-hint" aria-live="polite"></p>
 
-      <!--<section class="view-tabs" aria-label="Telemetry views">
-        <button id="liveTab" class="tab-button is-active" type="button">Live</button>
-        <button id="rawTab" class="tab-button" type="button">RAW</button>
-      </section>-->
-
       <section class="meta-grid">
         <article class="meta-card">
           <h2>Last Sender MAC</h2>
@@ -89,7 +84,11 @@
         </article>
       </section>
 
-      <section id="rawPanel" class="metric-grid panel-view raw-grid" hidden>
+      <section class="metric-grid raw-grid">
+        <article class="metric-card diagnostic-card">
+          <h2>RAW Diagnostics</h2>
+          <p class="unit">Use these raw values when calibrating sensors.</p>
+        </article>
         <article class="metric-card">
           <h2>Temp ADC</h2>
           <p id="rawTempAdc" class="mono">-</p>
