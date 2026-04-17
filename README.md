@@ -27,7 +27,7 @@ Detailed setup: `docs/SETUP_GUIDE.md`
 - `esp-sender/`: Sender firmware (real sensor read + calibration)
 - `esp-receiver/`: Receiver firmware (ESP-NOW -> NDJSON bridge)
 - `web/`: Browser dashboard (Web Serial)
-- `docs/`: Setup, flashing, calibration, troubleshooting, backend roadmap
+- `docs/`: Setup, flashing, calibration, architecture, troubleshooting, backend roadmap
 
 ## Current Protocol (v2)
 
@@ -70,6 +70,8 @@ python3 -m http.server 8080
 Open `http://localhost:8080` and click Connect Serial.
 
 Detailed flash workflow: `docs/FLASHING_GUIDE.md`
+
+Full data-flow and ESP-NOW explanation: `docs/ARCHITECTURE_AND_DATA_FLOW.md`
 
 ## Calibration And Diagnostics
 
