@@ -19,6 +19,11 @@ constexpr uint8_t kTurbidityPin = 33;
 constexpr uint8_t kFlowPin = 27;
 
 constexpr float kSeriesResistor = 10000.0f;
+// The NTC divider is fed from the devkit's 3V3 rail, which is NOT exactly 3.3 V.
+// One-point calibrated against a thermometer reading of 21.0 C on 2026-10-15:
+// with analogReadMilliVolts() the pin sits at 1.5493 V at 21.0 C, which only
+// resolves to 21.0 C if the divider's supply is 3.40 V. Confirm by metering 3V3.
+constexpr float kNtcSupplyVolts = 3.40f;
 constexpr float kNominalResistance = 10000.0f;
 constexpr float kNominalTempC = 25.0f;
 constexpr float kBCoefficient = 3950.0f;
@@ -27,7 +32,21 @@ constexpr float kVcc = 3.3f;
 // YF-style flow sensors are commonly calibrated as frequency / 6.5 ~= L/min.
 constexpr float kFlowCalibrationFactor = 6.5f;
 constexpr float kPhCalibrationSlope = -5.48f;
-constexpr float kPhCalibrationOffset = 14.67f;
+// Fitted so a stock PH-4502C trimmed to 2.50 V at pH 7 reads 7: (7 - 20.70) / -5.48 = 2.50 V.
+constexpr float kPhCalibrationOffset = 20.70f;
+// The electrode's volts-per-pH scales with absolute temperature; the fit is at 25 C.
+constexpr float kPhCalibrationTempC = 25.0f;
+constexpr float kPhNeutralPh = 7.0f;
+// Outside this span the number cannot be a pH measurement at all, so report
+// nothing rather than clamping it to a confident-looking 0.00 or 14.00.
+// Trim-independent, unlike a fixed voltage threshold.
+constexpr float kPhPlausibleMin = -1.0f;
+constexpr float kPhPlausibleMax = 15.0f;
+// DFRobot turbidity module outputs 0-4.5 V; a 2:1 divider protects the 3.3 V ADC.
+constexpr float kTurbidityDividerRatio = 2.0f;
+// TDS boards specify 2 %/C, referenced to 25 C.
+constexpr float kTdsTempCoefficient = 0.02f;
+constexpr float kTdsReferenceTempC = 25.0f;
 constexpr float kPhMin = 0.0f;
 constexpr float kPhMax = 14.0f;
 constexpr float kTdsMin = 0.0f;
@@ -35,8 +54,9 @@ constexpr float kTdsMax = 2000.0f;
 constexpr float kTurbidityMin = 0.0f;
 constexpr float kTurbidityMax = 3000.0f;
 
-// Replace with the receiver MAC printed in receiver_ready.
-constexpr uint8_t kReceiverMac[6] = {0xE4, 0x65, 0xB8, 0x7A, 0x7C, 0x68};
+// Receiver MAC, read off receiver_ready on 2026-10-15.
+// Previous value was E4:65:B8:7A:7C:68 - a different board, same Espressif OUI.
+constexpr uint8_t kReceiverMac[6] = {0xE4, 0x65, 0xB8, 0x7A, 0x92, 0xB4};
 
 struct __attribute__((packed)) TelemetryPacket {
   uint8_t version;
@@ -116,7 +136,10 @@ void IRAM_ATTR onFlowPulse() {
 
 AnalogReading readAnalogPin(uint8_t pin) {
   const uint16_t adc = static_cast<uint16_t>(analogRead(pin));
-  const float voltage = static_cast<float>(adc) * kVcc / kAdcMax;
+  // analogReadMilliVolts() applies the chip's eFuse Vref calibration. The naive
+  // adc * kVcc / kAdcMax assumed a 3.3 V full-scale, which measured ~7.5 % low on
+  // this board against a multimeter - worth about -3 C on the NTC.
+  const float voltage = static_cast<float>(analogReadMilliVolts(pin)) / 1000.0f;
   return {adc, voltage};
 }
 
@@ -124,11 +147,11 @@ TemperatureReading readTemperatureC() {
   const AnalogReading raw = readAnalogPin(kTempPin);
   const float voltage = raw.voltage;
 
-  if (voltage <= 0.0f || voltage >= kVcc) {
+  if (voltage <= 0.0f || voltage >= kNtcSupplyVolts) {
     return {NAN, raw};
   }
 
-  const float resistance = kSeriesResistor * (kVcc / voltage - 1.0f);
+  const float resistance = kSeriesResistor * (kNtcSupplyVolts / voltage - 1.0f);
   float temp = resistance / kNominalResistance;
   temp = log(temp);
   temp /= kBCoefficient;
@@ -137,31 +160,67 @@ TemperatureReading readTemperatureC() {
   return {temp - 273.15f, raw};
 }
 
-PhReading readPh() {
+PhReading readPh(float temperatureC) {
   const AnalogReading raw = readAnalogPin(kPhPin);
+
+  // Correct the electrode voltage back to its 25 C equivalent, then apply the
+  // 25 C fit. Electrode sensitivity is proportional to absolute temperature.
+  const float neutralVoltage =
+      (kPhNeutralPh - kPhCalibrationOffset) / kPhCalibrationSlope;
+  float voltage25 = raw.voltage;
+  if (isfinite(temperatureC)) {
+    const float tempFactor =
+        (temperatureC + 273.15f) / (kPhCalibrationTempC + 273.15f);
+    voltage25 = neutralVoltage + (raw.voltage - neutralVoltage) / tempFactor;
+  }
+
   const float calibratedPh =
-      kPhCalibrationSlope * raw.voltage + kPhCalibrationOffset;
+      kPhCalibrationSlope * voltage25 + kPhCalibrationOffset;
+
+  // Judged on the value, not on the raw ADC count: a disconnected or unpowered
+  // module lands far outside pH 0-14, which is a broken chain rather than a
+  // measurement. The dashboard renders NAN as "-".
+  if (calibratedPh < kPhPlausibleMin || calibratedPh > kPhPlausibleMax) {
+    return {NAN, raw};
+  }
+
   const float clampedPh =
       calibratedPh < kPhMin ? kPhMin
                             : (calibratedPh > kPhMax ? kPhMax : calibratedPh);
   return {clampedPh, raw};
 }
 
-TdsReading readTds() {
+TdsReading readTds(float temperatureC) {
   const AnalogReading raw = readAnalogPin(kTdsPin);
   const float voltage = raw.voltage;
-  const float ppm =
+  float ppm =
       (133.42f * voltage * voltage * voltage - 255.86f * voltage * voltage +
        857.39f * voltage) *
       0.5f;
+
+  // Conductivity rises with temperature; normalise to 25 C.
+  // NOTE: 0 V is a legitimate TDS reading (dry probe in air), so unlike pH there
+  // is no rail check here - a disconnected input is indistinguishable from clean
+  // water on this channel, which is a real limitation worth stating out loud.
+  if (isfinite(temperatureC)) {
+    ppm /= 1.0f + kTdsTempCoefficient * (temperatureC - kTdsReferenceTempC);
+  }
+
   const float clampedPpm = ppm < kTdsMin ? kTdsMin : (ppm > kTdsMax ? kTdsMax : ppm);
   return {clampedPpm, raw};
 }
 
 TurbidityReading readTurbidity() {
   const AnalogReading raw = readAnalogPin(kTurbidityPin);
-  const float ntu =
-      -1120.4f * raw.voltage * raw.voltage + 5742.3f * raw.voltage - 4352.9f;
+
+  if (raw.adc == 0 || raw.adc >= static_cast<uint16_t>(kAdcMax)) {
+    return {NAN, raw};
+  }
+
+  // Undo the 2:1 divider so the DFRobot curve sees the module's own 0-5 V output.
+  const float sensorVoltage = raw.voltage * kTurbidityDividerRatio;
+  const float ntu = -1120.4f * sensorVoltage * sensorVoltage +
+                    5742.3f * sensorVoltage - 4352.9f;
   const float clampedNtu =
       ntu < kTurbidityMin ? kTurbidityMin
                           : (ntu > kTurbidityMax ? kTurbidityMax : ntu);
@@ -194,15 +253,21 @@ FlowReading updateAndReadFlowRate() {
   return {g_flowRate, g_lastFlowWindowPulseCount, g_lastFlowWindowMs};
 }
 
+// Runs in the WiFi task, NOT the Arduino loop. It must not touch Serial:
+// printing from here interleaves with the packet line and corrupts the NDJSON.
+// Record the outcome and let loop() emit it.
+volatile uint32_t g_sendResultSequence = 0;
+volatile bool g_sendResultOk = false;
+volatile bool g_sendResultPending = false;
+
 void onDataSent(const uint8_t *macAddr, esp_now_send_status_t status) {
   if (macAddr == nullptr) {
     return;
   }
 
-  Serial.printf(
-      "{\"type\":\"sender_send\",\"sequence\":%lu,\"status\":\"%s\"}\n",
-      static_cast<unsigned long>(g_sequence),
-      status == ESP_NOW_SEND_SUCCESS ? "ok" : "fail");
+  g_sendResultSequence = g_sequence;
+  g_sendResultOk = (status == ESP_NOW_SEND_SUCCESS);
+  g_sendResultPending = true;
 }
 
 bool initEspNowSender() {
@@ -244,10 +309,11 @@ bool initEspNowSender() {
 SensorReadings readSensors() {
   SensorReadings readings{};
   readings.temperature = readTemperatureC();
-  readings.ph = readPh();
+  const float temperatureC = readings.temperature.celsius;
+  readings.ph = readPh(temperatureC);
   readings.flow = updateAndReadFlowRate();
   readings.turbidity = readTurbidity();
-  readings.tds = readTds();
+  readings.tds = readTds(temperatureC);
 
   if (!isfinite(readings.temperature.celsius)) {
     Serial.printf(
@@ -288,6 +354,14 @@ TelemetryPacket buildSensorPacket(const SensorReadings &readings) {
   return packet;
 }
 
+void formatJsonFloat(char *out, size_t outSize, float value) {
+  if (isfinite(value)) {
+    snprintf(out, outSize, "%.3f", value);
+  } else {
+    snprintf(out, outSize, "null");
+  }
+}
+
 void sendTelemetry() {
   const SensorReadings readings = readSensors();
   const TelemetryPacket packet = buildSensorPacket(readings);
@@ -302,11 +376,27 @@ void sendTelemetry() {
     return;
   }
 
-  Serial.printf(
-      "{\"type\":\"sender_packet\",\"sequence\":%lu,\"temperature\":%.3f,\"ph\":%.3f,\"flow\":%.3f,\"turbidity\":%.3f,\"tds\":%.3f,\"ph_adc\":%u,\"ph_v\":%.3f}\n",
-      static_cast<unsigned long>(packet.sequence), packet.temperature, packet.ph,
-      packet.flow, packet.turbidity, packet.tds,
-      static_cast<unsigned int>(packet.phAdc), packet.phVoltage);
+  // Built into one buffer and written once. Ten separate Serial.print calls
+  // let a concurrent writer land in the middle of the line.
+  char line[256];
+  char t[16];
+  char ph[16];
+  char fl[16];
+  char tu[16];
+  char td[16];
+  formatJsonFloat(t, sizeof(t), packet.temperature);
+  formatJsonFloat(ph, sizeof(ph), packet.ph);
+  formatJsonFloat(fl, sizeof(fl), packet.flow);
+  formatJsonFloat(tu, sizeof(tu), packet.turbidity);
+  formatJsonFloat(td, sizeof(td), packet.tds);
+
+  snprintf(line, sizeof(line),
+           "{\"type\":\"sender_packet\",\"sequence\":%lu,\"temperature\":%s,"
+           "\"ph\":%s,\"flow\":%s,\"turbidity\":%s,\"tds\":%s,"
+           "\"ph_adc\":%u,\"ph_v\":%.3f}",
+           static_cast<unsigned long>(packet.sequence), t, ph, fl, tu, td,
+           static_cast<unsigned int>(packet.phAdc), packet.phVoltage);
+  Serial.println(line);
 }
 
 }  // namespace
@@ -319,7 +409,7 @@ void setup() {
     delay(10);
   }
 
-  pinMode(kFlowPin, INPUT);
+  pinMode(kFlowPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(kFlowPin), onFlowPulse, RISING);
 
   if (!initEspNowSender()) {
@@ -330,6 +420,14 @@ void setup() {
 }
 
 void loop() {
+  // All Serial output happens here, in one context.
+  if (g_sendResultPending) {
+    g_sendResultPending = false;
+    Serial.printf("{\"type\":\"sender_send\",\"sequence\":%lu,\"status\":\"%s\"}\n",
+                  static_cast<unsigned long>(g_sendResultSequence),
+                  g_sendResultOk ? "ok" : "fail");
+  }
+
   const uint32_t now = millis();
   if (now - g_lastSendMs >= kSendIntervalMs) {
     sendTelemetry();

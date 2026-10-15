@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
+#include <math.h>
 
 namespace {
 
@@ -60,6 +61,20 @@ uint32_t g_lastStatsMs = 0;
 uint32_t g_lastValidPacketMs = 0;
 uint32_t g_recentValidPackets = 0;
 
+// The ESP-NOW receive callback runs in the WiFi task, not the Arduino loop.
+// It must not touch Serial: printing from there interleaves with a telemetry
+// line and corrupts the NDJSON. Record the fault and let loop() emit it.
+enum : uint8_t {
+  kDeferredErrorNone = 0,
+  kDeferredErrorNullPointers,
+  kDeferredErrorSizeMismatch,
+  kDeferredErrorVersionMismatch,
+  kDeferredErrorQueueFull,
+};
+volatile uint8_t g_deferredError = kDeferredErrorNone;
+volatile int32_t g_deferredErrorA = 0;
+volatile int32_t g_deferredErrorB = 0;
+
 portMUX_TYPE g_queueMux = portMUX_INITIALIZER_UNLOCKED;
 
 void macToString(const uint8_t *mac, char *out, size_t outSize) {
@@ -72,9 +87,8 @@ void enqueueFrame(const ReceivedFrame &frame) {
   if (g_count >= kQueueSize) {
     g_droppedPackets++;
     portEXIT_CRITICAL(&g_queueMux);
-    Serial.printf(
-        "{\"type\":\"error\",\"message\":\"receiver_queue_full\",\"dropped\":%lu}\n",
-        static_cast<unsigned long>(g_droppedPackets));
+    g_deferredErrorA = static_cast<int32_t>(g_droppedPackets);
+    g_deferredError = kDeferredErrorQueueFull;
     return;
   }
 
@@ -98,38 +112,62 @@ bool dequeueFrame(ReceivedFrame &frame) {
   return true;
 }
 
+// JSON has no NaN or Infinity. A railed sender channel arrives as NAN in the
+// packet, so serialise it as null. A raw %.3f of NAN would print the token
+// "nan", which is invalid JSON and makes the dashboard drop the whole line.
+void formatJsonFloat(char *out, size_t outSize, float value) {
+  if (isfinite(value)) {
+    snprintf(out, outSize, "%.3f", value);
+  } else {
+    snprintf(out, outSize, "null");
+  }
+}
+
 void emitTelemetryJson(const ReceivedFrame &frame) {
   char macString[18] = {0};
   macToString(frame.mac, macString, sizeof(macString));
 
-  Serial.printf(
-      "{\"type\":\"telemetry\",\"version\":%u,\"mac\":\"%s\",\"sequence\":%lu,"
-      "\"temperature\":%.3f,\"ph\":%.3f,\"flow\":%.3f,\"turbidity\":%.3f,"
-      "\"tds\":%.3f,\"senderUptimeMs\":%lu,\"receiverUptimeMs\":%lu,\"rssi\":",
-      frame.packet.version, macString, static_cast<unsigned long>(frame.packet.sequence),
-      frame.packet.temperature, frame.packet.ph, frame.packet.flow,
-      frame.packet.turbidity, frame.packet.tds,
-      static_cast<unsigned long>(frame.packet.senderUptimeMs),
-      static_cast<unsigned long>(frame.receivedMs));
-
+  char temperature[16];
+  char ph[16];
+  char flow[16];
+  char turbidity[16];
+  char tds[16];
+  char rssi[16];
+  formatJsonFloat(temperature, sizeof(temperature), frame.packet.temperature);
+  formatJsonFloat(ph, sizeof(ph), frame.packet.ph);
+  formatJsonFloat(flow, sizeof(flow), frame.packet.flow);
+  formatJsonFloat(turbidity, sizeof(turbidity), frame.packet.turbidity);
+  formatJsonFloat(tds, sizeof(tds), frame.packet.tds);
   if (frame.hasRssi) {
-    Serial.printf("%ld", static_cast<long>(frame.rssi));
+    snprintf(rssi, sizeof(rssi), "%ld", static_cast<long>(frame.rssi));
   } else {
-    Serial.print("null");
+    snprintf(rssi, sizeof(rssi), "null");
   }
 
-  Serial.printf(
-      ",\"raw\":{\"tempAdc\":%u,\"phAdc\":%u,\"tdsAdc\":%u,\"turbidityAdc\":%u,"
-      "\"tempVoltage\":%.3f,\"phVoltage\":%.3f,\"tdsVoltage\":%.3f,"
-      "\"turbidityVoltage\":%.3f,\"flowPulseCount\":%lu,\"flowWindowMs\":%lu}}\n",
-      static_cast<unsigned int>(frame.packet.tempAdc),
-      static_cast<unsigned int>(frame.packet.phAdc),
-      static_cast<unsigned int>(frame.packet.tdsAdc),
-      static_cast<unsigned int>(frame.packet.turbidityAdc),
-      frame.packet.tempVoltage, frame.packet.phVoltage, frame.packet.tdsVoltage,
-      frame.packet.turbidityVoltage,
-      static_cast<unsigned long>(frame.packet.flowPulseCount),
-      static_cast<unsigned long>(frame.packet.flowWindowMs));
+  // One buffer, one write. Multiple Serial.print calls would let a concurrent
+  // writer land in the middle of the line and invalidate the JSON.
+  char line[640];
+  snprintf(line, sizeof(line),
+           "{\"type\":\"telemetry\",\"version\":%u,\"mac\":\"%s\",\"sequence\":%lu,"
+           "\"temperature\":%s,\"ph\":%s,\"flow\":%s,\"turbidity\":%s,\"tds\":%s,"
+           "\"senderUptimeMs\":%lu,\"receiverUptimeMs\":%lu,\"rssi\":%s,"
+           "\"raw\":{\"tempAdc\":%u,\"phAdc\":%u,\"tdsAdc\":%u,\"turbidityAdc\":%u,"
+           "\"tempVoltage\":%.3f,\"phVoltage\":%.3f,\"tdsVoltage\":%.3f,"
+           "\"turbidityVoltage\":%.3f,\"flowPulseCount\":%lu,\"flowWindowMs\":%lu}}",
+           frame.packet.version, macString,
+           static_cast<unsigned long>(frame.packet.sequence),
+           temperature, ph, flow, turbidity, tds,
+           static_cast<unsigned long>(frame.packet.senderUptimeMs),
+           static_cast<unsigned long>(frame.receivedMs), rssi,
+           static_cast<unsigned int>(frame.packet.tempAdc),
+           static_cast<unsigned int>(frame.packet.phAdc),
+           static_cast<unsigned int>(frame.packet.tdsAdc),
+           static_cast<unsigned int>(frame.packet.turbidityAdc),
+           frame.packet.tempVoltage, frame.packet.phVoltage, frame.packet.tdsVoltage,
+           frame.packet.turbidityVoltage,
+           static_cast<unsigned long>(frame.packet.flowPulseCount),
+           static_cast<unsigned long>(frame.packet.flowWindowMs));
+  Serial.println(line);
 }
 
 void emitStatsJson() {
@@ -163,16 +201,15 @@ void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int 
 
   if (macAddress == nullptr || incomingData == nullptr) {
     g_invalidPackets++;
-    Serial.println(
-        "{\"type\":\"error\",\"message\":\"packet_invalid_null_pointers\"}");
+    g_deferredError = kDeferredErrorNullPointers;
     return;
   }
 
   if (len != static_cast<int>(sizeof(TelemetryPacket))) {
     g_invalidPackets++;
-    Serial.printf(
-        "{\"type\":\"error\",\"message\":\"packet_size_mismatch\",\"expected\":%u,\"received\":%d}\n",
-        static_cast<unsigned int>(sizeof(TelemetryPacket)), len);
+    g_deferredErrorA = static_cast<int32_t>(sizeof(TelemetryPacket));
+    g_deferredErrorB = len;
+    g_deferredError = kDeferredErrorSizeMismatch;
     return;
   }
 
@@ -181,10 +218,9 @@ void onDataReceived(const uint8_t *macAddress, const uint8_t *incomingData, int 
 
   if (packet.version != kPacketVersion) {
     g_invalidPackets++;
-    Serial.printf(
-        "{\"type\":\"error\",\"message\":\"packet_version_mismatch\",\"expected\":%u,\"received\":%u}\n",
-        static_cast<unsigned int>(kPacketVersion),
-        static_cast<unsigned int>(packet.version));
+    g_deferredErrorA = static_cast<int32_t>(kPacketVersion);
+    g_deferredErrorB = static_cast<int32_t>(packet.version);
+    g_deferredError = kDeferredErrorVersionMismatch;
     return;
   }
 
@@ -249,6 +285,29 @@ void setup() {
 }
 
 void loop() {
+  // All Serial output happens here, in one context.
+  if (g_deferredError != kDeferredErrorNone) {
+    const uint8_t code = g_deferredError;
+    g_deferredError = kDeferredErrorNone;
+    switch (code) {
+      case kDeferredErrorQueueFull:
+        Serial.printf("{\"type\":\"error\",\"message\":\"receiver_queue_full\",\"dropped\":%ld}\n",
+                      static_cast<long>(g_deferredErrorA));
+        break;
+      case kDeferredErrorSizeMismatch:
+        Serial.printf("{\"type\":\"error\",\"message\":\"packet_size_mismatch\",\"expected\":%ld,\"received\":%ld}\n",
+                      static_cast<long>(g_deferredErrorA), static_cast<long>(g_deferredErrorB));
+        break;
+      case kDeferredErrorVersionMismatch:
+        Serial.printf("{\"type\":\"error\",\"message\":\"packet_version_mismatch\",\"expected\":%ld,\"received\":%ld}\n",
+                      static_cast<long>(g_deferredErrorA), static_cast<long>(g_deferredErrorB));
+        break;
+      default:
+        Serial.println("{\"type\":\"error\",\"message\":\"packet_invalid_null_pointers\"}");
+        break;
+    }
+  }
+
   ReceivedFrame frame;
   while (dequeueFrame(frame)) {
     emitTelemetryJson(frame);
