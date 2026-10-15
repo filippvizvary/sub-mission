@@ -3,6 +3,15 @@ const disconnectButton = document.getElementById("disconnectButton");
 const statusPill = document.getElementById("statusPill");
 const envHint = document.getElementById("envHint");
 const signalFill = document.getElementById("signalFill");
+const exportButton = document.getElementById("exportButton");
+const statFields = {
+  total: document.getElementById("statTotal"),
+  valid: document.getElementById("statValid"),
+  invalid: document.getElementById("statInvalid"),
+  dropped: document.getElementById("statDropped"),
+  gaps: document.getElementById("statGaps"),
+  age: document.getElementById("statAge"),
+};
 
 const fields = {
   temperature: document.getElementById("temperature"),
@@ -264,6 +273,83 @@ function formatMetric(value, digits = 2) {
   return value.toFixed(digits);
 }
 
+function setStatText(element, value, warn) {
+  if (!element) {
+    return;
+  }
+  element.textContent = String(value);
+  element.classList.toggle("stat-warn", Boolean(warn));
+}
+
+function updateStats(payload) {
+  setStatText(statFields.total, payload.total ?? "-");
+  setStatText(statFields.valid, payload.valid ?? "-");
+  setStatText(statFields.invalid, payload.invalid ?? "-", (payload.invalid ?? 0) > 0);
+  setStatText(statFields.dropped, payload.dropped ?? "-", (payload.dropped ?? 0) > 0);
+  setStatText(statFields.gaps, payload.sequenceGaps ?? "-", (payload.sequenceGaps ?? 0) > 0);
+  const age = payload.lastPacketAgeMs;
+  setStatText(statFields.age, age === null || age === undefined ? "no packet yet" : `${age} ms`,
+    typeof age === "number" && age > kLinkLossThresholdMs);
+}
+
+const samples = [];
+const kMaxSamples = 20000;
+
+function recordSample(data) {
+  const raw = data.raw || {};
+  samples.push({
+    time: new Date().toISOString(),
+    sequence: data.sequence ?? "",
+    temperature: data.temperature ?? "",
+    ph: data.ph ?? "",
+    flow: data.flow ?? "",
+    turbidity: data.turbidity ?? "",
+    tds: data.tds ?? "",
+    rssi: data.rssi ?? "",
+    tempAdc: raw.tempAdc ?? "",
+    phAdc: raw.phAdc ?? "",
+    tdsAdc: raw.tdsAdc ?? "",
+    turbidityAdc: raw.turbidityAdc ?? "",
+    tempVoltage: raw.tempVoltage ?? "",
+    phVoltage: raw.phVoltage ?? "",
+    tdsVoltage: raw.tdsVoltage ?? "",
+    turbidityVoltage: raw.turbidityVoltage ?? "",
+    flowPulseCount: raw.flowPulseCount ?? "",
+    flowWindowMs: raw.flowWindowMs ?? "",
+  });
+  if (samples.length > kMaxSamples) {
+    samples.shift();
+  }
+}
+
+function csvCell(value) {
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportCsv() {
+  if (!samples.length) {
+    log("No samples recorded yet - nothing to export.");
+    return;
+  }
+  const columns = Object.keys(samples[0]);
+  const rows = [columns.join(",")];
+  for (const sample of samples) {
+    rows.push(columns.map((column) => csvCell(sample[column])).join(","));
+  }
+  const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `water-telemetry-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  log(`Exported ${samples.length} samples to CSV.`);
+}
+
 function updateTelemetry(data) {
   hasSeenSender = true;
   lastTelemetryMs = Date.now();
@@ -309,6 +395,8 @@ function updateTelemetry(data) {
   fields.rawTurbidityVoltage.textContent = formatRawVoltage(raw.turbidityVoltage);
   fields.rawFlowPulses.textContent = formatRawInt(raw.flowPulseCount);
   fields.rawFlowWindowMs.textContent = formatRawInt(raw.flowWindowMs);
+
+  recordSample(data);
 }
 
 function processLine(line) {
@@ -383,6 +471,8 @@ function processLine(line) {
       }
     }
 
+    updateStats(payload);
+
     log(
       `Stats total=${payload.total} valid=${payload.valid} invalid=${payload.invalid} dropped=${payload.dropped} recentValid=${payload.recentValid ?? "-"}`
     );
@@ -394,10 +484,20 @@ function processLine(line) {
     return;
   }
 
+  if (payload.type === "warn") {
+    log(`Sender warning: ${payload.message}${payload.phVoltage !== undefined ? ` (${payload.phVoltage} V)` : ""}`);
+    return;
+  }
+
   if (payload.type === "error") {
     setStatus("status-error", "Receiver Error");
     log(`Receiver error: ${payload.message}`);
+    return;
   }
+
+  // Anything else came from a board this page does not understand - most often
+  // the sender's own serial output, which means the wrong port was picked.
+  log(`Unrecognised message type "${payload.type}" - is this serial port the SENDER board?`);
 }
 
 async function readLoop() {
@@ -545,6 +645,12 @@ connectButton.addEventListener("click", () => {
 disconnectButton.addEventListener("click", () => {
   disconnectSerial();
 });
+
+if (exportButton) {
+  exportButton.addEventListener("click", () => {
+    exportCsv();
+  });
+}
 
 if ("serial" in navigator) {
   navigator.serial.addEventListener("disconnect", (event) => {

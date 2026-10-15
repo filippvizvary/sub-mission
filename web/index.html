@@ -4,12 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Water Telemetry Receiver</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <!-- No external font fetch: this dashboard must work with no network at all. -->
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -28,10 +23,38 @@
         <button id="disconnectButton" class="button button-secondary" disabled>
           Disconnect
         </button>
+        <button id="exportButton" class="button button-secondary">Export CSV</button>
         <div id="statusPill" class="status status-idle">Idle</div>
       </section>
 
       <p id="envHint" class="env-hint" aria-live="polite"></p>
+
+      <section class="meta-grid stats-strip">
+        <article class="meta-card">
+          <h2>Packets Total</h2>
+          <p id="statTotal" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Valid</h2>
+          <p id="statValid" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Invalid</h2>
+          <p id="statInvalid" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Dropped</h2>
+          <p id="statDropped" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Sequence Gaps</h2>
+          <p id="statGaps" class="mono">-</p>
+        </article>
+        <article class="meta-card">
+          <h2>Last Packet Age</h2>
+          <p id="statAge" class="mono">-</p>
+        </article>
+      </section>
 
       <section class="meta-grid">
         <article class="meta-card">
