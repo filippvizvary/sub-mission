@@ -44,6 +44,11 @@ constexpr float kPhPlausibleMin = -1.0f;
 constexpr float kPhPlausibleMax = 15.0f;
 // DFRobot turbidity module outputs 0-4.5 V; a 2:1 divider protects the 3.3 V ADC.
 constexpr float kTurbidityDividerRatio = 2.0f;
+// Turbidity is reported RELATIVE to this measured clear-water baseline, because
+// absolute NTU requires formazine/polymer standards we do not have. Baseline
+// measured 2026-10-16 in tap water: module output 3.455 V (pin 1.727 V).
+// Re-measure and update if the optics, LED or head change.
+constexpr float kTurbidityClearVolts = 3.455f;
 // TDS boards specify 2 %/C, referenced to 25 C.
 constexpr float kTdsTempCoefficient = 0.02f;
 constexpr float kTdsReferenceTempC = 25.0f;
@@ -210,6 +215,11 @@ TdsReading readTds(float temperatureC) {
   return {clampedPpm, raw};
 }
 
+float turbidityNtu(float sensorVoltage) {
+  return -1120.4f * sensorVoltage * sensorVoltage +
+         5742.3f * sensorVoltage - 4352.9f;
+}
+
 TurbidityReading readTurbidity() {
   const AnalogReading raw = readAnalogPin(kTurbidityPin);
 
@@ -219,11 +229,14 @@ TurbidityReading readTurbidity() {
 
   // Undo the 2:1 divider so the DFRobot curve sees the module's own 0-5 V output.
   const float sensorVoltage = raw.voltage * kTurbidityDividerRatio;
-  const float ntu = -1120.4f * sensorVoltage * sensorVoltage +
-                    5742.3f * sensorVoltage - 4352.9f;
+  // Change from the clear-water baseline, so clear water reads ~0 and turbidity
+  // reads positive. The underlying curve is DFRobot's reference transfer, which
+  // this module sits ~19 % off in absolute terms.
+  const float relativeNtu =
+      turbidityNtu(sensorVoltage) - turbidityNtu(kTurbidityClearVolts);
   const float clampedNtu =
-      ntu < kTurbidityMin ? kTurbidityMin
-                          : (ntu > kTurbidityMax ? kTurbidityMax : ntu);
+      relativeNtu < kTurbidityMin ? kTurbidityMin
+                                  : (relativeNtu > kTurbidityMax ? kTurbidityMax : relativeNtu);
   return {clampedNtu, raw};
 }
 
