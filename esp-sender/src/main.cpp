@@ -44,9 +44,14 @@ constexpr float kPhPlausibleMin = -1.0f;
 constexpr float kPhPlausibleMax = 15.0f;
 // DFRobot turbidity module outputs 0-4.5 V; a 2:1 divider protects the 3.3 V ADC.
 constexpr float kTurbidityDividerRatio = 2.0f;
-// Turbidity is reported RELATIVE to this measured clear-water baseline, because
-// absolute NTU requires formazine/polymer standards we do not have. Baseline
-// measured 2026-10-16 in tap water: module output 3.455 V (pin 1.727 V).
+// Turbidity is reported as the PERCENTAGE of the clear-water signal that is gone.
+// DFRobot's published NTU curve is a quadratic with its vertex at 2.563 V, so it
+// runs backwards below that point: near the vertex a whisker of voltage flipped
+// the reading between 500, 0 and 850 while the light was dropping monotonically.
+// This module also sits ~19 % off their reference transfer, so an absolute NTU
+// figure is indefensible. Signal loss is monotonic by construction and cannot
+// fold. Baseline is the module's own clear-water output, measured 2026-10-16 in
+// tap water at 3.455 V (pin 1.727 V), reproducible to 0.06 % across re-readings.
 // Re-measure and update if the optics, LED or head change.
 constexpr float kTurbidityClearVolts = 3.455f;
 // TDS boards specify 2 %/C, referenced to 25 C.
@@ -57,7 +62,7 @@ constexpr float kPhMax = 14.0f;
 constexpr float kTdsMin = 0.0f;
 constexpr float kTdsMax = 2000.0f;
 constexpr float kTurbidityMin = 0.0f;
-constexpr float kTurbidityMax = 3000.0f;
+constexpr float kTurbidityMax = 100.0f;
 
 // Receiver MAC, read off receiver_ready on 2026-10-15.
 // Previous value was E4:65:B8:7A:7C:68 - a different board, same Espressif OUI.
@@ -109,7 +114,7 @@ struct TdsReading {
 };
 
 struct TurbidityReading {
-  float ntu;
+  float lossPercent;
   AnalogReading raw;
 };
 
@@ -215,29 +220,26 @@ TdsReading readTds(float temperatureC) {
   return {clampedPpm, raw};
 }
 
-float turbidityNtu(float sensorVoltage) {
-  return -1120.4f * sensorVoltage * sensorVoltage +
-         5742.3f * sensorVoltage - 4352.9f;
-}
-
 TurbidityReading readTurbidity() {
   const AnalogReading raw = readAnalogPin(kTurbidityPin);
 
-  if (raw.adc == 0 || raw.adc >= static_cast<uint16_t>(kAdcMax)) {
+  // A pin at the HIGH rail cannot come from the module through a working 2:1
+  // divider - that needs 6.6 V - so it means the divider is not dividing.
+  // A pin at the LOW end is a real reading: almost no light is reaching the
+  // detector, which is the top of the turbidity range, not a fault.
+  if (raw.adc >= static_cast<uint16_t>(kAdcMax)) {
     return {NAN, raw};
   }
 
-  // Undo the 2:1 divider so the DFRobot curve sees the module's own 0-5 V output.
+  // Undo the 2:1 divider so this is the module's own output voltage.
   const float sensorVoltage = raw.voltage * kTurbidityDividerRatio;
-  // Change from the clear-water baseline, so clear water reads ~0 and turbidity
-  // reads positive. The underlying curve is DFRobot's reference transfer, which
-  // this module sits ~19 % off in absolute terms.
-  const float relativeNtu =
-      turbidityNtu(sensorVoltage) - turbidityNtu(kTurbidityClearVolts);
-  const float clampedNtu =
-      relativeNtu < kTurbidityMin ? kTurbidityMin
-                                  : (relativeNtu > kTurbidityMax ? kTurbidityMax : relativeNtu);
-  return {clampedNtu, raw};
+  const float lossPercent =
+      100.0f * (kTurbidityClearVolts - sensorVoltage) / kTurbidityClearVolts;
+  const float clampedPercent =
+      lossPercent < kTurbidityMin ? kTurbidityMin
+                                  : (lossPercent > kTurbidityMax ? kTurbidityMax
+                                                                 : lossPercent);
+  return {clampedPercent, raw};
 }
 
 FlowReading updateAndReadFlowRate() {
@@ -351,7 +353,7 @@ TelemetryPacket buildSensorPacket(const SensorReadings &readings) {
   packet.temperature = readings.temperature.celsius;
   packet.ph = readings.ph.ph;
   packet.flow = readings.flow.litersPerMinute;
-  packet.turbidity = readings.turbidity.ntu;
+  packet.turbidity = readings.turbidity.lossPercent;
   packet.tds = readings.tds.ppm;
   packet.senderUptimeMs = millis();
   packet.tempAdc = readings.temperature.raw.adc;
