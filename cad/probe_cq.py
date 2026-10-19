@@ -127,19 +127,13 @@ def make_pod():
               .workplane(offset=POD_LEN)
               .transformed().circle(POD_OD/2).loft(combine="s") if False else barrel)
     # tail cone done properly
-    tail = (cq.Workplane("XY")
-            .add(cq.Solid.makeCone(POD_OD/2, POD_OD*0.18, POD_OD*0.55))
-            .translate((0,0,POD_LEN)))
-    pod = barrel.union(tail)
+    pod = barrel
     # 5mm solid front wall (this is the mag-coupled barrier)
     wall = cq.Workplane("XY").circle((POD_OD-4)/2).extrude(-WALL_T)
     pod = pod.union(wall)
     # bore
     pod = pod.cut(cq.Workplane("XY").circle(POD_ID/2).extrude(POD_LEN+POD_OD))
-    # nose bearing blocks (two PEEK bushings modelled as bosses)
-    boss1 = cq.Workplane("XY").circle(22/2).extrude(14).translate((0,0,-30))
-    boss2 = cq.Workplane("XY").circle(22/2).extrude(10).translate((0,0,-12))
-    pod = pod.union(boss1).union(boss2)
+    # bearings live in the wet carrier, ahead of the wall -- nothing protrudes here
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------
@@ -218,7 +212,7 @@ def make_sensors():
 def make_cage_adapter():
     # transition cone between pod tail (Ø110) and sensor cage (Ø130)
     return (cq.Workplane("XY").circle(55)
-            .workplane(offset=64).circle(65)
+            .workplane(offset=20).circle(65)
             .loft(combine="s"))
 
 def make_pod_seal():
@@ -263,16 +257,27 @@ parts["rotor"] = cq.Workplane("XY").add(make_hub().val())
 for i in range(BLADES):
     b = make_blade().rotate((0,0,0),(0,0,1), i*120)
     parts["rotor"] = parts["rotor"].union(b.val(), clean=True)
-parts["shaft"] = make_shaft()
-parts["magcup_wet"] = make_cup().mirror("XZ").translate((0,0,HUB_LEN/2+6+2+WALL_T+MAGCUP_H*2+4))
-parts["magcup_dry"] = make_cup().translate((0,0,HUB_LEN/2+6+WALL_T))
-parts["pod"] = make_pod().translate((0,0,HUB_LEN/2+6))
-parts["cage"] = make_cage().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
-parts["wet_carrier"] = make_wet_carrier().translate((0,0,-55))
-parts["weed_guard"] = make_weed_guard().translate((0,0,-44))
-parts["sensors"] = make_sensors().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
-parts["pod_seal"] = make_pod_seal().translate((0,0,HUB_LEN/2+6))
-parts["cage_adapter"] = make_cage_adapter().translate((0,0,150))  # bridges pod end (161) to cage (214)
+# ---- explicit axial layout (local Z, before the pod is laid horizontal) ----
+# upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
+Z_SHAFT   = 0     # shaft spans 0..66
+Z_CARRIER = 15    # wet bearing carrier 15..70
+Z_WETCUP  = 66    # wet magnet cup 66..80
+Z_POD     = 85    # pod: wall 80..85, barrel 85..205
+Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
+Z_ADAPTER = 205   # transition cone 205..225
+Z_CAGE    = 225   # cage 225..375
+Z_GUARD   = -50   # weed guard ring, upstream of the blade plane
+
+parts["shaft"]       = make_shaft().translate((0,0,Z_SHAFT))
+parts["wet_carrier"] = make_wet_carrier().translate((0,0,Z_CARRIER))
+parts["magcup_wet"]  = make_cup().mirror("XZ").translate((0,0,Z_WETCUP))
+parts["pod"]         = make_pod().translate((0,0,Z_POD))
+parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
+parts["magcup_dry"]  = make_cup().translate((0,0,Z_DRYCUP))
+parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
+parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
+parts["sensors"]     = make_sensors().translate((0,0,Z_CAGE))
+parts["weed_guard"]  = make_weed_guard().translate((0,0,Z_GUARD))
 parts["anchor"] = make_anchor()
 parts["guys"] = make_guys()
 parts["safety_cable"] = (cq.Workplane("XY").circle(1.5).extrude(140)
