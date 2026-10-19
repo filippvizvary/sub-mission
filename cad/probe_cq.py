@@ -162,12 +162,9 @@ def make_cage():
 def make_site():
     pole = cq.Workplane("XY").circle(POLE_OD/2).extrude(POLE_H)
     collar = cq.Workplane("XY").circle((POLE_OD+16)/2).extrude(44).translate((0,0,38))
-    # arm (slight 5deg rise)
-    arm = (cq.Workplane("YZ")
-           .circle(ARM_OD/2).extrude(ARM_LEN+40)
-           .rotate((0,0,0),(0,0,1), 90)
-           .rotate((0,0,0),(0,-1,0), 5))
-    arm = arm.translate((0,0,60))
+    # arm: built along Z, then laid out along +X (89 deg from Z -> nearly horizontal)
+    arm = cq.Workplane("XY").circle(ARM_OD/2).extrude(ARM_LEN+40)
+    arm = arm.rotate((0,0,0),(0,1,0), 85).translate((0,0,60))
     elbow = cq.Workplane("XY").sphere((ARM_OD+8)/2).translate((ARM_LEN, 0, 60+ARM_LEN*math.tan(math.radians(5))))
     drop  = (cq.Workplane("XY")
              .circle((ARM_OD-6)/2)
@@ -201,7 +198,16 @@ site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna"
 for name, shape in zip(site_names, site):
     parts[f"site_{name}"] = shape
 
-# full assembly: pod chain raised to drop-tube end at arm tip, then the site at origin
+# ---------------- placement -------------------------------------------------
+# Pod chain is built vertically in local Z; hang it horizontal at the arm end,
+# rotor upstream (-X), cage downstream (+X), 420mm underwater.
+# Transform: rotate about Y by +90 deg (+Z -> +X), then translate to arm tip.
+POD_TIP = (ARM_LEN-80, 0, -420)
+pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage"]
+for name in pod_chain:
+    parts[name] = parts[name].rotate((0,0,0),(0,1,0),90).translate(POD_TIP)
+
+# assembly ----------------------------------------------------------
 assy = cq.Assembly()
 for name, shape in parts.items():
     try:
