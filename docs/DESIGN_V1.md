@@ -119,6 +119,8 @@ Flood behaviour by design:
   up + flood warning = the instrument measures the flood AND tells you to
   come retrieve it. Retrieval is the same 5-minute reverse sequence.
 
+## 7. Build-before-order list (the honesty ledger)
+
 1. Measure cogging torque of candidate generator (weight on arm / back-EMF) [gating #1]
 2. Measure magnetic coupling slip torque (spring balance jig)
 3. XFOIL polar NACA 4412 at Re 6e4 -> confirm Cp~0.35 at TSR 5.5
