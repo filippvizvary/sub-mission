@@ -90,7 +90,34 @@ but treat print as splash-only; sealing relies on the solid 5 mm coupling
 wall + potting. Acceptance: 0.5 bar vacuum, 24 h submerged, internal
 humidity flat.
 
-## 7. Build-before-order list (the honesty ledger)
+## 6b. Deployment and flood survival (2026-10-19)
+
+Principle: separate the 10-minute field work from the load path. Ground
+interface installed once; probe is a removable mast pinned into it.
+
+Anchor math (3 m/s + 1.5 m stage + debris-raft graze):
+- arm 187 N, drop tube 119 N, pod+cage+rotor ~140 N, pole with debris
+  mat ~680 N worst case. Total lateral worst case ~600-700 N.
+- 48 mm pole driven 600 mm alone: ~300-400 N lateral — INSUFFICIENT.
+- Fix: M68 ground screw (800 mm, solar-fence class, 1-2 kN lateral) as a
+  permanent receiver + two 3 mm Dyneema guys at 45 deg up/downstream on
+  own screws. Pole becomes a pinned removable mast. Margin 3-4x.
+
+Deploy sequence (one person, target <= 10 min):
+1. (prior visit done once): screws + guys + receiver levelled.
+2. Pole into receiver, linch pin, keyed collar = plumb by geometry.
+3. Arm onto collar hinge, pin. Pod(pre-clipped to drop tube) onto arm-end
+   hinge, pin.
+4. Single potted bulkhead connector at the dry box.
+5. LoRa handshake LED confirms gateway. Leave.
+
+Flood behaviour by design:
+- shear pin at drop-tube hinge releases pod swing at >150 N debris impact;
+  pod stays hinged downstream, never departs; re-pin from spare-pin hole.
+- weed-guard ring doubles as upstream debris deflector.
+- MS5837 rising-stage signal triggers firmware storm mode: report cadence
+  up + flood warning = the instrument measures the flood AND tells you to
+  come retrieve it. Retrieval is the same 5-minute reverse sequence.
 
 1. Measure cogging torque of candidate generator (weight on arm / back-EMF) [gating #1]
 2. Measure magnetic coupling slip torque (spring balance jig)
