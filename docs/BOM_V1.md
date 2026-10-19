@@ -244,3 +244,44 @@ good: higher EMF per spin. Sim v3 bus check stays the gating formula.
   20 x ~450 + 2 x ~200 = ~9400 EUR one-off, ~0 recurring.
 - pH module add-on per selected intake site: ~70 EUR.
 
+---
+
+# Machined / non-printable materials (verified 2026-10-19)
+
+## Magnets (the coupling hearts)
+- magsy.sk (SK) — cylinder N52 Ø8x5 exists in their cylinder catalogue
+  (axial magnetization). Bare N52 still needs canning: potted in DP270 +
+  316L foil wrap; canned Ø8 with resin/Inox cup exists at
+  supermagneticshop.com ("SM05"/"SM08 INOX", epoxy/Inox coated, from
+  ~0.30 EUR at 51+ pcs) — cheaper than machining our own cans.
+- 16 per probe; cost < 6 EUR either path.
+
+## Bearings (wet shaft)
+- igus iglidur J plain bearings at tme.eu — JSM-0507-05 (5x7x5 mm, 83 pcs
+  in stock, 1.18 USD) or flanged JFM-0507-05 (170 pcs). These are the
+  official water/dirt-proof plain bearings the adversarial review named
+  (RR-01). No PEEK machining needed for v1 — iglidur J is the better
+  wet bearing anyway. 2x per probe.
+- MR105ZZ steel ball bearings exist (NSK/EZO) but only for the DRY
+  generator-side reference jig, not submerged.
+
+## Steel / rod stock
+- nerezmaterial.cz (Brno, delivers SK): nerezová tyč kruhová Ø5 h9,
+  Wst.Nr. 1.4301 (AISI 304) 3 m bar = 63.1 Kč (~2.6 EUR).
+  For the wet shaft use their 316L (1.4404) on request — same shop,
+  on-quote for small sections. One 3 m bar = ~26 shafts.
+- Pole: scaffold tube Ø48.3 zinc — stavebniny local (listed already).
+- Bearing carrier tube: 316SS Ø12xØ8 — nerezmaterial "trubka" section
+  or cut from Ø12 bar stock; fallback: brass tube from modelař shop.
+
+## O-rings / chemicals
+- NBR O-rings metric kit + Ø100x2.5 singles: tme.eu/gme.sk (listed).
+- Molykote 111 100 g: tme.eu. Loctite 243: tme.eu / local auto shop
+  (MotoPlex etc). DP270: techfun.sk. West 105/206: techfun.sk.
+
+## Verdict on "stuff we can't print"
+Nothing on this probe is unreachable from SK/CZ shops. The only true
+machine-shop touch is IF we wanted machined PEEK bushings — avoided by
+using igus iglidur J stock parts, which are also the correct wet-bearing
+engineering answer.
+
