@@ -3,6 +3,21 @@
 Status: design draft 2026-10-18, Haven. Everything here is computed or
 assumed; nothing below has been built or measured unless tagged [v0].
 
+## 0. Why — the Budča 2021 case
+
+26 July 2021: ~500 m3 of biogas-plant digestate leaked from a Bag Tank at
+Bioplyn Budca after a storm-downed branch punctured the liner, flowed down
+Biensky potok into the Hron, contaminated >30 km of river, killed an
+estimated 40 t of fish across 26 species (including the entire Hron
+population of hlavatka podunajska). SIzP assessed environmental damage at
+~400 MEUR; criminal charges followed. Detection happened the next morning
+when passing fishermen reported turbid, smelly water — no monitoring
+system gave any warning during the hours the plume was still moving.
+
+Reference: SIzP / TASR case record (2021-07-26), police charge 2025-07-16,
+SOP SR event log. The probe exists so the next Budca is detected at
+minute 3, not hour 10.
+
 ## 1. Architecture
 
 Bank-mounted pole, hinged swing arm, submerged pod. One-person,
