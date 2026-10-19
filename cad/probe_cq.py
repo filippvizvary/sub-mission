@@ -303,10 +303,27 @@ for name in pod_chain:
                    .translate(POD_TIP))
 
 # assembly ----------------------------------------------------------
-assy = cq.Assembly()
+COLORS = {
+    "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
+    "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
+    "wet_carrier": (0.45, 0.50, 0.58), "weed_guard": (0.10, 0.55, 0.25),
+    "pod": (0.10, 0.42, 0.30), "pod_seal": (0.18, 0.50, 0.36),
+    "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
+    "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
+    "guys": (0.30, 0.30, 0.32), "safety_cable": (0.70, 0.70, 0.72),
+    "site_pole": (0.22, 0.22, 0.24), "site_collar": (0.12, 0.12, 0.14),
+    "site_arm": (0.45, 0.45, 0.48), "site_drop": (0.45, 0.45, 0.48),
+    "site_strut": (0.45, 0.45, 0.48), "site_clamp": (0.40, 0.40, 0.43),
+    "site_box": (0.78, 0.72, 0.45), "site_lid": (0.68, 0.62, 0.38),
+    "site_antenna": (0.08, 0.08, 0.08), "site_antenna_tip": (0.75, 0.10, 0.10),
+    "site_cable": (0.10, 0.10, 0.10),
+}
+
+assy = cq.Assembly(name="sub_mission_probe")
 for name, shape in parts.items():
     try:
-        assy.add(shape, name=name)
+        rgb = COLORS.get(name, (0.80, 0.80, 0.80))
+        assy.add(shape, name=name, color=cq.Color(*rgb))
     except Exception as e:
         print("add failed:", name, e)
 
