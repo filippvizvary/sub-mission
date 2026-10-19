@@ -167,10 +167,10 @@ def make_site():
     arm = arm.rotate((0,0,0),(0,1,0), 85).translate((0,0,60))
     elbow = (cq.Workplane("XY").circle((ARM_OD+8)/2).extrude(ARM_OD+8)
              .translate((ARM_LEN-(ARM_OD+8)/2, 0, 60+ARM_LEN*math.tan(math.radians(5)))))
-    drop  = (cq.Workplane("XY")
-             .circle((ARM_OD-6)/2)
-             .extrude(60+ARM_LEN*math.tan(math.radians(5))+420)
-             .translate((ARM_LEN,0,-420)))
+    # hollow Ø28x2 tube: carries the pod AND routes the cable inside it
+    drop_h = 60 + ARM_LEN*math.tan(math.radians(5)) + 365
+    drop  = (cq.Workplane("XY").circle(14).circle(12)
+             .extrude(drop_h).translate((ARM_LEN,0,-365)))
     strut = (cq.Workplane("YZ")
              .circle((ARM_OD-10)/2).extrude(260)
              .rotate((0,0,0),(0,0,1),90)
@@ -180,7 +180,9 @@ def make_site():
     ante  = cq.Workplane("XY").circle(3).extrude(330).translate((0,0,1750+40))
     tip   = cq.Workplane("XY").circle(4.5).extrude(9).translate((0,0,1750+40+322))
     cable = cq.Workplane("XY").circle(4.5).extrude(1750-40-90).translate((-(POLE_OD/2+5),0,90))
-    return (pole, collar, arm, elbow, drop, strut, box, lid, ante, tip, cable)
+    # clamp saddle: the physical joint between drop tube and pod shell
+    clamp = cq.Workplane("XY").box(70, 90, 40).translate((ARM_LEN, 0, -392))
+    return (pole, collar, arm, elbow, drop, strut, box, lid, ante, tip, cable, clamp)
 
 # ---------------- wet-side bearing carrier (A04, A05) ----------------------
 def make_wet_carrier():
@@ -213,6 +215,12 @@ def make_sensors():
     return ph.union(ntc).union(turb).union(tds).union(prs)
 
 # ---------------- pod sealing detail (C04, C07) ----------------------------
+def make_cage_adapter():
+    # transition cone between pod tail (Ø110) and sensor cage (Ø130)
+    return (cq.Workplane("XY").circle(55)
+            .workplane(offset=64).circle(65)
+            .loft(combine="s"))
+
 def make_pod_seal():
     # O-ring groove: annular cut at rim, 2.2 wide x 1.8 deep
     ring = (cq.Workplane("XY").circle((POD_OD-4)/2).circle((POD_OD-4)/2-2.2)
@@ -232,12 +240,16 @@ def make_anchor():
     return screw.union(sleeve).union(a1).union(a2)
 
 def make_guys():
-    # two 3mm Dyneema lines from pole top to anchors at 45 deg
-    g1 = (cq.Workplane("XY").circle(1.5).extrude(1500)
-          .rotate((0,0,0),(0,1,0), 40).translate((0,0,900)))
-    g2 = (cq.Workplane("XY").circle(1.5).extrude(1500)
-          .rotate((0,0,0),(0,1,0), -40).translate((0,0,900)))
-    return g1.union(g2)
+    # two 3mm Dyneema lines, drawn exactly between pole top and the anchors
+    top = cq.Vector(0, 0, POLE_H-150)
+    out = None
+    for sy in (1, -1):
+        anc = cq.Vector(-500, sy*900, -300)
+        d = anc - top
+        cyl = cq.Solid.makeCylinder(1.5, d.Length, top, d.normalized())
+        wp = cq.Workplane(obj=cyl)
+        out = wp if out is None else out.union(wp)
+    return out
 
 # ---------------- safety cable (H11) ---------------------------------------
 def make_safety_cable():
@@ -260,12 +272,13 @@ parts["wet_carrier"] = make_wet_carrier().translate((0,0,-55))
 parts["weed_guard"] = make_weed_guard().translate((0,0,-44))
 parts["sensors"] = make_sensors().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
 parts["pod_seal"] = make_pod_seal().translate((0,0,HUB_LEN/2+6))
+parts["cage_adapter"] = make_cage_adapter().translate((0,0,150))  # bridges pod end (161) to cage (214)
 parts["anchor"] = make_anchor()
 parts["guys"] = make_guys()
 parts["safety_cable"] = (cq.Workplane("XY").circle(1.5).extrude(140)
     .rotate((0,0,0),(0,1,0),90).translate((ARM_LEN-130, 0, -420)))
 site = make_site()
-site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna","antenna_tip","cable"]
+site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna","antenna_tip","cable","clamp"]
 for name, shape in zip(site_names, site):
     parts[f"site_{name}"] = shape
 
@@ -273,9 +286,9 @@ for name, shape in zip(site_names, site):
 # Pod chain is built vertically in local Z; hang it horizontal at the arm end,
 # rotor upstream (-X), cage downstream (+X), 420mm underwater.
 # Transform: rotate about Y by +90 deg (+Z -> +X), then translate to arm tip.
-POD_TIP = (ARM_LEN-80, 0, -420)
+POD_TIP = (ARM_LEN, 0, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal"]
+             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
