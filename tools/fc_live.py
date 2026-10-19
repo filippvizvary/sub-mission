@@ -2,9 +2,12 @@
 """
 Live bridge to a RUNNING FreeCAD GUI via its built-in Web workbench server.
 
-In FreeCAD's Python console (View -> Panels -> Python console), run once:
+On the machine running the FreeCAD GUI (optiplex-1), in View -> Panels ->
+Python console, run once:
 
-    import Web; Web.startServer("127.0.0.1", 54880)
+    import Web; Web.startServer("100.124.11.55", 54880)
+
+(Binds to the Tailscale address only, so it is not exposed on LAN/internet.)
 
 Then from a shell:
 
@@ -13,12 +16,12 @@ Then from a shell:
     python3 tools/fc_live.py shot     # save a viewport screenshot
     python3 tools/fc_live.py exec "print(App.listDocuments())"
 
-Haven, 2026-10-19. Local-only (127.0.0.1). Executes Python in the GUI thread,
+Haven, 2026-10-19. Tailnet-only bind. Executes Python in the GUI thread,
 so documents/viewport update in front of you.
 """
 import socket, sys, os, time
 
-HOST, PORT = "127.0.0.1", 54880
+HOST, PORT = os.environ.get("FC_HOST", "100.124.11.55"), 54880
 STEP = "/home/filip/sub-mission/cad/cq/probe_assembly.step"
 
 
