@@ -227,8 +227,8 @@ def make_anchor():
     screw = (cq.Workplane("XY").circle(34).extrude(800).translate((0,0,-800))
              .union(cq.Workplane(obj=tip)))
     sleeve = cq.Workplane("XY").circle(26).circle((POLE_OD/2)+0.4).extrude(300)
-    a1 = cq.Workplane("XY").circle(8).extrude(300).translate((1100, 900, -300))
-    a2 = cq.Workplane("XY").circle(8).extrude(300).translate((-1100, 900, -300))
+    a1 = cq.Workplane("XY").circle(8).extrude(300).translate((-500,  900, -300))
+    a2 = cq.Workplane("XY").circle(8).extrude(300).translate((-500, -900, -300))
     return screw.union(sleeve).union(a1).union(a2)
 
 def make_guys():
@@ -262,7 +262,8 @@ parts["sensors"] = make_sensors().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
 parts["pod_seal"] = make_pod_seal().translate((0,0,HUB_LEN/2+6))
 parts["anchor"] = make_anchor()
 parts["guys"] = make_guys()
-parts["safety_cable"] = make_safety_cable().translate((ARM_LEN-80-260, 0, 0))
+parts["safety_cable"] = (cq.Workplane("XY").circle(1.5).extrude(140)
+    .rotate((0,0,0),(0,1,0),90).translate((ARM_LEN-130, 0, -420)))
 site = make_site()
 site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna","antenna_tip","cable"]
 for name, shape in zip(site_names, site):
@@ -274,9 +275,14 @@ for name, shape in zip(site_names, site):
 # Transform: rotate about Y by +90 deg (+Z -> +X), then translate to arm tip.
 POD_TIP = (ARM_LEN-80, 0, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal","safety_cable"]
+             "wet_carrier","weed_guard","sensors","pod_seal"]
 for name in pod_chain:
-    parts[name] = parts[name].rotate((0,0,0),(0,1,0),90).translate(POD_TIP)
+    # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
+    # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
+    parts[name] = (parts[name]
+                   .rotate((0,0,0),(0,1,0),90)
+                   .rotate((0,0,0),(0,0,1),90)
+                   .translate(POD_TIP))
 
 # assembly ----------------------------------------------------------
 assy = cq.Assembly()
