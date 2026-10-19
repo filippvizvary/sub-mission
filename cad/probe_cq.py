@@ -291,7 +291,9 @@ for name, shape in zip(site_names, site):
 # Pod chain is built vertically in local Z; hang it horizontal at the arm end,
 # rotor upstream (-X), cage downstream (+X), 420mm underwater.
 # Transform: rotate about Y by +90 deg (+Z -> +X), then translate to arm tip.
-POD_TIP = (ARM_LEN, 0, -420)
+# pod barrel centred under the drop tube; rotor sticks out upstream (rotating
+# parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
+POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
              "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter"]
 for name in pod_chain:
