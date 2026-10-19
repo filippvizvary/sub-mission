@@ -99,6 +99,15 @@ humidity flat.
 5. 24 h vacuum-submerge test of printed pod
 6. Field range test of radio at actual site
 
+## 7b. Variant roadmap
+
+**v2a (mill wheel):** low-head low-flow sites — village brooks, tributary mouths,
+biogas-plant runoff channels. Breastshot/undershot wheel Ø 250-400 mm on a weir
+lip or culvert drop; same generator, rectifier, supercap, dry box, sensors,
+LoRa. Different rotor only. Triggered by: any target site < 0.4 m/s sustained
+flow. Budča 2021 started in Biensky potok, not the main stem — this variant
+covers exactly that class of source.
+
 ## 8. AMAVET honesty
 
 Generator has never powered the board [v0]. No river test ever [v0].
