@@ -1,84 +1,84 @@
 #!/usr/bin/env python3
 """
-Live bridge to a RUNNING FreeCAD GUI via its built-in Web workbench server.
+Live bridge to a RUNNING FreeCAD GUI on optiplex-1 over Tailscale.
 
-On the machine running the FreeCAD GUI (optiplex-1), in View -> Panels ->
-Python console, run once:
+On the OptiPlex, in FreeCAD: View -> Panels -> Python console, run once:
 
-    import Web; Web.startServer("100.124.11.55", 54880)
+    import Web
+    Web.startServer("100.124.11.55", 54880)
 
-(Binds to the Tailscale address only, so it is not exposed on LAN/internet.)
-
-Then from a shell:
+Then from NZXT:
 
     python3 tools/fc_live.py ping
-    python3 tools/fc_live.py import   # load the probe STEP into the live doc
-    python3 tools/fc_live.py shot     # save a viewport screenshot
-    python3 tools/fc_live.py exec "print(App.listDocuments())"
+    python3 tools/fc_live.py docs
+    python3 tools/fc_live.py import      # fresh document, no duplicates
+    python3 tools/fc_live.py exec "code"
 
-Haven, 2026-10-19. Tailnet-only bind. Executes Python in the GUI thread,
-so documents/viewport update in front of you.
+Rules learned the hard way:
+  - the server handles ONE connection at a time; ALWAYS shut down cleanly
+  - responses are capped ~1 KB, so never return big strings
+  - App.listDocuments() is a DICT, not a list
+  - never kill a client mid-send; it wedges the server
 """
-import socket, sys, os, time
+import socket, sys, os
 
-HOST, PORT = os.environ.get("FC_HOST", "100.124.11.55"), 54880
+HOST = os.environ.get("FC_HOST", "100.124.11.55")
+PORT = int(os.environ.get("FC_PORT", "54880"))
 STEP = "/home/filip/sub-mission/cad/cq/probe_assembly.step"
 
 
-def send(code: str, timeout: float = 60.0) -> str:
+def send(code: str, timeout: float = 25.0) -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(timeout)
     try:
         s.connect((HOST, PORT))
-    except ConnectionRefusedError:
-        return ("ERR: no FreeCAD server on %s:%d. In FreeCAD's Python console run:\n"
-                "  import Web; Web.startServer(\"127.0.0.1\", %d)" % (HOST, PORT, PORT))
+    except OSError as e:
+        return "ERR: cannot reach %s:%d (%s)" % (HOST, PORT, e)
     try:
         s.sendall(code.encode())
-        chunks = []
-        while True:
+        chunks, total = [], 0
+        while total < 1000:
             try:
-                d = s.recv(65536)
+                d = s.recv(4096)
             except socket.timeout:
                 break
             if not d:
                 break
             chunks.append(d)
-            if len(d) < 65536:
-                break
+            total += len(d)
         return b"".join(chunks).decode(errors="replace")
     finally:
+        try:
+            s.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         s.close()
 
 
-def cmd_ping():
-    return send("print('PONG', App.Version()[0]+'.'+App.Version()[1])")
+def ping():
+    return send("p = 1 + 1")
 
 
-def cmd_import():
-    # import STEP into whatever document is active, or a new one
-    code = f'''
-import FreeCAD as App, Import
-doc = App.activeDocument()
-if doc is None:
-    doc = App.newDocument("probe")
-Import.insert("{STEP}", doc.Name)
-doc.recompute()
-Gui.activeDocument().activeView().viewAxometric()
-Gui.activeDocument().activeView().fitAll()
-print("imported into", doc.Name, "objects:", len(doc.Objects))
-'''
+def docs():
+    return send("import FreeCAD as App; "
+                "r = '; '.join('%s:%d' % (d.Name, len(d.Objects)) "
+                "for d in App.listDocuments().values()); r")
+
+
+def fresh_import():
+    code = (
+        "import FreeCAD as App, Import, FreeCADGui as Gui\n"
+        "name = 'probe_live'\n"
+        "if name in App.listDocuments():\n"
+        "    App.closeDocument(name)\n"
+        "doc = App.newDocument(name)\n"
+        "Import.insert('%s', doc.Name)\n"
+        "doc.recompute()\n"
+        "Gui.activeDocument().activeView().viewAxometric()\n"
+        "Gui.SendMsgToActiveView('ViewFit')\n"
+        "r = 'imported %%d objects' %% (len(doc.Objects),)\n" % STEP
+    )
     return send(code, timeout=180)
-
-
-def cmd_shot(path="/tmp/freecad_live.png"):
-    code = f'''
-import FreeCADGui as Gui
-v = Gui.activeDocument().activeView()
-v.saveImage("{path}", 1600, 1000, "White")
-print("saved {path}")
-'''
-    return send(code)
 
 
 def main():
@@ -87,12 +87,11 @@ def main():
         return
     cmd = sys.argv[1]
     if cmd == "ping":
-        print(cmd_ping())
+        print(repr(ping()))
+    elif cmd == "docs":
+        print(docs())
     elif cmd == "import":
-        print(cmd_import())
-    elif cmd == "shot":
-        out = sys.argv[2] if len(sys.argv) > 2 else "/tmp/freecad_live.png"
-        print(cmd_shot(out))
+        print(fresh_import())
     elif cmd == "exec":
         print(send(sys.argv[2], timeout=120))
     else:
