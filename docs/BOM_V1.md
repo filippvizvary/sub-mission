@@ -196,3 +196,51 @@ That behaviour must be detectable in telemetry (RPM=0 + depth<0.25m).
 4. Mag coupling slip torque on a printed jig (~0.35 Nm target)
 5. Printed pod passes the vacuum-submerge acceptance test
 
+---
+
+# Sourcing update 2026-10-19 (verified live listings)
+
+## Radio / LoRa
+- Probe antenna: 868 MHz 5 dBi omni, SMA-M, 195 mm, ~6 EUR — neven.cz
+  (SMA-M and RPSMA-M both in stock). Probe end does not need high gain; pole
+  height does the work. Gateway end is where gain matters.
+- Gateway antenna: MikroTik 868_Omni_Antenna, 862-876 MHz, 6.5 dBi, IP66,
+  mast-mount kit (25-50 mm pole) + 1 m SMA cable — i4wifi.cz. THIS is the
+  ridgeline/mast antenna for the 10 km+ links.
+- Gateway: RAK2287 (SX1302 concentrator, mini-PCIe) + Pi HAT + Raspberry Pi 4
+  + above antenna. Budget 180-220 EUR per gateway, covers every probe within
+  ~10 km radio horizon. Two gateways cover the whole middle Hron.
+
+## Generator candidates (gimbal BLDCs used as 3-phase alternators)
+- X-TEAM XTG3506 — sk.x-teamrc.com (Slovak!). 24N22P, 6 ohm, 42 g,
+  0.08 N·m @ 11.1 V, inbuilt AS5048A encoder (free RPM telemetry = free flow
+  measurement, no extra sensor). Measure cogging first — gating #1.
+- T-Motor GB2208 KV128 — 39.5 g, 14.4 ohm, advertised low-cogging, ~26 USD.
+- iFlight GM3506 — 5.6 ohm, hollow shaft 12 mm (routing option for shaft).
+NOTE: all three are ~130-300 rpm/V class, LOWER than my sim's assumed 300 -
+good: higher EMF per spin. Sim v3 bus check stays the gating formula.
+
+## Power
+- Supercap decision: Eaton XLR-4R0507 LIC 500 F 4.0 V stands (field-failure
+  review reason: 5.5 V EDLC coin cells like Eaton KR-5R5H474 have ~50 ohm ESR,
+  which browns out a 40 mA LoRa burst - do NOT cheapen to the coin class).
+- Rectifier diode: Nexperia PMEG2010AEB,115 in stock at TME (SOD-523, 20 V,
+  1 A, Vf 270 mV @ 100 mA). 6x per probe.
+- MCU: LaskaKit ESP32-S3-DEVKit — measured ~12 uA deep sleep board-level,
+  Li-ion charger onboard; beats generic S3 boards for sleep budget.
+
+## Sensors (verified before)
+- Turbidity DFRobot SEN0189: techfun.sk, 12.45 EUR, 6 in stock.
+- TDS DFRobot SEN0244: TME. pH: DFRobot SEN0161-V2.
+- Temp: DS18B20 waterproof 1 m: techfun.sk (multiple listings ~3-6 EUR).
+- Depth: MS5837-30BA01: components-store.cz (5941 pcs) or Blue Robotics
+  Bar30 carrier if potted-ready preferred.
+- Baro ref: BME280 module: laskakit.cz (in dry box, NOT potted).
+
+## Revised totals (with pH deferred to per-site option)
+- Probe, no pH: ~430-470 EUR (was 743; SubConn wet-mate swapped to potted
+  gland + on-bank disconnect, pH kit out, connector savings verified).
+- Attribution network, middle Hron (20 probes + 2 gateways):
+  20 x ~450 + 2 x ~200 = ~9400 EUR one-off, ~0 recurring.
+- pH module add-on per selected intake site: ~70 EUR.
+
