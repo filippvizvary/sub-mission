@@ -165,7 +165,8 @@ def make_site():
     # arm: built along Z, then laid out along +X (89 deg from Z -> nearly horizontal)
     arm = cq.Workplane("XY").circle(ARM_OD/2).extrude(ARM_LEN+40)
     arm = arm.rotate((0,0,0),(0,1,0), 85).translate((0,0,60))
-    elbow = cq.Workplane("XY").sphere((ARM_OD+8)/2).translate((ARM_LEN, 0, 60+ARM_LEN*math.tan(math.radians(5))))
+    elbow = (cq.Workplane("XY").circle((ARM_OD+8)/2).extrude(ARM_OD+8)
+             .translate((ARM_LEN-(ARM_OD+8)/2, 0, 60+ARM_LEN*math.tan(math.radians(5)))))
     drop  = (cq.Workplane("XY")
              .circle((ARM_OD-6)/2)
              .extrude(60+ARM_LEN*math.tan(math.radians(5))+420)
@@ -177,9 +178,71 @@ def make_site():
     box   = cq.Workplane("XY").box(160,190,80).translate((0,0,1750))
     lid   = cq.Workplane("XY").box(162,192,6).translate((0,0,1750+43))
     ante  = cq.Workplane("XY").circle(3).extrude(330).translate((0,0,1750+40))
-    tip   = cq.Workplane("XY").sphere(4.5).translate((0,0,1750+40+330))
+    tip   = cq.Workplane("XY").circle(4.5).extrude(9).translate((0,0,1750+40+322))
     cable = cq.Workplane("XY").circle(4.5).extrude(1750-40-90).translate((-(POLE_OD/2+5),0,90))
     return (pole, collar, arm, elbow, drop, strut, box, lid, ante, tip, cable)
+
+# ---------------- wet-side bearing carrier (A04, A05) ----------------------
+def make_wet_carrier():
+    # 316L tube Ø14xØ10x55 straddling the wet shaft, plus 2 igus bushings
+    tube = cq.Workplane("XY").circle(7).circle(5).extrude(55)
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0,0,8))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0,0,42))
+    return tube.union(b1).union(b2)
+
+# ---------------- weed guard ring + struts (A07) ---------------------------
+def make_weed_guard():
+    ring = (cq.Workplane("XY").circle(ROTOR_R+15).circle(ROTOR_R+7)
+            .extrude(4))
+    struts = None
+    for i in range(3):
+        s = (cq.Workplane("XY").box(ROTOR_R+7, 8, 4)
+             .translate((-(ROTOR_R+7)/2, 0, 0))
+             .rotate((0,0,0),(0,0,1), i*120+60))
+        struts = s if struts is None else struts.union(s)
+    return ring.union(struts)
+
+# ---------------- real sensor bodies (D04-D07) -----------------------------
+def make_sensors():
+    # all in cage-local coordinates, z 0..150, inside radius 61
+    ph = cq.Workplane("XY").circle(6).extrude(150).translate((38, 0, 0))
+    ntc = cq.Workplane("XY").circle(3).extrude(50).translate((0, -42, 20))
+    turb = cq.Workplane("XY").box(38, 28, 10).translate((0, 40, 70))
+    tds = cq.Workplane("XY").box(30, 8, 60).translate((-40, 0, 30))
+    prs = cq.Workplane("XY").box(15, 15, 3).translate((0, 0, 140))
+    return ph.union(ntc).union(turb).union(tds).union(prs)
+
+# ---------------- pod sealing detail (C04, C07) ----------------------------
+def make_pod_seal():
+    # O-ring groove: annular cut at rim, 2.2 wide x 1.8 deep
+    ring = (cq.Workplane("XY").circle((POD_OD-4)/2).circle((POD_OD-4)/2-2.2)
+            .extrude(1.8))
+    # cable gland boss Ø18 x 12 on the pod wall
+    boss = cq.Workplane("XY").circle(9).extrude(12).translate((POD_OD/2-6, 0, 70))
+    return ring.union(boss)
+
+# ---------------- anchor hardware (H01, H03, H10) --------------------------
+def make_anchor():
+    tip = cq.Solid.makeCone(34, 6, 60).translate(cq.Vector(0,0,-860))
+    screw = (cq.Workplane("XY").circle(34).extrude(800).translate((0,0,-800))
+             .union(cq.Workplane(obj=tip)))
+    sleeve = cq.Workplane("XY").circle(26).circle((POLE_OD/2)+0.4).extrude(300)
+    a1 = cq.Workplane("XY").circle(8).extrude(300).translate((1100, 900, -300))
+    a2 = cq.Workplane("XY").circle(8).extrude(300).translate((-1100, 900, -300))
+    return screw.union(sleeve).union(a1).union(a2)
+
+def make_guys():
+    # two 3mm Dyneema lines from pole top to anchors at 45 deg
+    g1 = (cq.Workplane("XY").circle(1.5).extrude(1500)
+          .rotate((0,0,0),(0,1,0), 40).translate((0,0,900)))
+    g2 = (cq.Workplane("XY").circle(1.5).extrude(1500)
+          .rotate((0,0,0),(0,1,0), -40).translate((0,0,900)))
+    return g1.union(g2)
+
+# ---------------- safety cable (H11) ---------------------------------------
+def make_safety_cable():
+    return (cq.Workplane("XY").circle(1.5).extrude(520)
+            .rotate((0,0,0),(0,1,0), 90).translate((ARM_LEN-80, 0, -420)))
 
 # ---------------- assembly -------------------------------------------------
 parts = {}
@@ -193,17 +256,25 @@ parts["magcup_wet"] = make_cup().mirror("XZ").translate((0,0,HUB_LEN/2+6+2+WALL_
 parts["magcup_dry"] = make_cup().translate((0,0,HUB_LEN/2+6+WALL_T))
 parts["pod"] = make_pod().translate((0,0,HUB_LEN/2+6))
 parts["cage"] = make_cage().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
+parts["wet_carrier"] = make_wet_carrier().translate((0,0,-55))
+parts["weed_guard"] = make_weed_guard().translate((0,0,-44))
+parts["sensors"] = make_sensors().translate((0,0,HUB_LEN/2+6+POD_LEN+WALL_T+60))
+parts["pod_seal"] = make_pod_seal().translate((0,0,HUB_LEN/2+6))
+parts["anchor"] = make_anchor()
+parts["guys"] = make_guys()
+parts["safety_cable"] = make_safety_cable().translate((ARM_LEN-80-260, 0, 0))
 site = make_site()
 site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna","antenna_tip","cable"]
 for name, shape in zip(site_names, site):
     parts[f"site_{name}"] = shape
 
-# ---------------- placement -------------------------------------------------
+# ---------------- assembly placement --------------------------------------
 # Pod chain is built vertically in local Z; hang it horizontal at the arm end,
 # rotor upstream (-X), cage downstream (+X), 420mm underwater.
 # Transform: rotate about Y by +90 deg (+Z -> +X), then translate to arm tip.
 POD_TIP = (ARM_LEN-80, 0, -420)
-pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage"]
+pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
+             "wet_carrier","weed_guard","sensors","pod_seal","safety_cable"]
 for name in pod_chain:
     parts[name] = parts[name].rotate((0,0,0),(0,1,0),90).translate(POD_TIP)
 

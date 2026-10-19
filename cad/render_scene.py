@@ -23,12 +23,19 @@ PARTS = {
   "site_antenna":   ("black",1.0),
   "site_antenna_tip":("crimson",1.0),
   "site_cable":     ("black",1.0),
+  "anchor":         ("silver",1.0),
+  "guys":           ("dimgray",1.0),
+  "safety_cable":   ("silver",1.0),
   "rotor":          ("darkorange",1.0),
   "shaft":          ("darkgray",1.0),
   "magcup_wet":     ("gray",1.0),
   "magcup_dry":     ("gray",1.0),
   "pod":            ("seagreen",1.0),
+  "pod_seal":       ("seagreen",1.0),
+  "wet_carrier":    ("slategray",1.0),
+  "weed_guard":     ("forestgreen",1.0),
   "cage":           ("royalblue",1.0),
+  "sensors":        ("whitesmoke",1.0),
 }
 
 def load(name):

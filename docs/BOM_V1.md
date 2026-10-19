@@ -1,5 +1,16 @@
 # sub-mission probe — complete BOM v1 (Slovakia-sourced, 90-day target)
 
+> **Single source of truth: `PARTS_LIST.csv` / `PARTS_LIST.md`** (80 lines, 62 verified
+> live listings, 7 pending quotes, 10 printed in-house). The sections below are the
+> original narrative version; where they disagree with PARTS_LIST, PARTS_LIST wins.
+>
+> **Real totals after the full list was priced (correcting an earlier optimistic claim):**
+> - first probe, everything bought new: **~920 EUR**
+> - marginal probe (tooling + filament spools excluded): **~720 EUR**
+> - site hardware per deployment: **~105 EUR**
+> - gateway: **~300 EUR**
+> - 20 probes + 2 gateways: **~17 100 EUR** one-off, ~0 recurring
+
 Honesty gate: every item is either in a Slovak/CZ shop's catalogue TODAY
 (link + price) or has a printed/machined substitute named. Prices are
 list + VAT where shown; check stock before ordering. This is v1 design,
