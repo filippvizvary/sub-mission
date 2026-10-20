@@ -16,11 +16,11 @@ import math
 
 MU0 = 4 * math.pi * 1e-7
 BR = 1.42          # N52 remanence, T (typical 1.42-1.47)
-A_MAG = 0.004      # magnet radius, m
+A_MAG = 0.005      # magnet radius, m (D10)
 L_MAG = 0.005      # magnet height, m
 N_MAG = 8
-CUP_D = 0.042      # cup diameter, m
-R_PITCH = CUP_D / 2 - 0.008   # magnet pitch radius in the cup
+CUP_D = 0.070      # cup diameter, m
+R_PITCH = CUP_D / 2 - 0.005 - 0.002   # magnet pitch radius: 28 mm
 K_TAN = 0.6        # tangential / axial force ratio at peak
 
 
@@ -69,16 +69,17 @@ def torque(gap):
 
 
 def main():
-    print("magnets: %d x N52 D8x5 per cup, pitch radius %.1f mm" % (N_MAG, R_PITCH * 1000))
+    print("magnets: %d x N52 D10x5 per cup, pitch radius %.1f mm" % (N_MAG, R_PITCH * 1000))
     print("gap = magnet face to magnet face (wall 5 mm + potting + clearance)\n")
     print("  gap mm   axial force/magnet   slip torque   vs 0.164 Nm load")
-    for g_mm in (4, 5, 6, 7, 8, 10, 12):
+    for g_mm in (4.0, 4.2, 5, 6, 7, 8, 10):
         t, f = torque(g_mm / 1000)
         print("  %5.1f    %8.2f N          %6.3f N·m      %5.2fx"
               % (g_mm, f, t, t / 0.164))
 
-    print("\n  the model's wall is 5 mm; with 1 mm potting either side the")
-    print("  magnets sit ~7 mm apart -> read the 7 mm row.")
+    print("\n  wall 4 mm + 0.2 mm epoxy recess each side -> magnets sit")
+    print("  4.2 mm apart -> read the 4.2 mm row. Axial pull is what the")
+    print("  wet carrier's thrust face has to carry.")
 
 
 if __name__ == "__main__":

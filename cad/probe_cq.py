@@ -96,30 +96,33 @@ def make_shaft():
     return cq.Workplane("XY").circle(2.5).extrude(115).translate((0,0,-HUB_LEN/2-26))
 
 def make_cup(dry=False):
-    # solid disc, then pocket the magnet ring
-    cup = cq.Workplane("XY").circle((MAGCUP_D+6)/2).extrude(MAGCUP_H)
-    pocket = cq.Workplane("XY").circle(MAGCUP_D/2).extrude(MAGCUP_H-3).translate((0,0,3))
-    cup = cup.cut(pocket)
+    """Solid disc with 8 blind magnet pockets on the +Z face and a bore for
+    the shaft. Pockets are real pockets: the magnet sits 5 mm deep with
+    0.2 mm of epoxy over it, not floating in an open dish."""
+    cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(MAGCUP_H)
+    # bore for shaft / wet carrier
+    cup = cup.cut(cq.Workplane("XY").circle(10).extrude(MAGCUP_H + 10).translate((0, 0, -5)))
+    # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
-        th = 2*math.pi*i/MAG_N
-        r = MAGCUP_D/2 - MAG_D
-        p = (cq.Workplane("XY")
-             .circle(MAG_D/2 + 0.05).extrude(MAG_H+0.1)
-             .translate((r*math.cos(th), r*math.sin(th), 4)))
-        cup = cup.cut(p)
+        th = 2 * math.pi * i / MAG_N
+        r = MAGCUP_D / 2 - MAG_D / 2 - 2
+        pocket = (cq.Workplane("XY").circle(MAG_D / 2 + 0.1).extrude(MAG_H + 0.2)
+                  .translate((r * math.cos(th), r * math.sin(th), MAGCUP_H - MAG_H - 0.2)))
+        cup = cup.cut(pocket)
     return cup
 
 # ---------------- generator pod with nose bearing blocks --------------------
 
 
 def make_magnets(dry=False):
-    """8 discrete N52 discs per cup, so they show up in the exploded view."""
+    """8 discrete N52 discs, each sitting in its own pocket."""
     out = None
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
-        r = MAGCUP_D / 2 - MAG_D
+        r = MAGCUP_D / 2 - MAG_D / 2 - 2
         m = (cq.Workplane("XY").circle(MAG_D / 2).extrude(MAG_H)
-             .translate((r * math.cos(th), r * math.sin(th), 4)))
+             .translate((r * math.cos(th), r * math.sin(th),
+                         MAGCUP_H - MAG_H - 0.2)))
         out = m if out is None else out.union(m)
     return out
 
@@ -379,7 +382,7 @@ for i in range(BLADES):
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
 Z_SHAFT   = 0     # shaft spans 0..66
 Z_CARRIER = 15    # wet bearing carrier 15..70
-Z_WETCUP  = 66    # wet magnet cup 66..80
+Z_WETCUP  = 63    # wet cup 63..81, face on the wall face
 Z_POD     = 85    # pod: wall 80..85, barrel 85..205
 Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
 Z_ADAPTER = 205   # transition cone 205..225
@@ -388,19 +391,14 @@ Z_GUARD   = -50   # weed guard ring, upstream of the blade plane
 
 parts["shaft"]       = make_shaft().translate((0,0,Z_SHAFT))
 parts["wet_carrier"] = make_wet_carrier().translate((0,0,Z_CARRIER))
-parts["magcup_wet"]  = make_cup().mirror("XZ").translate((0,0,Z_WETCUP))
+parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
-parts["magcup_dry"]  = make_cup().translate((0,0,Z_DRYCUP))
+parts["magcup_dry"]  = make_cup().mirror("XZ").translate((0,0,Z_DRYCUP + MAGCUP_H))
 parts["joints"] = make_joints()
-parts["magnets_wet"] = (make_magnets()
-                    .rotate((0,0,0),(1,0,0),90)
-                    .rotate((0,0,0),(0,0,1),90)
-                    .translate((0,0,Z_WETCUP)))
-parts["magnets_dry"] = (make_magnets(dry=True)
-                        .rotate((0,0,0),(1,0,0),90)
-                        .rotate((0,0,0),(0,0,1),90)
-                        .translate((0,0,Z_DRYCUP)))
+# same frame as the cup: built along Z, mirrored like cup A, no extra rotation
+parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
+parts["magnets_dry"] = make_magnets(dry=True).mirror("XZ").translate((0,0,Z_DRYCUP + MAGCUP_H))
 parts["generator"] = make_generator().translate((0,0,Z_POD+60))
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
