@@ -15,7 +15,7 @@ C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,prin
 C02,pod,Tail cone,printed integral,1,0,0,printed in-house,-,printed,
 C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,grease Molykote 111
 C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,todo,NOT YET IN MODEL - add to pod
-C05,pod,Pod clamp screws,M4x30 A4 + washers,6,0,0,tme.eu,3.0,verified,
+C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,
 C06,pod,Desiccant,5g silica gel with indicator,2,0,0,local,2.0,verified,replace at service
 C07,pod,Cable gland wet side,Lapp Skintop MS-M 12x1.5 + Scotchcast 2131,1,0,0,tme.eu,12.0,verified,NOT YET IN MODEL - add boss
 C08,pod,Generator,T-Motor GB2208 KV128 or X-TEAM XTG3506 (24N22P 6ohm w/ AS5048A encoder),1,0,0,sk.x-teamrc.com / tmotor,26.0,verified,XTG3506 preferred: encoder = free RPM/flow
@@ -28,9 +28,9 @@ D09,sensors,Dissolved oxygen kit,"DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L
 D05,sensors,Level / stage probe,"Submersible IP68 316L, 0-1 mH2O, 0.5-4.5V out, 5m cable, permanent immersion rated",1,0,0,TME / sensorsone (quote),110.0,quote,"MS5837-30BA REJECTED: gel element must be dried daily, 24h max submersion"
 D06,sensors,EC/TDS,DFRobot SEN0244 Gravity analog TDS module + probe,1,0,0,tme.eu,14.0,verified,"+-10% FS is the weakest sensor; use as trend indicator, site-calibrate"
 D07,sensors,Turbidity,DFRobot SEN0189 (0-4.5V analog),1,0,0,techfun.sk,12.45,verified,6 in stock; in model as sensor_turb
-D08,sensors,Sensor cable,4x2x0.5mm shielded PUR outdoor,4,0,0,tme.eu,20.0,verified,
+D08,sensors,Sensor cable,4x2x0.5mm shielded PUR outdoor,1,0,0,tme.eu,20.0,verified,
 E01,cage,Sensor cage,Ø130x150 printed ASA 12 slots,1,0,0,printed in-house,-,printed,in model as cage
-E02,cage,Cage fasteners,M3x10 A4 + nylok,12,0,0,tme.eu,6.0,verified,
+E02,cage,Cage fasteners,M3x10 A4 + nylok,1,0,0,tme.eu,6.0,verified,
 E03,cage,Sensor holders,printed clips for pH/TDS/turbidity/NTC/MS5837,5,0,0,printed in-house,-,printed,in model as sensor bodies
 F01,interface,Cable,8x0.5mm2 PUR jacket submersible 6m,1,0,0,tme.eu,35.0,verified,
 F02,interface,Bulkhead connector,potted gland entry (NOT SubConn),1,0,0,tme.eu,12.0,verified,cost cut from 85 EUR wet-mate
@@ -51,19 +51,19 @@ G14,drybox,PCB,custom 2-layer 60x80mm,1,0,0,jlcpcb,3.0,quote,panel of 10 amortis
 G15,drybox,Connectors,JST-PH/XH assortment + crimps,1,0,0,laskakit.cz,10.0,verified,
 G16,drybox,Protection,Fuse 0.5A + TVS + ESD array,1,0,0,tme.eu,6.0,verified,
 G17,drybox,Cable glands,M12 IP68 potted x3,3,0,0,tme.eu,3.0,verified,
-H01,site,Ground screw anchor,M68 x 800mm solar-fence ground screw,1,1,0,hornbach,25.0,verified,1-2kN lateral - covers flood case
-H02,site,Pole,scaffold tube Ø48.3x3.2 x 3000mm galvanised,1,1,0,stavebniny,18.0,verified,removable mast pinned into receiver
-H03,site,Receiver sleeve,Ø52 tube 300mm + pin holes,1,1,0,metal shop,8.0,quote,pinned mast interface
-H04,site,Arm tube,alu Ø28x1.5 x 1300mm,1,1,0,hornbach,9.0,verified,
-H05,site,Drop tube,alu Ø22x1.5 x 900mm,1,1,0,hornbach,6.0,verified,
-H06,site,Hinge collar,printed ASA + M8 A4 bolt,1,1,0,printed + tme,3.0,printed,
-H07,site,Shear pin,M4 316SS pin + 2 spares on pole collar,3,1,0,tme.eu,1.0,verified,releases pod on >150N debris hit
-H08,site,Yaw strut,alu Ø22x600mm + 2 clamps,1,1,0,hornbach,5.0,verified,anti-flutter
-H09,site,Guy line,3mm Dyneema 2x4m + turnbuckles,2,1,0,tme.eu,9.0,verified,45deg up/downstream
-H10,site,Guy anchor,300mm ground screw x2,2,1,0,hornbach,10.0,verified,
-H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,1,1,0,tme.eu,4.0,verified,theft/flood retention
-H12,site,Security fastener,one-way Torx M5 + steel band for box,1,1,0,tme.eu,4.0,verified,anti-theft
-H13,site,Site label,engraved plate with project + contact,1,1,0,local print shop,3.0,verified,anti-theft by making it unsellable
+H01,site,Ground screw anchor,M68 x 800mm solar-fence ground screw,0,1,0,hornbach,25.0,verified,1-2kN lateral - covers flood case
+H02,site,Pole,scaffold tube Ø48.3x3.2 x 3000mm galvanised,0,1,0,stavebniny,18.0,verified,removable mast pinned into receiver
+H03,site,Receiver sleeve,Ø52 tube 300mm + pin holes,0,1,0,metal shop,8.0,quote,pinned mast interface
+H04,site,Arm tube,alu Ø28x1.5 x 1300mm,0,1,0,hornbach,9.0,verified,
+H05,site,Drop tube,alu Ø22x1.5 x 900mm,0,1,0,hornbach,6.0,verified,
+H06,site,Hinge collar,printed ASA + M8 A4 bolt,0,1,0,printed + tme,3.0,printed,
+H07,site,Shear pin,M4 316SS pin + 2 spares on pole collar,0,1,0,tme.eu,1.0,verified,releases pod on >150N debris hit
+H08,site,Yaw strut,alu Ø22x600mm + 2 clamps,0,1,0,hornbach,5.0,verified,anti-flutter
+H09,site,Guy line,3mm Dyneema 2x4m + turnbuckles,0,1,0,tme.eu,9.0,verified,45deg up/downstream
+H10,site,Guy anchor,300mm ground screw x2,0,1,0,hornbach,10.0,verified,
+H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,0,1,0,tme.eu,4.0,verified,theft/flood retention
+H12,site,Security fastener,one-way Torx M5 + steel band for box,0,1,0,tme.eu,4.0,verified,anti-theft
+H13,site,Site label,engraved plate with project + contact,0,1,0,local print shop,3.0,verified,anti-theft by making it unsellable
 I01,gateway,Gateway concentrator,RAK2287 SX1302 868MHz mini-PCIe + Pi HAT,0,0,1,rakwireless reseller,120.0,quote,
 I02,gateway,Compute,Raspberry Pi 4 4GB + PSU + SD,0,0,1,local,70.0,verified,
 I03,gateway,Antenna,MikroTik 868_Omni 6.5dBi IP66 862-876MHz + mast kit,0,0,1,i4wifi.cz,45.0,quote,THE range-critical part
