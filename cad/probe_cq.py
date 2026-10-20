@@ -21,14 +21,8 @@ os.makedirs(OUT, exist_ok=True)
 ROTOR_R = 110.0
 HUB_D, HUB_LEN = 64.0, 46.0
 BLADES = 3
-STATIONS = [ # (r_frac, chord_mm, twist_deg about quarter-chord)
-  (0.20, 42, 28),
-  (0.40, 38, 20),
-  (0.55, 34, 12),
-  (0.70, 30,  6),
-  (0.85, 24,  3),
-  (1.00, 17,  2),
-]
+STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
+            (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
 MAGCUP_D = 42.0; MAGCUP_H = 14.0; WALL_T = 5.0
 MAG_D = 8.0; MAG_H = 5.0; MAG_N = 8
 POD_OD = 110.0; POD_ID = 96.0; POD_LEN = 120.0
@@ -116,6 +110,18 @@ def make_cup(dry=False):
     return cup
 
 # ---------------- generator pod with nose bearing blocks --------------------
+
+
+def make_magnets(dry=False):
+    """8 discrete N52 discs per cup, so they show up in the exploded view."""
+    out = None
+    for i in range(MAG_N):
+        th = 2 * math.pi * i / MAG_N
+        r = MAGCUP_D / 2 - MAG_D
+        m = (cq.Workplane("XY").circle(MAG_D / 2).extrude(MAG_H)
+             .translate((r * math.cos(th), r * math.sin(th), 4)))
+        out = m if out is None else out.union(m)
+    return out
 
 def make_generator():
     # GB2208-class outrunner: Ø27.5 x 23 mm body, 3 mm shaft
@@ -387,6 +393,14 @@ parts["pod"]         = make_pod().translate((0,0,Z_POD))
 parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
 parts["magcup_dry"]  = make_cup().translate((0,0,Z_DRYCUP))
 parts["joints"] = make_joints()
+parts["magnets_wet"] = (make_magnets()
+                    .rotate((0,0,0),(1,0,0),90)
+                    .rotate((0,0,0),(0,0,1),90)
+                    .translate((0,0,Z_WETCUP)))
+parts["magnets_dry"] = (make_magnets(dry=True)
+                        .rotate((0,0,0),(1,0,0),90)
+                        .rotate((0,0,0),(0,0,1),90)
+                        .translate((0,0,Z_DRYCUP)))
 parts["generator"] = make_generator().translate((0,0,Z_POD+60))
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
@@ -411,7 +425,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints"]
+             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg

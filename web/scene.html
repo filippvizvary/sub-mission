@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sub-mission - assembly viewer</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0f14;overflow:hidden;
+            font-family:ui-monospace,Menlo,monospace;color:#e6edf3}
+  #c{display:block;width:100%;height:100%}
+  .lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:none;
+       font-size:11px;white-space:nowrap;padding:2px 6px;border-radius:3px;
+       background:rgba(11,15,20,.86);border-left:2px solid;letter-spacing:.02em}
+  #hud{position:absolute;left:16px;top:14px;font-size:11px;line-height:1.75;
+       background:rgba(11,15,20,.86);border:1px solid #2d333b;border-radius:6px;
+       padding:10px 14px}
+  #hud h1{font-size:12px;margin:0 0 6px;letter-spacing:.07em;text-transform:uppercase}
+  #hud b{color:#7ee787;font-weight:600}
+  #legend{position:absolute;right:16px;top:14px;font-size:10.5px;line-height:1.8;
+          background:rgba(11,15,20,.86);border:1px solid #2d333b;border-radius:6px;
+          padding:9px 13px}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <h1>sub-mission</h1>
+  <div><b>1</b> assembled &middot; <b>2</b> explode &middot; <b>3</b> wide explode</div>
+  <div><b>d</b> drivetrain &middot; <b>s</b> bank structure &middot; <b>drag</b> orbit</div>
+  <div id="mode" style="opacity:.6;margin-top:5px">view: drivetrain</div>
+</div>
+<div id="legend"></div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+
+const DRIVE = [
+  ['weed_guard','weed guard','asa'],
+  ['rotor','rotor 3x NACA4412 D220','rotor'],
+  ['shaft','wet shaft 316L','steel'],
+  ['wet_carrier','carrier + PEEK bushings','steel'],
+  ['magnets_wet','8x N52 - wet cup','magnet'],
+  ['magcup_wet','magnet cup A (wet)','asa'],
+  ['pod_seal','coupling wall 5 mm','asa'],
+  ['magcup_dry','magnet cup B (dry)','asa'],
+  ['magnets_dry','8x N52 - dry cup','magnet'],
+  ['generator','generator GB2208','alu'],
+  ['pod','pod shell OD110','asa'],
+  ['cage_adapter','adapter OD110-130','asa'],
+  ['sensors','sensors (pH, DO, TDS, turb)','pcb'],
+  ['cage','sensor cage OD130','asa'],
+];
+
+const SITE = [
+  ['site_pole','pole 2.6 m','alu'],
+  ['site_collar','pole collar + anchor','steel'],
+  ['site_arm','swing arm 1.2 m','alu'],
+  ['site_elbow','elbow clamp','alu'],
+  ['site_drop','drop tube OD28','alu'],
+  ['site_clamp','collar clamp','asa'],
+  ['site_strut','diagonal strut','alu'],
+  ['site_box','dry box','asa'],
+  ['site_lid','lid + O-ring','asa'],
+  ['site_antenna','868 MHz antenna','alu'],
+  ['joints','bolts + brackets','steel'],
+  ['cable_run','cable run','rubber'],
+];
+
+const MATS = {
+  asa:   {color:0x2f81f7, metalness:0.10, roughness:0.72},
+  alu:   {color:0xb6c0cc, metalness:0.90, roughness:0.38},
+  steel: {color:0x96a0ab, metalness:0.98, roughness:0.24},
+  magnet:{color:0x6b7280, metalness:0.80, roughness:0.30},
+  pcb:   {color:0x2ea043, metalness:0.20, roughness:0.62},
+  rubber:{color:0x2d333b, metalness:0.05, roughness:0.95},
+  rotor: {color:0xd29922, metalness:0.15, roughness:0.55},
+};
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0f14);
+
+const camera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 1, 20000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xdfe9ff, 0x141a21, 1.15));
+const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(700,1200,900); scene.add(key);
+const fill = new THREE.DirectionalLight(0x88aaff, 0.85); fill.position.set(-900,300,-700); scene.add(fill);
+const rim2 = new THREE.DirectionalLight(0xffd9a0, 0.55); rim2.position.set(300,-500,-900); scene.add(rim2);
+
+const groupDrive = new THREE.Group();
+const groupSite  = new THREE.Group();
+groupSite.rotation.x = -Math.PI/2;   // model is Z-up, three.js is Y-up
+scene.add(groupDrive, groupSite);
+
+const loader = new STLLoader();
+const labels = [];
+let pending = DRIVE.length + SITE.length;
+
+function add(list, group, axisKey) {
+  list.forEach(([name, label, mat], i) => {
+    loader.load('parts/' + name + '.stl', geo => {
+      geo.computeVertexNormals();
+      geo.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial(MATS[mat]));
+      mesh.userData = {axisKey, index:i, centre:geo.boundingSphere.center.clone()};
+      group.add(mesh);
+
+      const div = document.createElement('div');
+      div.className = 'lbl';
+      const hex = '#' + new THREE.Color(MATS[mat].color).getHexString();
+      div.style.borderColor = hex;
+      div.style.color = hex;
+      div.textContent = label;
+      div.style.display = 'none';
+      document.body.appendChild(div);
+      labels.push({div, mesh});
+
+      if (--pending === 0) ready();
+    });
+  });
+}
+add(DRIVE, groupDrive, 'y');
+add(SITE, groupSite, 'z');
+
+let explode = 0.85;
+let currentGroup = groupDrive;
+
+function computeOffsets(group, gap) {
+  const list = group.children.slice().sort((a,b) => a.userData.index - b.userData.index);
+  let cursor = 0;
+  list.forEach(m => {
+    const g = m.geometry;
+    g.computeBoundingBox();
+    const extent = g.boundingBox.max.y - g.boundingBox.min.y;
+    m.userData.offset = cursor - g.boundingBox.min.y;   // where its lowest point lands
+    cursor += extent + gap;
+  });
+}
+
+function layout() {
+  groupDrive.children.forEach(m => { m.position.y = explode * m.userData.offset; });
+  // the bank structure is tall and wide: spreading it along Y would span 10 m.
+  // spread it sideways instead, so each part stays at its real height.
+  groupSite.children.forEach(m => {
+    m.position.x = explode * (m.userData.index - 4.5) * 260;
+    m.position.y = 0;
+  });
+  fit(currentGroup);
+}
+
+function fit(g) {
+  const box = new THREE.Box3().setFromObject(g);
+  const size = box.getSize(new THREE.Vector3());
+  const mid = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const dist = (maxDim / 2) / Math.tan((camera.fov * Math.PI / 180) / 2) * 1.05;
+  controls.target.copy(mid);
+  camera.position.set(mid.x + dist*0.55, mid.y + dist*0.18, mid.z + dist*0.95);
+  camera.near = Math.max(maxDim/800, 0.5);
+  camera.far = maxDim*50;
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function ready() {
+  const b = new THREE.Box3().setFromObject(groupDrive);
+  groupDrive.position.set(0, -b.getCenter(new THREE.Vector3()).y, 0);
+  groupSite.updateMatrixWorld(true);
+  const c = new THREE.Box3().setFromObject(groupSite);
+  const cc = c.getCenter(new THREE.Vector3());
+  groupSite.position.set(-cc.x, -cc.y, -cc.z);
+  groupSite.visible = false;
+  computeOffsets(groupDrive, 18);
+  const mExp = location.search.match(/explode=([0-9.]+)/);
+  if (mExp) explode = parseFloat(mExp[1]);
+  if (location.search.includes('view=site')) {
+    currentGroup = groupSite; groupSite.visible = true; groupDrive.visible = false;
+    document.getElementById('mode').textContent = 'view: bank structure';
+  }
+  layout();
+  document.getElementById('legend').innerHTML =
+    [['asa','printed ASA'],['alu','aluminium'],['steel','stainless 316L'],
+     ['magnet','N52 magnet'],['pcb','electronics'],['rubber','cable']]
+    .map(([k,t]) => '<div><span class="sw" style="background:#' +
+         new THREE.Color(MATS[k].color).getHexString() + '"></span>' + t + '</div>').join('');
+}
+
+const v = new THREE.Vector3();
+function tick() {
+  requestAnimationFrame(tick);
+  controls.update();
+  renderer.render(scene, camera);
+  labels.forEach(({div, mesh}) => {
+    if (!mesh.parent.visible) { div.style.display = 'none'; return; }
+    v.copy(mesh.userData.centre).applyMatrix4(mesh.matrixWorld); v.project(camera);
+    const on = v.z < 1;
+    div.style.display = on ? 'block' : 'none';
+    if (!on) return;
+    const px = (v.x*0.5+0.5)*innerWidth, py = (-v.y*0.5+0.5)*innerHeight;
+    const side = labels.indexOf(labels.find(l => l.div === div)) % 2 === 0 ? -1 : 1;
+    div.style.transform = side < 0 ? 'translate(-100%,-50%)' : 'translate(0,-50%)';
+    div.style.left = (px + side * 26) + 'px';
+    div.style.top  = py + 'px';
+  });
+}
+tick();
+
+function setExplode(f) { explode = f; layout(); }
+
+addEventListener('keydown', e => {
+  if (e.key === '1') setExplode(0.0);
+  if (e.key === '2') setExplode(0.45);
+  if (e.key === '3') setExplode(1.0);
+  if (e.key === 'd' || e.key === 'D') {
+    currentGroup = groupDrive; groupDrive.visible = true; groupSite.visible = false;
+    document.getElementById('mode').textContent = 'view: drivetrain';
+    fit(groupDrive);
+  }
+  if (e.key === 's' || e.key === 'S') {
+    currentGroup = groupSite; groupSite.visible = true; groupDrive.visible = false;
+    document.getElementById('mode').textContent = 'view: bank structure';
+    fit(groupSite);
+  }
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+window.setExplode = setExplode;
+</script>
+</body>
+</html>
