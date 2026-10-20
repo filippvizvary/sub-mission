@@ -162,9 +162,9 @@ def make_site():
     elbow = (cq.Workplane("XY").circle((ARM_OD+8)/2).extrude(ARM_OD+8)
              .translate((ARM_LEN-(ARM_OD+8)/2, 0, 60+ARM_LEN*math.tan(math.radians(5)))))
     # hollow Ø28x2 tube: carries the pod AND routes the cable inside it
-    drop_h = 60 + ARM_LEN*math.tan(math.radians(5)) + 365
+    drop_h = 60 + ARM_LEN*math.tan(math.radians(5)) + 355
     drop  = (cq.Workplane("XY").circle(14).circle(12)
-             .extrude(drop_h).translate((ARM_LEN,0,-365)))
+             .extrude(drop_h).translate((ARM_LEN,0,-355)))
     strut = (cq.Workplane("YZ")
              .circle((ARM_OD-10)/2).extrude(260)
              .rotate((0,0,0),(0,0,1),90)
@@ -174,8 +174,12 @@ def make_site():
     ante  = cq.Workplane("XY").circle(3).extrude(330).translate((0,0,1750+40))
     tip   = cq.Workplane("XY").circle(4.5).extrude(9).translate((0,0,1750+40+322))
     cable = cq.Workplane("XY").circle(4.5).extrude(1750-40-90).translate((-(POLE_OD/2+5),0,90))
-    # clamp saddle: the physical joint between drop tube and pod shell
-    clamp = cq.Workplane("XY").box(70, 90, 40).translate((ARM_LEN, 0, -392))
+    # collar clamp: ring AROUND the barrel (no penetration), with one boss on top
+    clamp = (cq.Workplane("XZ").circle(63).circle(56).extrude(44)
+             .translate((ARM_LEN, -22, -420)))
+    boss = (cq.Workplane("XY").circle(16).extrude(14)
+            .translate((ARM_LEN, 0, -369)))
+    clamp = clamp.union(boss)
     return (pole, collar, arm, elbow, drop, strut, box, lid, ante, tip, cable, clamp)
 
 # ---------------- wet-side bearing carrier (A04, A05) ----------------------
@@ -250,6 +254,19 @@ def make_safety_cable():
     return (cq.Workplane("XY").circle(1.5).extrude(520)
             .rotate((0,0,0),(0,1,0), 90).translate((ARM_LEN-80, 0, -420)))
 
+def make_cable_run():
+    # visible part of the cable: pod gland exit, around the barrel, into the collar
+    pts = [(ARM_LEN+58, -72, -420), (ARM_LEN+72, -50, -405),
+           (ARM_LEN+72, -10, -390), (ARM_LEN+18, 0, -378)]
+    out = None
+    for a, b in zip(pts, pts[1:]):
+        va, vb = cq.Vector(*a), cq.Vector(*b)
+        d = vb - va
+        cyl = cq.Solid.makeCylinder(4, d.Length, va, d.normalized())
+        wp = cq.Workplane(obj=cyl)
+        out = wp if out is None else out.union(wp)
+    return out
+
 # ---------------- assembly -------------------------------------------------
 parts = {}
 # rotor: 3 blades at 120deg intervals + hub, instances by rebuilding each blade
@@ -280,12 +297,14 @@ parts["sensors"]     = make_sensors().translate((0,0,Z_CAGE))
 parts["weed_guard"]  = make_weed_guard().translate((0,0,Z_GUARD))
 parts["anchor"] = make_anchor()
 parts["guys"] = make_guys()
+parts["cable_run"] = make_cable_run()
 parts["safety_cable"] = (cq.Workplane("XY").circle(1.5).extrude(140)
     .rotate((0,0,0),(0,1,0),90).translate((ARM_LEN-130, 0, -420)))
 site = make_site()
 site_names = ["pole","collar","arm","elbow","drop","strut","box","lid","antenna","antenna_tip","cable","clamp"]
 for name, shape in zip(site_names, site):
     parts[f"site_{name}"] = shape
+
 
 # ---------------- assembly placement --------------------------------------
 # Pod chain is built vertically in local Z; hang it horizontal at the arm end,
