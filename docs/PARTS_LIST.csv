@@ -36,7 +36,7 @@ F01,interface,Cable,8x0.5mm2 PUR jacket submersible 6m,1,0,0,tme.eu,35.0,verifie
 F02,interface,Bulkhead connector,potted gland entry (NOT SubConn),1,0,0,tme.eu,12.0,verified,cost cut from 85 EUR wet-mate
 G01,drybox,Enclosure,IP68 ready-made 190x130x80mm,1,0,0,tme.eu,22.0,verified,in model as site_box
 G02,drybox,MCU,LaskaKit ESP32-S3-DEVKit (~12uA sleep),1,0,0,laskakit.cz,12.0,verified,
-G03,drybox,Radio,Wio-E5 SX1262 868MHz mini board,1,0,0,techfun.sk,15.0,verified,
+G03,drybox,Radio,"Wio-E5 mini = STM32WLE5JC (MCU+LoRa) + USB-C + CH340; 868 MHz, SMA antenna",1,0,0,techfun.sk,15.0,verified,same board as gateway I01; in the probe USB-C unused (two USB devices cannot link) - connect over UART TX/RX/3V3/GND
 G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,1,0,0,neven.cz,6.0,verified,149 CZK
 G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,1,0,0,tme.eu,3.0,verified,
 G06,drybox,Boost harvester,LTC3105EFE MPPT boost,1,0,0,tme.eu,5.0,verified,needed when EMF below bus
@@ -64,7 +64,7 @@ H10,site,Guy anchor,300mm ground screw x2,0,1,0,hornbach,10.0,verified,
 H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,0,1,0,tme.eu,4.0,verified,theft/flood retention
 H12,site,Security fastener,one-way Torx M5 + steel band for box,0,1,0,tme.eu,4.0,verified,anti-theft
 H13,site,Site label,engraved plate with project + contact,0,1,0,local print shop,3.0,verified,anti-theft by making it unsellable
-I01,gateway,Gateway radio (single-channel),"Wio-E5 mini SX1262 868MHz + USB-UART bridge; plugs into RPi USB, no soldering",0,0,1,rakwireless reseller,18.0,verified,Concentrator NOT needed: our nodes share one channel/SF. Add 0-15 min TX jitter per node.
+I01,gateway,Gateway radio (single-channel),Wio-E5 mini = STM32WLE5JC + USB-C + CH340; plugs straight into RPi USB,0,0,1,rakwireless reseller,18.0,verified,"identical SKU to probe radio G03 - one firmware image both sides; buy 3 (1 probe, 1 gateway, 1 spare/range-test)"
 I02,gateway,Compute,Raspberry Pi 4 4GB + PSU + SD,0,0,1,local,70.0,verified,"YOU ALREADY HAVE THIS - reuse, zero soldering; runs the gateway service"
 I03,gateway,Antenna,MikroTik 868_Omni 6.5dBi IP66 862-876MHz + mast kit,0,0,1,i4wifi.cz,45.0,quote,range-critical: gateway antenna gain + mast height set the link
 I04,gateway,Enclosure,IP65 box + PoE injector,0,0,1,tme.eu,35.0,verified,
