@@ -1,90 +1,87 @@
-# Water Telemetry Monorepo
+# sub-mission
 
-ESP32 sender/receiver telemetry system for water-quality style sensors.
-The sender publishes sensor data over ESP-NOW, the receiver bridges it to USB serial NDJSON, and the web dashboard visualizes both processed metrics and RAW diagnostics.
+River water-quality probe for AMAVET. A bank-mounted pole carries a swing arm
+over the stream; a sealed pod hangs from it on a drop tube. A 3-blade rotor
+drives the generator through a magnetic coupling that works **through a solid
+4 mm wall** - no shaft ever pierces the shell. Sensors report over 868 MHz LoRa
+to a gateway on a Raspberry Pi.
 
-## Prerequisites
+## Where things are
 
-You must install PlatformIO before any `pio ...` command will work.
+```
+cad/
+  probe_cq.py        parametric CadQuery model - the single source of truth
+  explode.py         exploded elevation drawings + coupling section (PNG)
+  check_overlap.py   clash check between parts
+  cq/                GENERATED meshes and STEP  (gitignored)
 
-1. Python 3.9+ installed.
-2. PlatformIO Core installed and available in PATH.
-3. Chrome/Edge/Brave for Web Serial dashboard.
+sim/
+  rotor_check.py     BEM + Prandtl: Cp, rpm, torque at a given flow
+  clutch_check.py    magnetic coupling: force and slip torque vs gap
+  simulate.py        energy budget over a flow cycle
 
-Quick install example:
+docs/
+  DESIGN.md          geometry, joints, sealing, why each choice was made
+  BOM.md             bill of materials with sources and prices
+  BUILD_PROCEDURE.md nine build phases, each with a gate
+  SENSORS.md         which sensors, accuracy, service interval
+  parts.xlsx         GENERATED order sheet for the school (by shop, with spares)
+  reviews/           external frontier-model design reviews
+  legacy/            pre-probe (v0 ESP-NOW) documentation
+
+firmware/
+  sender/            PlatformIO project - probe node
+  receiver/          PlatformIO project - ESP-NOW -> USB bridge (v0, to be replaced by LoRa)
+
+web/
+  3d.html            landing page for the viewer
+  scene.html         three.js exploded assembly (materials, labels, slider)
+  index.html         v0 serial dashboard
+  parts/             GENERATED meshes served to the viewer (gitignored)
+
+tools/
+  build_parts_xlsx.py  builds docs/parts.xlsx from docs/PARTS_LIST.csv
+  build_order_sheet.py adds the by-shop order sheets
+  sync_parts.sh        copy fresh meshes into web/parts and restart the service
+archive/            superseded OpenSCAD, old renders, FreeCAD bridge
+```
+
+## Build the model
 
 ```bash
-python3 -m pip install --user platformio
-python3 -m platformio --version
+PYTHONPATH=~/.local/lib/python3.14/site-packages python3 cad/probe_cq.py
+tools/sync_parts.sh
 ```
 
-If `pio` is not found after install, use `python3 -m platformio` or add the user scripts path to PATH.
+`probe_cq.py` prints a sensor-fit report and writes STL + STEP per part into
+`cad/cq/`. It refuses nothing - if a sensor does not fit the cage, the report
+says so before anything is ordered.
 
-Detailed setup: `docs/SETUP_GUIDE.md`
-
-## Repository Structure
-
-- `esp-sender/`: Sender firmware (real sensor read + calibration)
-- `esp-receiver/`: Receiver firmware (ESP-NOW -> NDJSON bridge)
-- `web/`: Browser dashboard (Web Serial)
-- `docs/`: Setup, flashing, calibration, architecture, troubleshooting, backend roadmap
-
-## Current Protocol (v2)
-
-- Packet version: `2`
-- Sender interval: `2000 ms`
-- Shared packed payload includes processed values and RAW diagnostics.
-- Receiver emits `type=telemetry` and periodic `type=receiver_stats` JSON lines.
-
-## Quick Start
-
-1. Flash receiver first:
+## See it
 
 ```bash
-cd /sub-mission/esp-receiver
-pio run -t upload
-pio device monitor -b 115200
+systemctl --user status submission-web.service
+# http://<host>:8899/3d.html
 ```
 
-Expected startup message:
+Keys: `1` assembled, `2` explode, `3` wide explode, `d` drivetrain,
+`s` bank structure. There is also a slider.
 
-```json
-{"type":"receiver_ready","packetVersion":2,"receiverMac":"..","baud":115200}
-```
+## Numbers that matter
 
-2. Copy receiver MAC into sender `kReceiverMac` in `esp-sender/src/main.cpp`, then flash sender:
+| quantity | value | from |
+|---|---|---|
+| rotor Cp at TSR 5, 1.0 m/s | 0.393 | `sim/rotor_check.py` |
+| rotor rpm / shaft power | 434 rpm / 7.46 W | `sim/rotor_check.py` |
+| shaft torque | 0.164 N.m | `sim/rotor_check.py` |
+| coupling slip torque | 1.00 N.m at 4.2 mm gap | `sim/clutch_check.py` |
+| coupling margin | 6.1x | both |
+| coupling axial pull | 59.5 N | `sim/clutch_check.py` |
 
-```bash
-cd /sub-mission/esp-sender
-pio run -t upload
-pio device monitor -b 115200
-```
+## Open items
 
-3. Run dashboard:
-
-```bash
-cd /sub-mission/web
-python3 -m http.server 8080
-```
-
-Open `http://localhost:8080` and click Connect Serial.
-
-Detailed flash workflow: `docs/FLASHING_GUIDE.md`
-
-Full data-flow and ESP-NOW explanation: `docs/ARCHITECTURE_AND_DATA_FLOW.md`
-
-## Calibration And Diagnostics
-
-- pH is calibrated from RAW voltage in sender firmware.
-- Dashboard shows RAW ADC/voltage fields for all analog sensors.
-- Use RAW values as calibration reference before trusting processed values.
-
-Calibration guide: `docs/CALIBRATION_GUIDE.md`
-
-Troubleshooting guide: `docs/TROUBLESHOOTING.md`
-
-## Notes
-
-1. Sender and receiver firmware versions must match (coordinated update).
-2. Receiver should be flashed before sender when protocol changes.
-3. Backend/API roadmap remains in `docs/BACKEND_ROADMAP.md`.
+- cogging torque of the chosen motor is **not measured**; the cut-in speed
+  depends on it (build procedure phase 1)
+- coupling slip coefficient (0.6 tangential/axial) is an engineering estimate,
+  not a measurement - verify with a spring balance
+- pH electrode is a 14-30 day serviceable module, not a 90-day channel

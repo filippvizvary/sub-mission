@@ -58,23 +58,16 @@ def make_blade():
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
-        # build profile directly in 3D: chord along Z (rotation plane normal),
-        # thickness along X, span along +Y, quarter-chord at origin before twist
         pts3d = []
         for x_frac, y_frac in n_pts:
-            # chordwise u, thickness v, quarter-chord pivot
+            # chordwise u (tangential, in the rotor plane), thickness v (axial)
             u = (x_frac - qc) * chord
             v = y_frac * chord
-            # twist about the span axis (Y): rotate (u,v) in the XZ plane
-            # local frame before twist: chord dir = +Z, thickness dir = +X
-            x_l = v
-            z_l = u
-            # rotation about +Y by pitch angle
-            x_r =  x_l*math.cos(th) + z_l*math.sin(th)
-            z_r = -x_l*math.sin(th) + z_l*math.cos(th)
-            pts3d.append((x_r, r, z_r))
-        # closed wire: first point repeated
-        wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
+            # twist about the radial span axis (X): u rotates into the axial dir
+            y_l = u * math.cos(th) - v * math.sin(th)
+            z_l = u * math.sin(th) + v * math.cos(th)
+            # span along +X at this station
+            pts3d.append((r, y_l, z_l))
         wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
         sections.append(wire)
     blade = cq.Solid.makeLoft(sections, ruled=True)
@@ -146,15 +139,24 @@ def make_pod():
               .transformed().circle(POD_OD/2).loft(combine="s") if False else barrel)
     # tail cone done properly
     pod = barrel
-    # 5mm solid front wall (this is the mag-coupled barrier)
-    wall = cq.Workplane("XY").circle((POD_OD-4)/2).extrude(-WALL_T)
-    pod = pod.union(wall)
+    # the coupling wall is a separate part (see make_coupling_wall) so the
+    # exploded view can show it; here we only keep the barrel
     # bore
     pod = pod.cut(cq.Workplane("XY").circle(POD_ID/2).extrude(POD_LEN+POD_OD))
     # bearings live in the wet carrier, ahead of the wall -- nothing protrudes here
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------
+
+def make_coupling_wall():
+    """Solid Ø106 x 4 disc - the pressure barrier the magnets work through.
+    Nothing pierces it: no shaft hole, only the O-ring groove on the rim."""
+    disc = cq.Workplane("XY").circle((POD_OD - 4) / 2).extrude(WALL_T)
+    groove = (cq.Workplane("XY").circle((POD_OD - 4) / 2)
+              .circle((POD_OD - 4) / 2 - 2.2).extrude(1.8))
+    return disc.cut(groove.translate((0, 0, WALL_T - 1.8)))
+
+
 def make_cage():
     outer = cq.Workplane("XY").circle(CAGE_OD/2).extrude(CAGE_LEN)
     inner = cq.Workplane("XY").circle((CAGE_OD-2*CAGE_WALL)/2).extrude(CAGE_LEN+2).translate((0,0,-1))
@@ -394,6 +396,7 @@ parts["wet_carrier"] = make_wet_carrier().translate((0,0,Z_CARRIER))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
+parts["coupling_wall"] = make_coupling_wall().translate((0,0,Z_POD - WALL_T))
 parts["magcup_dry"]  = make_cup().mirror("XZ").translate((0,0,Z_DRYCUP + MAGCUP_H))
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
@@ -423,7 +426,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry","coupling_wall"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg

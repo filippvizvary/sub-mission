@@ -1,2 +1,15 @@
 sim/__pycache__/
 sim/nous.py
+
+# generated geometry - rebuild with: python3 cad/probe_cq.py
+cad/cq/
+
+# meshes served by the 3D viewer - rebuild with: tools/sync_parts.sh
+web/parts/
+
+# python noise
+__pycache__/
+*.pyc
+
+# local render output
+renders/
