@@ -204,25 +204,34 @@ def make_site():
 
 # ---------------- wet-side bearing carrier (A04, A05) ----------------------
 def make_wet_carrier():
-    # 316L tube Ø14xØ10x55 straddling the wet shaft, plus 2 igus bushings
-    tube = cq.Workplane("XY").circle(7).circle(5).extrude(55)
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0,0,8))
-    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0,0,42))
-    return tube.union(b1).union(b2)
-
-# ---------------- weed guard ring + struts (A07) ---------------------------
-def make_weed_guard():
-    ring = (cq.Workplane("XY").circle(ROTOR_R+15).circle(ROTOR_R+7)
-            .extrude(4))
-    struts = None
+    """STATIC spider: bolts to the pod face and carries the rotor shaft in two
+    bushings. This is what holds the wet assembly axially - not the magnets."""
+    ring = (cq.Workplane("XY").circle(48).circle(42).extrude(7)
+            .translate((0, 0, 74)))
+    arms = None
     for i in range(3):
-        s = (cq.Workplane("XY").box(ROTOR_R+7, 8, 4)
-             .translate((-(ROTOR_R+7)/2, 0, 0))
-             .rotate((0,0,0),(0,0,1), i*120+60))
-        struts = s if struts is None else struts.union(s)
-    return ring.union(struts)
+        a = (cq.Workplane("XY").box(40, 9, 6)
+             .translate((22, 0, 74))
+             .rotate((0, 0, 0), (0, 0, 1), i * 120))
+        arms = a if arms is None else arms.union(a)
+    boss = cq.Workplane("XY").circle(9).extrude(30).translate((0, 0, 47))
+    body = ring.union(arms.cut(cq.Workplane("XY").circle(9).extrude(20).translate((0,0,74)))).union(boss)
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 50))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 68))
+    return body.cut(b1).cut(b2)
 
-# ---------------- real sensor bodies (D04-D07) -----------------------------
+
+def make_shaft_collars():
+    """Two collars sandwich the spider boss: the shaft cannot walk either way."""
+    up = cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, 41))
+    dn = cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, 77))
+    return up.union(dn)
+
+
+def make_nose_cone():
+    """Sheds filamentous algae outward instead of catching it on a ring."""
+    return cq.Workplane("XY").circle(32).workplane(offset=-40).circle(6).loft()
+
 def make_sensors():
     # all in cage-local coordinates, inside radius 61 (cage inner wall)
     # E201 pH electrode: Ø12.5 x 160 (LaskaKit spec)
@@ -392,7 +401,9 @@ Z_CAGE    = 225   # cage 225..425
 Z_GUARD   = -50   # weed guard ring, upstream of the blade plane
 
 parts["shaft"]       = make_shaft().translate((0,0,Z_SHAFT))
-parts["wet_carrier"] = make_wet_carrier().translate((0,0,Z_CARRIER))
+parts["wet_carrier"] = make_wet_carrier()
+parts["collars"]     = make_shaft_collars()
+parts["nose_cone"]   = make_nose_cone().translate((0,0,-23))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
@@ -406,7 +417,6 @@ parts["generator"] = make_generator().translate((0,0,Z_POD+60))
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
 parts["sensors"]     = make_sensors().translate((0,0,Z_CAGE))
-parts["weed_guard"]  = make_weed_guard().translate((0,0,Z_GUARD))
 parts["anchor"] = make_anchor()
 parts["guys"] = make_guys()
 parts["cable_run"] = make_cable_run()
@@ -426,7 +436,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry","coupling_wall"]
+             "wet_carrier","collars","nose_cone","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry","coupling_wall"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -439,7 +449,7 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "weed_guard": (0.10, 0.55, 0.25),
+    "wet_carrier": (0.45, 0.50, 0.58), "nose_cone": (0.10, 0.55, 0.25),
     "pod": (0.10, 0.42, 0.30), "pod_seal": (0.18, 0.50, 0.36),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
