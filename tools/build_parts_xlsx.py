@@ -53,7 +53,7 @@ OVR = {
     "F01": ("REQUIRED", "NO", "permanent", ""),
     "F02": ("REQUIRED", "NO", "permanent (potted)", ""),
     "G01": ("REQUIRED", "NO", "mechanical", "ready-made IP68 box, do not print"),
-    "G02": ("REQUIRED", "CHECK", "socketed reusable", "you have classic ESP32 devkits; S3 is different"),
+    "G02": ("DROP", "CHECK", "socketed reusable", "not used: Wio-E5 mini is the single brain (MCU + radio)"),
     "G03": ("REQUIRED", "NO", "socketed reusable", ""),
     "G04": ("REQUIRED", "NO", "mechanical", ""),
     "G05": ("REQUIRED", "NO", "socketed reusable", ""),
