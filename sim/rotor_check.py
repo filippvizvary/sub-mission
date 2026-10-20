@@ -100,16 +100,23 @@ def bem(st, tsr, n=300):
 
 
 def main():
-    best = None
-    print("  TSR  alpha   Cp      P[W]")
+    print("  TSR  alpha   Cp      P[W]   solidity@root")
     for tsr in (4, 5, 6, 7):
         for ad in (4, 5, 6, 7):
             st = wilson(tsr, ad)
             cp, P, T = bem(st, tsr)
-            print("  %3d  %5.1f  %5.3f  %6.2f" % (tsr, ad, cp, P))
-            if 0.15 < cp < 0.5 and (best is None or cp > best[0]):
-                best = (cp, tsr, ad, st, P, T)
+            sig_root = B * st[0][1] / (2 * math.pi * st[0][0] * R)
+            mark = "  <- model" if (tsr, ad) == (5, 5) else ""
+            print("  %3d  %5.1f  %5.3f  %6.2f   %5.2f%s" % (tsr, ad, cp, P, sig_root, mark))
 
+    # the model is built at TSR 5 / alpha 5: below that the root solidity
+    # goes past 1.0, i.e. the blades would overlap and cannot be printed
+    tsr, ad = 5, 5
+    st = wilson(tsr, ad)
+    cp, P, T = bem(st, tsr)
+    best = (cp, tsr, ad, st, P, T)
+
+    assert best is not None
     cp, tsr, ad, st, P, T = best
     omega = tsr * V / R
     print("\n  chosen: TSR %d, alpha %.0f deg" % (tsr, ad))
