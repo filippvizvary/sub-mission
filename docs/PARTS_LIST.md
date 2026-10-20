@@ -1,6 +1,7 @@
 # Parts list — single source of truth
 
-Generated from `PARTS_LIST.csv`. Every line maps to a part in `cad/probe_cq.py`.
+Generated from `PARTS_LIST.csv`. Sensor rationale: see `SENSORS.md`.
+
 Status: verified = live listing seen, quote = needs supplier quote, printed = in-house, todo = not yet in model.
 
 ## rotor
@@ -43,7 +44,8 @@ Status: verified = live listing seen, quote = needs supplier quote, printed = in
 | D02 | pH spare electrode | E201-C BNC | 2 | techfun.sk | 9.0 | verified |
 | D03 | pH buffer | 2x250ml pH7 + pH10 | 1 | techfun.sk | 12.0 | verified |
 | D04 | Temperature | DS18B20 waterproof 1m cable | 1 | techfun.sk | 5.0 | verified |
-| D05 | Depth/pressure | MS5837-30BA01 (TE) on carrier PCB | 1 | components-store.cz | 8.6 | verified |
+| D09 | Dissolved oxygen kit | DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L, BNC probe, 2m cable | 1 | global-ic.sk / botland.cz | 175.0 | verified |
+| D05 | Level / stage probe | Submersible IP68 316L, 0-1 mH2O, 0.5-4.5V out, 5m cable, permanent immersion rated | 1 | TME / sensorsone (quote) | 110.0 | quote |
 | D06 | EC/TDS | DFRobot SEN0244 Gravity analog TDS module + probe | 1 | tme.eu | 14.0 | verified |
 | D07 | Turbidity | DFRobot SEN0189 (0-4.5V analog) | 1 | techfun.sk | 12.45 | verified |
 | D08 | Sensor cable | 4x2x0.5mm shielded PUR outdoor | 4 | tme.eu | 20.0 | verified |
