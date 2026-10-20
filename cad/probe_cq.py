@@ -32,8 +32,10 @@ STATIONS = [ # (r_frac, chord_mm, twist_deg about quarter-chord)
 MAGCUP_D = 42.0; MAGCUP_H = 14.0; WALL_T = 5.0
 MAG_D = 8.0; MAG_H = 5.0; MAG_N = 8
 POD_OD = 110.0; POD_ID = 96.0; POD_LEN = 120.0
-CAGE_LEN = 150.0; CAGE_OD = 130.0; CAGE_WALL = 4.0; CAGE_SLOTS = 12
-ARM_OD = 28.0; POLE_OD = 60.0; POLE_H = 2600.0
+CAGE_LEN = 200.0; CAGE_OD = 130.0; CAGE_WALL = 4.0; CAGE_SLOTS = 12
+ARM_OD = 28.0; BOX_Z = 1710.0   # underside of the dry box
+POLE_TOP = 2600.0
+POLE_OD = 60.0; POLE_H = 2600.0
 ARM_LEN = 1200.0
 
 # ---------------- NACA 4412 (finite TE for kernel stability) ---------------
@@ -114,6 +116,13 @@ def make_cup(dry=False):
     return cup
 
 # ---------------- generator pod with nose bearing blocks --------------------
+
+def make_generator():
+    # GB2208-class outrunner: Ø27.5 x 23 mm body, 3 mm shaft
+    body = cq.Workplane("XY").circle(27.5/2).extrude(23)
+    shaft = cq.Workplane("XY").circle(1.5).extrude(12).translate((0, 0, -12))
+    return body.union(shaft)
+
 def make_pod():
     # main barrel + tail cone
     barrel = cq.Workplane("XY").circle(POD_OD/2).extrude(POD_LEN)
@@ -204,20 +213,106 @@ def make_weed_guard():
 
 # ---------------- real sensor bodies (D04-D07) -----------------------------
 def make_sensors():
-    # all in cage-local coordinates, z 0..150, inside radius 61
-    ph = cq.Workplane("XY").circle(6).extrude(150).translate((38, 0, 0))
-    ntc = cq.Workplane("XY").circle(3).extrude(50).translate((0, -42, 20))
-    turb = cq.Workplane("XY").box(38, 28, 10).translate((0, 40, 70))
-    tds = cq.Workplane("XY").box(30, 8, 60).translate((-40, 0, 30))
-    prs = cq.Workplane("XY").box(15, 15, 3).translate((0, 0, 140))
-    return ph.union(ntc).union(turb).union(tds).union(prs)
+    # all in cage-local coordinates, inside radius 61 (cage inner wall)
+    # E201 pH electrode: Ø12.5 x 160 (LaskaKit spec)
+    ph = cq.Workplane("XY").circle(6.25).extrude(160).translate((38, 0, 0))
+    # SEN0237 DO probe: Ø12 x 130 galvanic
+    do = cq.Workplane("XY").circle(6).extrude(130).translate((-38, 0, 0))
+    # DS18B20 stainless probe: Ø6 x 50
+    ntc = cq.Workplane("XY").circle(3).extrude(50).translate((0, -44, 20))
+    # SEN0189 turbidity head: 38 x 28 x 10
+    turb = cq.Workplane("XY").box(38, 28, 10).translate((0, 36, 70))
+    # SEN0244 TDS probe board: 30 x 8 x 60
+    tds = cq.Workplane("XY").box(30, 8, 60).translate((0, 0, 60))
+    # MS5837-class carrier PCB 15 x 15 x 3 (level sensor, mounted through cage floor)
+    prs = cq.Workplane("XY").box(15, 15, 3).translate((22, -22, 6))
+    return ph.union(do).union(ntc).union(turb).union(tds).union(prs)
 
-# ---------------- pod sealing detail (C04, C07) ----------------------------
+
+def fit_report():
+    """Check every sensor envelope against the cage interior."""
+    inner_r = CAGE_OD / 2 - CAGE_WALL
+    items = {
+        "pH E201 (12.5x160)":   (6.25, 160, 38, 0),
+        "DO SEN0237 (12x130)":  (6.0, 130, -38, 0),
+        "DS18B20 (6x50)":       (3.0, 50, 0, -44),
+        "turbidity (38x28x10)": (19.0, 10, 0, 36),
+        "TDS board (30x8x60)":  (15.0, 60, 0, 0),
+        "level PCB (15x15x3)":  (10.6, 3, 22, -22),
+    }
+    print("\n  sensor fit inside cage (inner radius %.1f mm, length %.0f mm)" % (inner_r, CAGE_LEN))
+    ok = True
+    for name, (r, h, ox, oy) in items.items():
+        radial = (ox ** 2 + oy ** 2) ** 0.5 + r
+        fits_r = radial <= inner_r
+        fits_h = h <= CAGE_LEN
+        ok = ok and fits_r and fits_h
+        print("    %-24s radial %5.1f / %5.1f %s | length %3.0f / %3.0f %s"
+              % (name, radial, inner_r, "OK " if fits_r else "HIT",
+                 h, CAGE_LEN, "OK" if fits_h else "HIT"))
+    print("    RESULT:", "ALL FIT" if ok else "CONFLICT - change cage")
+    return ok
+
+
 def make_cage_adapter():
-    # transition cone between pod tail (Ø110) and sensor cage (Ø130)
-    return (cq.Workplane("XY").circle(55)
-            .workplane(offset=20).circle(65)
-            .loft(combine="s"))
+    # Ø110 -> Ø130 transition, 20 mm
+    return (cq.Workplane("XY").circle(55).workplane(offset=20).circle(65)
+            .loft(ruled=True))
+
+
+def _bolt(x, y, z, d=6, h=30, axis="Z"):
+    s = cq.Solid.makeCylinder(d / 2, h, cq.Vector(x, y, z),
+                              cq.Vector(0, 0, 1) if axis == "Z" else cq.Vector(1, 0, 0))
+    head = cq.Solid.makeCylinder(d * 0.85, 5, cq.Vector(x, y, z + h),
+                                 cq.Vector(0, 0, 1) if axis == "Z" else cq.Vector(1, 0, 0))
+    return cq.Workplane(obj=s).union(cq.Workplane(obj=head))
+
+
+def make_joints():
+    """Every junction gets visible hardware - nothing is 'just pushed in'."""
+    out = None
+
+    def add(shape):
+        nonlocal out
+        out = shape if out is None else out.union(shape)
+
+    # 1. dry box -> pole: saddle plate + U-bolt band around the pole
+    band = (cq.Workplane("XY").circle((POLE_OD + 10) / 2).circle(POLE_OD / 2 + 1)
+            .extrude(40).translate((0, 0, BOX_Z - 30)))
+    plate = cq.Workplane("XY").box(60, 190, 8).translate((40, 0, BOX_Z - 30))
+    add(band); add(plate)
+    for dy in (-70, 70):
+        add(_bolt(70, dy, BOX_Z - 30, 6, 26, "X"))
+
+    # 2. antenna -> pole: bracket + clamp
+    ant = (cq.Workplane("XY").circle((POLE_OD + 10) / 2).circle(POLE_OD / 2 + 1)
+           .extrude(24).translate((0, 0, POLE_TOP - 40)))
+    add(ant)
+    add(cq.Workplane("XY").box(40, 10, 6).translate((30, 0, POLE_TOP - 28)))
+    add(_bolt(45, 0, POLE_TOP - 28, 5, 22, "X"))
+
+    # 3. arm -> pole collar: gusset + 4 bolts
+    arm_z = 60 + 20 * math.sin(math.radians(85))
+    add(cq.Workplane("XY").box(34, 90, 26).translate((15, 0, arm_z)))
+    for dy in (-30, 30):
+        for dz in (-8, 8):
+            add(_bolt(32, dy, arm_z + dz, 8, 34, "X"))
+
+    # 4. drop tube -> arm end: elbow clamp, 2 bolts
+    elbow_z = 60 + ARM_LEN * math.tan(math.radians(5))
+    add(cq.Workplane("XY").circle(19).circle(14).extrude(26)
+        .translate((ARM_LEN - 13, 0, elbow_z)))
+    for dx in (-8, 8):
+        add(_bolt(ARM_LEN - 13 + dx, 0, elbow_z + 26, 6, 24, "Z"))
+
+    # 5. pod collar clamp: 4 bolts around the collar
+    for ang in (45, 135, 225, 315):
+        import math as _m
+        x = ARM_LEN + 63 * _m.cos(_m.radians(ang))
+        z = -420 + 63 * _m.sin(_m.radians(ang))
+        add(_bolt(x, 0, z, 6, 30, "Y"))
+
+    return out
 
 def make_pod_seal():
     # O-ring groove: annular cut at rim, 2.2 wide x 1.8 deep
@@ -282,7 +377,7 @@ Z_WETCUP  = 66    # wet magnet cup 66..80
 Z_POD     = 85    # pod: wall 80..85, barrel 85..205
 Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
 Z_ADAPTER = 205   # transition cone 205..225
-Z_CAGE    = 225   # cage 225..375
+Z_CAGE    = 225   # cage 225..425
 Z_GUARD   = -50   # weed guard ring, upstream of the blade plane
 
 parts["shaft"]       = make_shaft().translate((0,0,Z_SHAFT))
@@ -291,6 +386,8 @@ parts["magcup_wet"]  = make_cup().mirror("XZ").translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
 parts["magcup_dry"]  = make_cup().translate((0,0,Z_DRYCUP))
+parts["joints"] = make_joints()
+parts["generator"] = make_generator().translate((0,0,Z_POD+60))
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
 parts["sensors"]     = make_sensors().translate((0,0,Z_CAGE))
@@ -314,7 +411,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter"]
+             "wet_carrier","weed_guard","sensors","pod_seal","cage_adapter","generator","joints"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -374,4 +471,5 @@ assy.save(os.path.join(OUT, "probe_assembly.step"))
 print("\n=== part report ===")
 for r in report:
     print(f"  {r[0]:22s} valid={r[1]} closed={r[2]} vol_mm3={r[3]}")
+fit_report()
 print("saved assembly:", os.path.join(OUT, "probe_assembly.step"))
