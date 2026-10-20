@@ -27,6 +27,10 @@
   <h1>sub-mission</h1>
   <div><b>1</b> assembled &middot; <b>2</b> explode &middot; <b>3</b> wide explode</div>
   <div><b>d</b> drivetrain &middot; <b>s</b> bank structure &middot; <b>drag</b> orbit</div>
+  <div style="margin-top:9px">
+    <input id="slider" type="range" min="0" max="100" value="55" style="width:190px;vertical-align:middle">
+    <span id="exval" style="opacity:.75;margin-left:6px">0.85</span>
+  </div>
   <div id="mode" style="opacity:.6;margin-top:5px">view: drivetrain</div>
 </div>
 <div id="legend"></div>
@@ -48,11 +52,11 @@ const DRIVE = [
   ['rotor','rotor 3x NACA4412 D220','rotor'],
   ['shaft','wet shaft 316L','steel'],
   ['wet_carrier','carrier + PEEK bushings','steel'],
-  ['magnets_wet','10x N52 D10x5 - wet cup','magnet'],
-  ['magcup_wet','magnet cup A (wet)','asa'],
+  ['magnets_wet','8x N52 D10x5 - wet cup','magnet'],
+  ['magcup_wet','magnet cup A, D70 / 8 pockets','asa'],
   ['pod_seal','coupling wall 4 mm','asa'],
-  ['magcup_dry','magnet cup B (dry)','asa'],
-  ['magnets_dry','10x N52 D10x5 - dry cup','magnet'],
+  ['magcup_dry','magnet cup B, D70 / 8 pockets','asa'],
+  ['magnets_dry','8x N52 D10x5 - dry cup','magnet'],
   ['generator','generator GB2208','alu'],
   ['pod','pod shell OD110','asa'],
   ['cage_adapter','adapter OD110-130','asa'],
@@ -120,6 +124,7 @@ function add(list, group, axisKey) {
       geo.computeBoundingSphere();
       const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial(MATS[mat]));
       mesh.userData = {axisKey, index:i, centre:geo.boundingSphere.center.clone()};
+      mesh.name = name;
       group.add(mesh);
 
       const div = document.createElement('div');
@@ -139,7 +144,7 @@ function add(list, group, axisKey) {
 add(DRIVE, groupDrive, 'y');
 add(SITE, groupSite, 'z');
 
-let explode = 0.85;
+let explode = 0.55;
 let currentGroup = groupDrive;
 
 function computeOffsets(group, gap) {
@@ -188,13 +193,18 @@ function ready() {
   groupSite.position.set(-cc.x, -cc.y, -cc.z);
   groupSite.visible = false;
   computeOffsets(groupDrive, 18);
+  const byName = {};
+  groupDrive.children.forEach(m => { byName[m.name] = m; });
+  // keep each magnet ring right at the mouth of its own cup
+  byName.magnets_wet.userData.offset = byName.magcup_wet.userData.offset - 9;
+  byName.magnets_dry.userData.offset = byName.magcup_dry.userData.offset + 9;
   const mExp = location.search.match(/explode=([0-9.]+)/);
   if (mExp) explode = parseFloat(mExp[1]);
   if (location.search.includes('view=site')) {
     currentGroup = groupSite; groupSite.visible = true; groupDrive.visible = false;
     document.getElementById('mode').textContent = 'view: bank structure';
   }
-  layout();
+  setExplode(explode);
   document.getElementById('legend').innerHTML =
     [['asa','printed ASA'],['alu','aluminium'],['steel','stainless 316L'],
      ['magnet','N52 magnet'],['pcb','electronics'],['rubber','cable']]
@@ -222,7 +232,18 @@ function tick() {
 }
 tick();
 
-function setExplode(f) { explode = f; layout(); }
+function setExplode(f) {
+  explode = f;
+  const sl = document.getElementById('slider');
+  const lb = document.getElementById('exval');
+  if (sl && Math.abs(parseFloat(sl.value) / 100 - f) > 0.001) sl.value = Math.round(f * 100);
+  if (lb) lb.textContent = f.toFixed(2);
+  layout();
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'slider') setExplode(parseFloat(e.target.value) / 100);
+});
 
 addEventListener('keydown', e => {
   if (e.key === '1') setExplode(0.0);
