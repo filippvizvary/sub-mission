@@ -3,29 +3,26 @@
 Adds the phase-1 buying sheet to sub-mission_parts.xlsx.
 
 PARTS_LIST.csv carries a `phase` column:
-  1    = buy now (the order being placed)
-  2    = later phase (site structure, gateway, pH, DO, tooling)
-  cut  = dead line (superseded by the CAD or killed by a design decision)
+  1    = buy now       2 = later phase       cut = dead line, do not buy
 
-This sheet is the phase-1 order grouped by shop, with no spares added, so the
-total is what actually leaves the account. Shipping is NOT in the CSV, so it is
-estimated separately at the bottom.
+The sheet is grouped by shop (that is how it gets ordered). The CSV stays the
+machine source; this workbook is the document you read and hand over.
+Shipping is not in the CSV, so it is estimated at the bottom.
 
 Run after build_parts_xlsx.py:
   PYTHONPATH=~/.local/lib/python3.14/site-packages /usr/bin/python3 tools/build_order_v1.py
 """
 import csv
-from collections import OrderedDict, defaultdict
+import math
+from collections import defaultdict
 
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
 
 XLSX = "/home/filip/sub-mission/docs/sub-mission_parts.xlsx"
 CSV = "/home/filip/sub-mission/docs/PARTS_LIST.csv"
 SHEET = "Order v1 (now)"
-
-SHIPPING_EST = 25.0          # EUR, ~6 shops, nothing in the CSV covers it
+SHIPPING_EST = 25.0
 
 SHOPS = [("tme.eu", "TME"), ("sensorsone", "sensorsone (quote)"),
          ("techfun", "techfun.sk"), ("prusa", "Prusa3D"),
@@ -36,9 +33,10 @@ SHOPS = [("tme.eu", "TME"), ("sensorsone", "sensorsone (quote)"),
          ("local", "local / shop"), ("printed", "printed in-house"),
          ("in CAD", "in CAD")]
 
+DARK, MID, LIGHT, TOTAL = "1F3864", "2E5C8A", "EAF0F8", "C6E0B4"
 thin = Side(style="thin", color="BFBFBF")
 BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
-C_HEAD, C_SHOP, C_TOT = "1F3864", "2E5C8A", "C6E0B4"
+MONEY = '#,##0.00'
 
 
 def n(x):
@@ -56,97 +54,155 @@ def shop_of(src):
     return "local / shop"
 
 
+def height_for(text, width_chars, base=13.5):
+    lines = max(1, math.ceil(len(str(text or "")) / max(width_chars, 8)))
+    return base * lines + 2
+
+
 def main():
     rows = list(csv.DictReader(open(CSV, encoding="utf-8")))
     p1 = [r for r in rows if r.get("phase") == "1"]
-
     by_shop = defaultdict(list)
-    by_id = {}
     for r in p1:
-        by_id[r["id"]] = r
         by_shop[shop_of(r["source"])].append(r)
+
+    goods = sum(n(r["price_eur"]) * n(r["qty_probe"]) for r in p1)
 
     wb = load_workbook(XLSX)
     if SHEET in wb.sheetnames:
         del wb[SHEET]
     ws = wb.create_sheet(SHEET, 0)
+    ws.sheet_view.showGridLines = False
 
-    ws["A1"] = "sub-mission phase 1 order - %s" % "PARTS_LIST.csv, phase=1"
-    ws["A1"].font = Font(bold=True, size=14, color=C_HEAD)
-    ws["A2"] = ("Grouped by shop because that is how it gets ordered. "
-                "No spares added here; shipping is not in the CSV and is "
-                "estimated at the bottom.")
-    ws["A2"].font = Font(italic=True, size=9)
+    ws.merge_cells("A1:F1")
+    c = ws["A1"]
+    c.value = "sub-mission - phase 1 order"
+    c.font = Font(bold=True, size=16, color="FFFFFF")
+    c.fill = PatternFill("solid", fgColor=DARK)
+    c.alignment = Alignment(vertical="center", indent=1)
+    ws.row_dimensions[1].height = 30
 
-    hdr = ["ID", "Part", "Spec", "Qty", "Unit EUR", "Total EUR", "Status", "Notes"]
-    row = 4
+    ws.merge_cells("A2:F2")
+    c = ws["A2"]
+    c.value = ("Grouped by shop, because that is how the order is placed. No spares added. "
+               "Shipping is not in the parts list and is estimated at the bottom.")
+    c.font = Font(italic=True, size=9, color="404040")
+    c.alignment = Alignment(vertical="center", indent=1)
+    ws.row_dimensions[2].height = 22
+
+    ws.merge_cells("A3:F3")
+    c = ws["A3"]
+    c.value = ("%d lines      goods %.2f EUR      shipping est. %.2f EUR      "
+               "LANDED %.2f EUR" % (len(p1), goods, SHIPPING_EST, goods + SHIPPING_EST))
+    c.font = Font(bold=True, size=11, color=DARK)
+    c.fill = PatternFill("solid", fgColor=TOTAL)
+    c.alignment = Alignment(vertical="center", indent=1)
+    ws.row_dimensions[3].height = 26
+
+    row = 5
     for sh in sorted(by_shop, key=lambda k: -sum(n(x["price_eur"]) * n(x["qty_probe"])
                                                  for x in by_shop[k])):
         items = sorted(by_shop[sh], key=lambda x: -n(x["price_eur"]) * n(x["qty_probe"]))
         sub = sum(n(x["price_eur"]) * n(x["qty_probe"]) for x in items)
-        ws.cell(row=row, column=1, value="%s   -   %.2f EUR" % (sh.upper(), sub))
-        for c in range(1, 9):
-            cell = ws.cell(row=row, column=c)
-            cell.fill = PatternFill("solid", fgColor=C_SHOP)
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.border = BORDER
+
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+        cell = ws.cell(row=row, column=1, value=sh.upper())
+        cell.font = Font(bold=True, size=11, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor=MID)
+        cell.alignment = Alignment(vertical="center", indent=1)
+        tot = ws.cell(row=row, column=6, value=round(sub, 2))
+        tot.number_format = MONEY
+        tot.font = Font(bold=True, size=11, color="FFFFFF")
+        tot.fill = PatternFill("solid", fgColor=MID)
+        tot.alignment = Alignment(horizontal="right", vertical="center")
+        ws.row_dimensions[row].height = 20
         row += 1
-        for c, h in enumerate(hdr, start=1):
-            cell = ws.cell(row=row, column=c, value=h)
-            cell.fill = PatternFill("solid", fgColor="D9E2F3")
-            cell.font = Font(bold=True, size=9)
+
+        for col, h in enumerate(["ID", "Part", "Specification / note", "Qty",
+                                 "Unit EUR", "Total EUR"], start=1):
+            cell = ws.cell(row=row, column=col, value=h)
+            cell.font = Font(bold=True, size=9, color=DARK)
+            cell.fill = PatternFill("solid", fgColor=LIGHT)
             cell.border = BORDER
+            cell.alignment = Alignment(vertical="center",
+                                       horizontal="right" if col > 3 else "left")
         row += 1
-        for x in items:
+
+        for i, x in enumerate(items):
             q, p = n(x["qty_probe"]), n(x["price_eur"])
-            vals = [x["id"], x["part"], x["spec"], int(q), p, round(q * p, 2),
-                    x["status"], x["notes"]]
-            for c, v in enumerate(vals, start=1):
-                cell = ws.cell(row=row, column=c, value=v)
+            spec = x["spec"]
+            if x["notes"]:
+                spec = "%s  -  %s" % (spec, x["notes"])
+            vals = [x["id"], x["part"], spec, int(q), p, round(q * p, 2)]
+            ws.row_dimensions[row].height = height_for(spec, 74)
+            for col, v in enumerate(vals, start=1):
+                cell = ws.cell(row=row, column=col, value=v)
                 cell.border = BORDER
                 cell.font = Font(size=9)
-                cell.alignment = Alignment(vertical="top", wrap_text=c in (3, 8))
-                if c in (5, 6):
-                    cell.number_format = '#,##0.00'
+                cell.alignment = Alignment(vertical="top", wrap_text=(col == 3),
+                                           horizontal="right" if col > 3 else "left")
+                if col in (5, 6):
+                    cell.number_format = MONEY
+                if i % 2:
+                    cell.fill = PatternFill("solid", fgColor="F7F9FC")
             row += 1
         row += 1
 
-    goods = sum(n(r["price_eur"]) * n(r["qty_probe"]) for r in p1)
-    row += 1
-    for label, val, bold in (("GOODS SUBTOTAL", goods, True),
-                             ("shipping, estimated (not in CSV)", SHIPPING_EST, False),
-                             ("LANDED", goods + SHIPPING_EST, True)):
-        ws.cell(row=row, column=5, value=label).font = Font(bold=bold, size=10)
-        cell = ws.cell(row=row, column=6, value=round(val, 2))
-        cell.number_format = '#,##0.00 "EUR"'
-        cell.font = Font(bold=bold, size=10)
-        cell.fill = PatternFill("solid", fgColor=C_TOT)
+    for label, val, strong in (("GOODS", goods, False),
+                               ("shipping, estimated", SHIPPING_EST, False),
+                               ("LANDED TOTAL", goods + SHIPPING_EST, True)):
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+        cell = ws.cell(row=row, column=1, value=label)
+        cell.alignment = Alignment(horizontal="right", vertical="center", indent=1)
+        cell.font = Font(bold=True, size=12 if strong else 10)
+        cell.fill = PatternFill("solid", fgColor=TOTAL if strong else "F2F2F2")
         cell.border = BORDER
+        tot = ws.cell(row=row, column=6, value=round(val, 2))
+        tot.number_format = MONEY
+        tot.font = Font(bold=True, size=12 if strong else 10)
+        tot.fill = PatternFill("solid", fgColor=TOTAL if strong else "F2F2F2")
+        tot.alignment = Alignment(horizontal="right", vertical="center")
+        tot.border = BORDER
+        ws.row_dimensions[row].height = 22 if strong else 18
         row += 1
 
+    row += 2
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+    cell = ws.cell(row=row, column=1, value="NOT IN THIS ORDER")
+    cell.font = Font(bold=True, size=12, color="FFFFFF")
+    cell.fill = PatternFill("solid", fgColor=DARK)
+    cell.alignment = Alignment(vertical="center", indent=1)
+    ws.row_dimensions[row].height = 22
     row += 1
-    ws.cell(row=row, column=1, value="NOT in this order").font = Font(bold=True, size=11)
-    row += 1
-    for phase, title in (("2", "phase 2 - later"),
-                         ("cut", "cut - dead line, do not buy")):
-        ids = [r for r in rows if r.get("phase") == phase]
-        ws.cell(row=row, column=1, value=title).font = Font(bold=True, size=9)
+
+    for phase, title, colr in (("2", "phase 2 - buy later", "7F7F7F"),
+                               ("cut", "cut - dead line, do not buy", "C00000")):
+        cell = ws.cell(row=row, column=1, value=title.upper())
+        cell.font = Font(bold=True, size=10, color=colr)
         row += 1
-        for r in ids:
-            val = "   %-4s %-46s %8s EUR" % (r["id"], r["part"][:46],
-                                             r["price_eur"] if r["price_eur"] not in ("", "-") else "-")
-            ws.cell(row=row, column=1, value=val).font = Font(size=9)
-            ws.cell(row=row, column=6, value=r["notes"][:90]).font = Font(size=8, italic=True)
+        for r in [x for x in rows if x.get("phase") == phase]:
+            price = r["price_eur"] if r["price_eur"] not in ("", "-") else "-"
+            ws.cell(row=row, column=1, value=r["id"]).font = Font(size=9)
+            ws.cell(row=row, column=2, value=r["part"][:52]).font = Font(size=9)
+            ws.cell(row=row, column=3, value=r["notes"][:150]).font = Font(size=8, italic=True)
+            cell = ws.cell(row=row, column=5, value=price)
+            cell.font = Font(size=9, color=colr)
+            cell.alignment = Alignment(horizontal="right")
+            ws.row_dimensions[row].height = max(13, height_for(r["notes"], 105))
             row += 1
         row += 1
 
-    for w, col in zip([6, 30, 52, 6, 9, 10, 11, 62], "ABCDEFGH"):
+    for col, w in zip("ABCDEF", [7, 26, 76, 5, 10, 11]):
         ws.column_dimensions[col].width = w
     ws.freeze_panes = "A5"
-    ws.page_setup.orientation = "landscape"
-    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    ws.page_setup.orientation = "portrait"
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    ws.print_options.horizontalCentered = True
+    ws.page_margins.left = ws.page_margins.right = 0.4
+    ws.page_margins.top = ws.page_margins.bottom = 0.5
 
     wb.save(XLSX)
     print("phase 1: %d lines, goods %.2f + shipping %.2f = %.2f EUR"
