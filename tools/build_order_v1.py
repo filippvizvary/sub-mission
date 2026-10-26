@@ -54,6 +54,17 @@ def shop_of(src):
     return "local / shop"
 
 
+def qty_of(r):
+    return sum(n(r.get(k, 0)) for k in ("qty_probe", "qty_site", "qty_gateway"))
+
+
+def cost_of(r):
+    """Owned items stay on the list but cost nothing."""
+    if (r.get("owned") or "").upper() == "YES":
+        return 0.0
+    return qty_of(r) * n(r["price_eur"])
+
+
 def height_for(text, width_chars, base=13.5):
     lines = max(1, math.ceil(len(str(text or "")) / max(width_chars, 8)))
     return base * lines + 2
@@ -66,7 +77,7 @@ def main():
     for r in p1:
         by_shop[shop_of(r["source"])].append(r)
 
-    goods = sum(n(r["price_eur"]) * n(r["qty_probe"]) for r in p1)
+    goods = sum(cost_of(r) for r in p1)
 
     wb = load_workbook(XLSX)
     if SHEET in wb.sheetnames:
@@ -100,10 +111,9 @@ def main():
     ws.row_dimensions[3].height = 26
 
     row = 5
-    for sh in sorted(by_shop, key=lambda k: -sum(n(x["price_eur"]) * n(x["qty_probe"])
-                                                 for x in by_shop[k])):
-        items = sorted(by_shop[sh], key=lambda x: -n(x["price_eur"]) * n(x["qty_probe"]))
-        sub = sum(n(x["price_eur"]) * n(x["qty_probe"]) for x in items)
+    for sh in sorted(by_shop, key=lambda k: -sum(cost_of(x) for x in by_shop[k])):
+        items = sorted(by_shop[sh], key=lambda x: -cost_of(x))
+        sub = sum(cost_of(x) for x in items)
 
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
         cell = ws.cell(row=row, column=1, value=sh.upper())
@@ -129,11 +139,14 @@ def main():
         row += 1
 
         for i, x in enumerate(items):
-            q, p = n(x["qty_probe"]), n(x["price_eur"])
+            q, p = qty_of(x), n(x["price_eur"])
+            owned = (x.get("owned") or "").upper() == "YES"
             spec = x["spec"]
             if x["notes"]:
                 spec = "%s  -  %s" % (spec, x["notes"])
-            vals = [x["id"], x["part"], spec, int(q), p, round(q * p, 2)]
+            if owned:
+                spec = "MAM  |  " + spec
+            vals = [x["id"], x["part"], spec, int(q), p, round(cost_of(x), 2)]
             ws.row_dimensions[row].height = height_for(spec, 74)
             for col, v in enumerate(vals, start=1):
                 cell = ws.cell(row=row, column=col, value=v)
@@ -143,7 +156,9 @@ def main():
                                            horizontal="right" if col > 3 else "left")
                 if col in (5, 6):
                     cell.number_format = MONEY
-                if i % 2:
+                if owned:
+                    cell.fill = PatternFill("solid", fgColor="E2EFDA")
+                elif i % 2:
                     cell.fill = PatternFill("solid", fgColor="F7F9FC")
             row += 1
         row += 1
