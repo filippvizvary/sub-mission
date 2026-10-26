@@ -13,9 +13,9 @@ B03,coupling,Separation wall,D106 x 4 mm - RECOMMENDED integral with the pod bul
 B04,coupling,Potting compound,3M Scotch-Weld DP270 black 25ml,1,0,0,techfun.sk,14.0,verified,,1,NO
 C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,printed in-house,-,printed,in model as pod,1,NO
 C02,pod,Tail cone,printed integral,1,0,0,printed in-house,-,printed,,1,NO
-C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,grease Molykote 111,2,NO
+C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,zadny spoj podu - bez neho sa pri ponoreni natecie,1,NO
 C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,todo,NOT YET IN MODEL - add to pod,1,NO
-C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,,2,NO
+C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,drzi zadny spoj; integralny bulkhead riesi len prednu stranu,1,NO
 C06,pod,Desiccant,5g silica gel with indicator,2,0,0,local shop,2.0,verified,replace at service,1,NO
 C07,pod,Cable gland wet side,Lapp Skintop MS-M 12x1.5 + Scotchcast 2131,1,0,0,tme.eu,12.0,verified,NOT YET IN MODEL - add boss,1,NO
 C08,pod,Generator,T-Motor GB2208 KV128 or X-TEAM XTG3506 (24N22P 6ohm w/ AS5048A encoder),1,0,0,sk.x-teamrc.com / tmotor,26.0,verified,"TEST BEZ GENERATORA: klietka + senzory stacia, generator je dalsi nakup; XTG3506 preferred: encoder = free RPM/flow",2,NO
