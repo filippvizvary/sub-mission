@@ -36,9 +36,9 @@ F01,interface,Cable,8x0.5mm2 PUR jacket submersible 6m,1,0,0,tme.eu,35.0,verifie
 F02,interface,Bulkhead connector,potted gland entry (NOT SubConn),1,0,0,tme.eu,12.0,verified,cost cut from 85 EUR wet-mate,1,NO
 G01,drybox,Enclosure,IP68 ready-made 190x130x80mm,1,0,0,tme.eu,22.0,verified,in model as site_box,1,NO
 G02,drybox,MCU (NOT USED in simple build),LaskaKit ESP32-S3-DEVKit,1,0,0,laskakit.cz,0.0,verified,DROPPED: Wio-E5 mini is the single brain (MCU+LoRa). Bring back only if we need more GPIO/dual-core.,cut,NO
-G03,drybox,MCU + radio (single board),"Seeed Wio-E5 mini: STM32WLE5JC Cortex-M4 + SX126x LoRa 868 MHz, USB-C, ADC/I2C/UART/GPIO",1,0,0,techfun.sk,15.0,verified,"does EVERYTHING in the probe: sensors + LoRa + duty cycle. u.FL/SMA antenna connector - check which, both work",1,NO
-G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,1,0,1,techfun.sk,6.0,verified,"2 ks: jeden na sondu (SMA na doske), jeden na gateway",1,NO
-G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,1,0,0,tme.eu,3.0,verified,u.FL -> SMA pigtail; skip if your board ships with SMA already,1,NO
+G03,drybox,MCU + radio (single board),"Seeed Wio-E5 mini: STM32WLE5JC Cortex-M4 + SX126x LoRa 868 MHz, USB-C, ADC/I2C/UART/GPIO",1,0,0,seeedstudio.com / openelab.io (EU),24.00,quote,"NIE je v techfun ani laskakit (overene 26.10.2026); Seeed $24.99, OpenELAB EU ~22.85; kazda doska obsahuje EU868 antenu",1,NO
+G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,0,0,0,techfun.sk,6.0,verified,v baleni kazdej Wio-E5 je EU868 antena - samostatne netreba; drzat ako zalohu,2,NO
+G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,0,0,0,tme.eu,3.0,verified,"netreba: doska ma SMA, antena sa skrutkuje priamo; pigtail len ak sa ide cez bulkhead",2,NO
 G06,drybox,Boost harvester,LTC3105EFE MPPT boost,1,0,0,tme.eu,5.0,verified,needed when EMF below bus,2,NO
 G07,drybox,Buck,TPS62A02DRC step-down,1,0,0,tme.eu,2.5,verified,,2,NO
 G08,drybox,Rectifier,Nexperia PMEG2010AEB 20V 1A SOD-523,6,0,0,tme.eu,0.15,verified,452k in stock,2,NO
@@ -64,7 +64,7 @@ H10,site,Guy anchor,300mm ground screw x2,0,1,0,hornbach,10.0,verified,,2,NO
 H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,0,1,0,tme.eu,4.0,verified,theft/flood retention,2,NO
 H12,site,Security fastener,one-way Torx M5 + steel band for box,0,1,0,tme.eu,4.0,verified,anti-theft,2,NO
 H13,site,Site label,engraved plate with project + contact,0,1,0,local print shop,3.0,verified,anti-theft by making it unsellable,2,NO
-I01,gateway,Gateway radio (single-channel),Wio-E5 mini = STM32WLE5JC + USB-C + CH340; plugs straight into RPi USB,0,0,1,techfun.sk,18.0,verified,druha Wio-E5 do USB na Raspberry Pi - bez nej nema kto prijimat,1,NO
+I01,gateway,Gateway radio (single-channel),Wio-E5 mini = STM32WLE5JC + USB-C + CH340; plugs straight into RPi USB,0,0,1,seeedstudio.com / openelab.io (EU),24.00,quote,"NIE je v techfun ani laskakit (overene 26.10.2026); Seeed $24.99, OpenELAB EU ~22.85; kazda doska obsahuje EU868 antenu",1,NO
 I02,gateway,Compute,Raspberry Pi 4 4GB + PSU + SD,0,0,1,local,70.0,verified,"YOU ALREADY HAVE THIS - reuse, zero soldering; runs the gateway service",2,NO
 I03,gateway,Antenna,MikroTik 868_Omni 6.5dBi IP66 862-876MHz + mast kit,0,0,1,i4wifi.cz,45.0,quote,range-critical: gateway antenna gain + mast height set the link,2,NO
 I04,gateway,Enclosure,IP65 box + PoE injector,0,0,1,tme.eu,35.0,verified,,2,NO
