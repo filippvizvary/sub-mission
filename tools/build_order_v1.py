@@ -156,6 +156,9 @@ def main():
                                            horizontal="right" if col > 3 else "left")
                 if col in (5, 6):
                     cell.number_format = MONEY
+                if col == 2 and x.get("link"):
+                    cell.hyperlink = x["link"]
+                    cell.font = Font(size=9, color="0563C1", underline="single")
                 if owned:
                     cell.fill = PatternFill("solid", fgColor="E2EFDA")
                 elif i % 2:
