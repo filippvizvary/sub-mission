@@ -1,83 +1,83 @@
-id,subsystem,part,spec,qty_probe,qty_site,qty_gateway,source,price_eur,status,notes
-A01,rotor,Blade,triple-blade rotor blade NACA4412 D220mm root pitch 28deg tip 2deg,3,0,0,printed in-house,-,printed,ASA or ASA-CF; 6 perimeters; epoxy coat; spare blade = fuse for branch strike
-A02,rotor,Hub,Ø64x46mm with 2x M4 heat-set inserts and Ø5 H7 shaft bore,1,0,0,printed in-house,-,printed,brass inserts M4 from TME
-A03,rotor,Wet shaft,316L Ø5 h6 x 115mm ground; 2 flats each end,1,0,0,nerezmaterial.cz,2.6,verified,3m bar 63.1 CZK makes ~26 shafts
-A04,rotor,Wet bearing,igus iglidur J plain bearing JSM-0507-05 5x7x5mm,2,0,0,tme.eu,1.18,verified,83 pcs in stock; JFM-0507-05 flanged 1.48 USD alt
-A05,rotor,Bearing carrier tube,316L Ø12xØ8x55mm,1,0,0,nerezmaterial.cz,1.2,quote,cut from Ø12 bar stock
-A06,rotor,Set screw,M4x8 316SS cup point ISO 4029,2,0,0,tme.eu,1.0,verified,
-A07,rotor,Weed guard ring,Ø250 printed ring + 3 struts 40mm upstream of blade plane,1,0,0,printed in-house,-,printed,in model as weed_guard
-A08,rotor,Blade safety retainer,3mm stainless lanyard + crimp ferrule,3,0,0,tme.eu,2.0,verified,keeps detached blade from leaving
-B01,coupling,Magnet,N52 Ø8x5 axially magnetised canned 316L or epoxy,16,0,0,magsy.sk / supermagneticshop.com,0.30,verified,~0.30 EUR at 51+ pcs canned; bare N52 must not touch water
-B02,coupling,Magnet cup,Ø48 rim potted magnets ASA,2,0,0,printed in-house,-,printed,in model as magcup
-B03,coupling,Separation wall,Ø106x5mm POM-C machined or PC-blend printed; integral with pod nose,1,0,0,nerezmaterial.cz / printed,-,quote,MUST be solid 5mm; no penetration
-B04,coupling,Potting compound,3M Scotch-Weld DP270 black 25ml,1,0,0,techfun.sk,14.0,verified,
-C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,printed in-house,-,printed,in model as pod
-C02,pod,Tail cone,printed integral,1,0,0,printed in-house,-,printed,
-C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,grease Molykote 111
-C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,todo,NOT YET IN MODEL - add to pod
-C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,
-C06,pod,Desiccant,5g silica gel with indicator,2,0,0,local,2.0,verified,replace at service
-C07,pod,Cable gland wet side,Lapp Skintop MS-M 12x1.5 + Scotchcast 2131,1,0,0,tme.eu,12.0,verified,NOT YET IN MODEL - add boss
-C08,pod,Generator,T-Motor GB2208 KV128 or X-TEAM XTG3506 (24N22P 6ohm w/ AS5048A encoder),1,0,0,sk.x-teamrc.com / tmotor,26.0,verified,XTG3506 preferred: encoder = free RPM/flow
-C09,pod,Generator mount,printed cradle + 4x M3x8 A4,1,0,0,printed + tme,1.0,printed,
-D01,sensors,pH electrode,DFRobot SEN0161-V2 Gravity pH kit + E201 BNC probe,1,0,0,techfun.sk,39.0,verified,OPTIONAL per site; 14-30 day service; +-0.1 pH after 2-pt cal
-D02,sensors,pH spare electrode,E201-C BNC,2,0,0,techfun.sk,9.0,verified,consumable
-D03,sensors,pH buffer,2x250ml pH7 + pH10,1,0,0,techfun.sk,12.0,verified,consumable
-D04,sensors,Temperature,DS18B20 waterproof 1m cable,1,0,0,techfun.sk,5.0,verified,in model as sensor_ntc
-D09,sensors,Dissolved oxygen kit,"DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L, BNC probe, 2m cable",1,0,0,global-ic.sk / botland.cz,175.0,verified,HIGHEST-VALUE channel (Budca = hypoxia); membrane 1-2 months in muddy water; 0.5M NaOH filling solution NOT shipped by air - source locally
-D05,sensors,Level / stage probe,"Submersible IP68 316L, 0-1 mH2O, 0.5-4.5V out, 5m cable, permanent immersion rated",1,0,0,TME / sensorsone (quote),110.0,quote,"MS5837-30BA REJECTED: gel element must be dried daily, 24h max submersion"
-D06,sensors,EC/TDS,DFRobot SEN0244 Gravity analog TDS module + probe,1,0,0,tme.eu,14.0,verified,"+-10% FS is the weakest sensor; use as trend indicator, site-calibrate"
-D07,sensors,Turbidity,DFRobot SEN0189 (0-4.5V analog),1,0,0,techfun.sk,12.45,verified,6 in stock; in model as sensor_turb
-D08,sensors,Sensor cable,4x2x0.5mm shielded PUR outdoor,1,0,0,tme.eu,20.0,verified,
-E01,cage,Sensor cage,Ø130x150 printed ASA 12 slots,1,0,0,printed in-house,-,printed,in model as cage
-E02,cage,Cage fasteners,M3x10 A4 + nylok,1,0,0,tme.eu,6.0,verified,
-E03,cage,Sensor holders,printed clips for pH/TDS/turbidity/NTC/MS5837,5,0,0,printed in-house,-,printed,in model as sensor bodies
-F01,interface,Cable,8x0.5mm2 PUR jacket submersible 6m,1,0,0,tme.eu,35.0,verified,
-F02,interface,Bulkhead connector,potted gland entry (NOT SubConn),1,0,0,tme.eu,12.0,verified,cost cut from 85 EUR wet-mate
-G01,drybox,Enclosure,IP68 ready-made 190x130x80mm,1,0,0,tme.eu,22.0,verified,in model as site_box
-G02,drybox,MCU (NOT USED in simple build),LaskaKit ESP32-S3-DEVKit,1,0,0,laskakit.cz,0.0,verified,DROPPED: Wio-E5 mini is the single brain (MCU+LoRa). Bring back only if we need more GPIO/dual-core.
-G03,drybox,MCU + radio (single board),"Seeed Wio-E5 mini: STM32WLE5JC Cortex-M4 + SX126x LoRa 868 MHz, USB-C, ADC/I2C/UART/GPIO",1,0,0,techfun.sk,15.0,verified,"does EVERYTHING in the probe: sensors + LoRa + duty cycle. u.FL/SMA antenna connector - check which, both work"
-G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,1,0,0,neven.cz,6.0,verified,149 CZK
-G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,1,0,0,tme.eu,3.0,verified,u.FL -> SMA pigtail; skip if your board ships with SMA already
-G06,drybox,Boost harvester,LTC3105EFE MPPT boost,1,0,0,tme.eu,5.0,verified,needed when EMF below bus
-G07,drybox,Buck,TPS62A02DRC step-down,1,0,0,tme.eu,2.5,verified,
-G08,drybox,Rectifier,Nexperia PMEG2010AEB 20V 1A SOD-523,6,0,0,tme.eu,0.15,verified,452k in stock
-G09,drybox,Clamp,TL431LIAQ + MJD127T4G + PWR263S 3.3R dump,1,0,0,tme.eu,4.0,verified,overvoltage protection
-G10,drybox,Supercap,Eaton XLR-4R0507 LIC 500F 4.0V,1,0,0,tme.eu,11.0,quote,NO coin-cell EDLC (50ohm ESR kills TX)
-G11,drybox,Voltage supervisor,TLV840 nanopower,1,0,0,tme.eu,1.5,verified,gates buck at 4.8V
-G12,drybox,Load switch,TPS22860 x2 for pH/EC sequencing,2,0,0,tme.eu,1.0,verified,removes ground-loop need
-G13,drybox,Barometer,BME280 module outside potting in vented sub-box,1,0,0,laskakit.cz,6.0,verified,pressure reference for MS5837
-G14,drybox,PCB,custom 2-layer 60x80mm,1,0,0,jlcpcb,3.0,quote,panel of 10 amortises
-G15,drybox,Connectors,JST-PH/XH assortment + crimps,1,0,0,laskakit.cz,10.0,verified,
-G16,drybox,Protection,Fuse 0.5A + TVS + ESD array,1,0,0,tme.eu,6.0,verified,
-G17,drybox,Cable glands,M12 IP68 potted x3,3,0,0,tme.eu,3.0,verified,
-H01,site,Ground screw anchor,M68 x 800mm solar-fence ground screw,0,1,0,hornbach,25.0,verified,1-2kN lateral - covers flood case
-H02,site,Pole,scaffold tube Ø48.3x3.2 x 3000mm galvanised,0,1,0,stavebniny,18.0,verified,removable mast pinned into receiver
-H03,site,Receiver sleeve,Ø52 tube 300mm + pin holes,0,1,0,metal shop,8.0,quote,pinned mast interface
-H04,site,Arm tube,alu Ø28x1.5 x 1300mm,0,1,0,hornbach,9.0,verified,
-H05,site,Drop tube,alu Ø22x1.5 x 900mm,0,1,0,hornbach,6.0,verified,
-H06,site,Hinge collar,printed ASA + M8 A4 bolt,0,1,0,printed + tme,3.0,printed,
-H07,site,Shear pin,M4 316SS pin + 2 spares on pole collar,0,1,0,tme.eu,1.0,verified,releases pod on >150N debris hit
-H08,site,Yaw strut,alu Ø22x600mm + 2 clamps,0,1,0,hornbach,5.0,verified,anti-flutter
-H09,site,Guy line,3mm Dyneema 2x4m + turnbuckles,0,1,0,tme.eu,9.0,verified,45deg up/downstream
-H10,site,Guy anchor,300mm ground screw x2,0,1,0,hornbach,10.0,verified,
-H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,0,1,0,tme.eu,4.0,verified,theft/flood retention
-H12,site,Security fastener,one-way Torx M5 + steel band for box,0,1,0,tme.eu,4.0,verified,anti-theft
-H13,site,Site label,engraved plate with project + contact,0,1,0,local print shop,3.0,verified,anti-theft by making it unsellable
-I01,gateway,Gateway radio (single-channel),Wio-E5 mini = STM32WLE5JC + USB-C + CH340; plugs straight into RPi USB,0,0,1,rakwireless reseller,18.0,verified,same board as G03; USB-C straight into the Pi; runs the packet listener
-I02,gateway,Compute,Raspberry Pi 4 4GB + PSU + SD,0,0,1,local,70.0,verified,"YOU ALREADY HAVE THIS - reuse, zero soldering; runs the gateway service"
-I03,gateway,Antenna,MikroTik 868_Omni 6.5dBi IP66 862-876MHz + mast kit,0,0,1,i4wifi.cz,45.0,quote,range-critical: gateway antenna gain + mast height set the link
-I04,gateway,Enclosure,IP65 box + PoE injector,0,0,1,tme.eu,35.0,verified,
-I05,gateway,Mast,3m alu mast + wall bracket,0,0,1,hornbach,30.0,verified,height sets range
-I06,gateway,Concentrator upgrade (optional),RAK2287 SX1302 mini-PCIe MODULE + RAK2287 Pi HAT (module alone is unusable - RPi has no mini-PCIe),0,0,1,rakwireless reseller,145.0,quote,Only for multi-SF / multi-channel / public TTN. Single-channel Wio-E5 gateway is enough for our 20 nodes.
-J01,consumable,Filament ASA,Prusament ASA 850g,1,0,0,prusa3d.com,32.0,verified,
-J02,consumable,Filament PC Blend,Prusament PC Blend 970g (for wall/structural),1,0,0,prusa3d.com,40.0,verified,
-J03,consumable,Epoxy barrier,West System 105 + 206,1,0,0,techfun.sk,18.0,verified,
-J04,consumable,Conformal coat,Electrolube acrylic 200ml,1,0,0,tme.eu,14.0,verified,
-J05,consumable,Silicone grease,Molykote 111 100g,1,0,0,tme.eu,9.0,verified,
-J06,consumable,Threadlocker,Loctite 243 + 406,1,0,0,tme.eu,11.0,verified,
-J07,consumable,Heat-set inserts,M3/M4 brass assortment,1,0,0,tme.eu,6.0,verified,
-J08,consumable,O-ring kit,NBR metric assortment,1,0,0,tme.eu,12.0,verified,
-K01,tooling,Vacuum chamber,Bel-Art F42025 + gauge + pump,1,0,0,tme.eu,85.0,verified,acceptance test rig (one-off)
-K02,tooling,Torque driver,Wiha 28506 1.2Nm,1,0,0,tme.eu,40.0,verified,one-off
-K03,tooling,Spring balance,0-5N for coupling slip jig,1,0,0,local,5.0,verified,one-off
+id,subsystem,part,spec,qty_probe,qty_site,qty_gateway,source,price_eur,status,notes,phase
+A01,rotor,Blade,triple-blade rotor blade NACA4412 D220mm root pitch 28deg tip 2deg,3,0,0,printed in-house,-,printed,ASA or ASA-CF; 6 perimeters; epoxy coat; spare blade = fuse for branch strike,1
+A02,rotor,Hub,Ø64x46mm with 2x M4 heat-set inserts and Ø5 H7 shaft bore,1,0,0,printed in-house,-,printed,brass inserts M4 from TME,1
+A03,rotor,Wet shaft,316L Ø5 h6 x 115mm ground; 2 flats each end,1,0,0,nerezmaterial.cz,2.6,verified,3m bar 63.1 CZK makes ~26 shafts,1
+A04,rotor,Wet bearing,igus iglidur J plain bearing JSM-0507-05 5x7x5mm,2,0,0,tme.eu,1.18,verified,83 pcs in stock; JFM-0507-05 flanged 1.48 USD alt,1
+A05,rotor,Bearing carrier tube,316L Ø12xØ8x55mm,1,0,0,nerezmaterial.cz,1.2,quote,CUT: superseded - the bearing carrier is the printed spider (wet_carrier),cut
+A06,rotor,Set screw,M4x8 316SS cup point ISO 4029,2,0,0,tme.eu,1.0,verified,,1
+A07,rotor,Weed guard ring,Ø250 printed ring + 3 struts 40mm upstream of blade plane,1,0,0,printed in-house,-,printed,CUT: killed by design - replaced by the nose cone D64->D12; a ring on struts upstream is an algae scythe,cut
+A08,rotor,Blade safety retainer,3mm stainless lanyard + crimp ferrule,3,0,0,tme.eu,2.0,verified,"CUT: killed by design - a tether on a 110 mm blade is a flail, and the hole is a stress riser at the root",cut
+B01,coupling,Magnet,"N52 D10x5 axially magnetised, canned 316L or epoxy potted",16,0,0,magsy.sk / supermagneticshop.com,0.55,verified,"8 per cup, pitch r28 on D70 cup; price for D10 canned to re-verify; bare N52 must not touch water",1
+B02,coupling,Magnet cup,"D70 rim, 8 pockets D10.2x5.2, printed ASA",2,0,0,printed in-house,,printed,"pockets 10.2 dia (magnet 10 + 0.2 glue), 0.2 mm epoxy recess",1
+B03,coupling,Separation wall,D106 x 4 mm - RECOMMENDED integral with the pod bulkhead (no separate part),1,0,0,nerezmaterial.cz / printed,,quote,"4 mm per CAD, not 5; integral removes O-ring C03 and screws C05",1
+B04,coupling,Potting compound,3M Scotch-Weld DP270 black 25ml,1,0,0,techfun.sk,14.0,verified,,1
+C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,printed in-house,-,printed,in model as pod,1
+C02,pod,Tail cone,printed integral,1,0,0,printed in-house,-,printed,,1
+C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,grease Molykote 111,2
+C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,todo,NOT YET IN MODEL - add to pod,1
+C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,,2
+C06,pod,Desiccant,5g silica gel with indicator,2,0,0,local,2.0,verified,replace at service,1
+C07,pod,Cable gland wet side,Lapp Skintop MS-M 12x1.5 + Scotchcast 2131,1,0,0,tme.eu,12.0,verified,NOT YET IN MODEL - add boss,1
+C08,pod,Generator,T-Motor GB2208 KV128 or X-TEAM XTG3506 (24N22P 6ohm w/ AS5048A encoder),1,0,0,sk.x-teamrc.com / tmotor,26.0,verified,XTG3506 preferred: encoder = free RPM/flow,1
+C09,pod,Generator mount,printed cradle + 4x M3x8 A4,1,0,0,printed + tme,1.0,printed,,1
+D01,sensors,pH electrode,DFRobot SEN0161-V2 Gravity pH kit + E201 BNC probe,1,0,0,techfun.sk,39.0,verified,OPTIONAL per site; 14-30 day service; +-0.1 pH after 2-pt cal,2
+D02,sensors,pH spare electrode,E201-C BNC,2,0,0,techfun.sk,9.0,verified,consumable,2
+D03,sensors,pH buffer,2x250ml pH7 + pH10,1,0,0,techfun.sk,12.0,verified,consumable,2
+D04,sensors,Temperature,DS18B20 waterproof 1m cable,1,0,0,techfun.sk,5.0,verified,in model as sensor_ntc,1
+D09,sensors,Dissolved oxygen kit,"DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L, BNC probe, 2m cable",1,0,0,global-ic.sk / botland.cz,175.0,verified,HIGHEST-VALUE channel (Budca = hypoxia); membrane 1-2 months in muddy water; 0.5M NaOH filling solution NOT shipped by air - source locally,2
+D05,sensors,Level / stage probe,"Submersible IP68 316L, 0-1 mH2O, 0.5-4.5V out, 5m cable, permanent immersion rated",1,0,0,TME / sensorsone (quote),110.0,quote,"MS5837-30BA REJECTED: gel element must be dried daily, 24h max submersion",1
+D06,sensors,EC/TDS,DFRobot SEN0244 Gravity analog TDS module + probe,1,0,0,tme.eu,14.0,verified,"+-10% FS is the weakest sensor; use as trend indicator, site-calibrate",1
+D07,sensors,Turbidity,DFRobot SEN0189 (0-4.5V analog),1,0,0,techfun.sk,12.45,verified,6 in stock; in model as sensor_turb,1
+D08,sensors,Sensor cable,4x2x0.5mm shielded PUR outdoor,1,0,0,tme.eu,20.0,verified,,2
+E01,cage,Sensor cage,Ø130x150 printed ASA 12 slots,1,0,0,printed in-house,-,printed,in model as cage,1
+E02,cage,Cage fasteners,M3x10 A4 + nylok,1,0,0,tme.eu,6.0,verified,,1
+E03,cage,Sensor holders,printed clips for pH/TDS/turbidity/NTC/MS5837,5,0,0,printed in-house,-,printed,in model as sensor bodies,1
+F01,interface,Cable,8x0.5mm2 PUR jacket submersible 6m,1,0,0,tme.eu,35.0,verified,,1
+F02,interface,Bulkhead connector,potted gland entry (NOT SubConn),1,0,0,tme.eu,12.0,verified,cost cut from 85 EUR wet-mate,1
+G01,drybox,Enclosure,IP68 ready-made 190x130x80mm,1,0,0,tme.eu,22.0,verified,in model as site_box,1
+G02,drybox,MCU (NOT USED in simple build),LaskaKit ESP32-S3-DEVKit,1,0,0,laskakit.cz,0.0,verified,DROPPED: Wio-E5 mini is the single brain (MCU+LoRa). Bring back only if we need more GPIO/dual-core.,cut
+G03,drybox,MCU + radio (single board),"Seeed Wio-E5 mini: STM32WLE5JC Cortex-M4 + SX126x LoRa 868 MHz, USB-C, ADC/I2C/UART/GPIO",1,0,0,techfun.sk,15.0,verified,"does EVERYTHING in the probe: sensors + LoRa + duty cycle. u.FL/SMA antenna connector - check which, both work",1
+G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,1,0,0,neven.cz,6.0,verified,149 CZK,1
+G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,1,0,0,tme.eu,3.0,verified,u.FL -> SMA pigtail; skip if your board ships with SMA already,1
+G06,drybox,Boost harvester,LTC3105EFE MPPT boost,1,0,0,tme.eu,5.0,verified,needed when EMF below bus,1
+G07,drybox,Buck,TPS62A02DRC step-down,1,0,0,tme.eu,2.5,verified,,1
+G08,drybox,Rectifier,Nexperia PMEG2010AEB 20V 1A SOD-523,6,0,0,tme.eu,0.15,verified,452k in stock,1
+G09,drybox,Clamp,TL431LIAQ + MJD127T4G + PWR263S 3.3R dump,1,0,0,tme.eu,4.0,verified,overvoltage protection,1
+G10,drybox,Supercap,Eaton XLR-4R0507 LIC 500F 4.0V,1,0,0,tme.eu,11.0,quote,NO coin-cell EDLC (50ohm ESR kills TX),1
+G11,drybox,Voltage supervisor,TLV840 nanopower,1,0,0,tme.eu,1.5,verified,gates buck at 4.8V,1
+G12,drybox,Load switch,TPS22860 x2 for pH/EC sequencing,2,0,0,tme.eu,1.0,verified,removes ground-loop need,1
+G13,drybox,Barometer,BME280 module outside potting in vented sub-box,1,0,0,laskakit.cz,6.0,verified,pressure reference for MS5837,2
+G14,drybox,PCB,custom 2-layer 60x80mm,1,0,0,jlcpcb,3.0,quote,panel of 10 amortises,2
+G15,drybox,Connectors,JST-PH/XH assortment + crimps,1,0,0,laskakit.cz,10.0,verified,,2
+G16,drybox,Protection,Fuse 0.5A + TVS + ESD array,1,0,0,tme.eu,6.0,verified,,1
+G17,drybox,Cable glands,M12 IP68 potted x3,3,0,0,tme.eu,3.0,verified,,1
+H01,site,Ground screw anchor,M68 x 800mm solar-fence ground screw,0,1,0,hornbach,25.0,verified,1-2kN lateral - covers flood case,2
+H02,site,Pole,scaffold tube Ø48.3x3.2 x 3000mm galvanised,0,1,0,stavebniny,18.0,verified,removable mast pinned into receiver,2
+H03,site,Receiver sleeve,Ø52 tube 300mm + pin holes,0,1,0,metal shop,8.0,quote,pinned mast interface,2
+H04,site,Arm tube,alu Ø28x1.5 x 1300mm,0,1,0,hornbach,9.0,verified,,2
+H05,site,Drop tube,alu Ø22x1.5 x 900mm,0,1,0,hornbach,6.0,verified,,2
+H06,site,Hinge collar,printed ASA + M8 A4 bolt,0,1,0,printed + tme,3.0,printed,,2
+H07,site,Shear pin,M4 316SS pin + 2 spares on pole collar,0,1,0,tme.eu,1.0,verified,releases pod on >150N debris hit,2
+H08,site,Yaw strut,alu Ø22x600mm + 2 clamps,0,1,0,hornbach,5.0,verified,anti-flutter,2
+H09,site,Guy line,3mm Dyneema 2x4m + turnbuckles,0,1,0,tme.eu,9.0,verified,45deg up/downstream,2
+H10,site,Guy anchor,300mm ground screw x2,0,1,0,hornbach,10.0,verified,,2
+H11,site,Safety cable,3mm galv wire + ferrules tethering pod to pole,0,1,0,tme.eu,4.0,verified,theft/flood retention,2
+H12,site,Security fastener,one-way Torx M5 + steel band for box,0,1,0,tme.eu,4.0,verified,anti-theft,2
+H13,site,Site label,engraved plate with project + contact,0,1,0,local print shop,3.0,verified,anti-theft by making it unsellable,2
+I01,gateway,Gateway radio (single-channel),Wio-E5 mini = STM32WLE5JC + USB-C + CH340; plugs straight into RPi USB,0,0,1,rakwireless reseller,18.0,verified,same board as G03; USB-C straight into the Pi; runs the packet listener,2
+I02,gateway,Compute,Raspberry Pi 4 4GB + PSU + SD,0,0,1,local,70.0,verified,"YOU ALREADY HAVE THIS - reuse, zero soldering; runs the gateway service",2
+I03,gateway,Antenna,MikroTik 868_Omni 6.5dBi IP66 862-876MHz + mast kit,0,0,1,i4wifi.cz,45.0,quote,range-critical: gateway antenna gain + mast height set the link,2
+I04,gateway,Enclosure,IP65 box + PoE injector,0,0,1,tme.eu,35.0,verified,,2
+I05,gateway,Mast,3m alu mast + wall bracket,0,0,1,hornbach,30.0,verified,height sets range,2
+I06,gateway,Concentrator upgrade (optional),RAK2287 SX1302 mini-PCIe MODULE + RAK2287 Pi HAT (module alone is unusable - RPi has no mini-PCIe),0,0,1,rakwireless reseller,145.0,quote,Only for multi-SF / multi-channel / public TTN. Single-channel Wio-E5 gateway is enough for our 20 nodes.,cut
+J01,consumable,Filament ASA,Prusament ASA 850g,1,0,0,prusa3d.com,32.0,verified,,1
+J02,consumable,Filament PC Blend,Prusament PC Blend 970g (for wall/structural),1,0,0,prusa3d.com,40.0,verified,,2
+J03,consumable,Epoxy barrier,West System 105 + 206,1,0,0,techfun.sk,18.0,verified,,1
+J04,consumable,Conformal coat,Electrolube acrylic 200ml,1,0,0,tme.eu,14.0,verified,,2
+J05,consumable,Silicone grease,Molykote 111 100g,1,0,0,tme.eu,9.0,verified,,1
+J06,consumable,Threadlocker,Loctite 243 + 406,1,0,0,tme.eu,11.0,verified,,2
+J07,consumable,Heat-set inserts,M3/M4 brass assortment,1,0,0,tme.eu,6.0,verified,,1
+J08,consumable,O-ring kit,NBR metric assortment,1,0,0,tme.eu,12.0,verified,,2
+K01,tooling,Vacuum chamber,Bel-Art F42025 + gauge + pump,1,0,0,tme.eu,85.0,verified,acceptance test rig (one-off),2
+K02,tooling,Torque driver,Wiha 28506 1.2Nm,1,0,0,tme.eu,40.0,verified,one-off,2
+K03,tooling,Spring balance,0-5N for coupling slip jig,1,0,0,local,5.0,verified,one-off,1
