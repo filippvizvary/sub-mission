@@ -38,7 +38,7 @@ G01,drybox,Enclosure,IP68 ready-made 190x130x80mm,1,0,0,tme.eu,22.0,verified,in 
 G02,drybox,MCU (NOT USED in simple build),LaskaKit ESP32-S3-DEVKit,1,0,0,laskakit.cz,0.0,verified,DROPPED: Wio-E5 mini is the single brain (MCU+LoRa). Bring back only if we need more GPIO/dual-core.,cut,NO,
 G03,drybox,MCU + radio (single board),"Seeed XIAO nRF52840 + Wio-SX1262 kit (Meshtastic), SEE336 - nRF52840 + SX1262",1,0,0,rpishop.cz,14.00,verified,"349 Kc, skladom 5+; nahradza Wio-E5, ktory v CZ/SK nie je; antena je v kite",1,NO,https://rpishop.cz/694263/seeed-studio-xiao-nrf52840-wio-sx1262-kit-pro-meshtastic/
 G04,drybox,Antenna probe,868MHz 5dBi SMA-M omni 195mm,0,0,0,techfun.sk,6.0,verified,v baleni kazdej Wio-E5 je EU868 antena - samostatne netreba; drzat ako zalohu,2,NO,
-G05,drybox,Antenna pigtail,u.FL to SMA bulkhead 15cm,0,0,0,tme.eu,3.0,verified,"netreba: doska ma SMA, antena sa skrutkuje priamo; pigtail len ak sa ide cez bulkhead",2,NO,
+G05,drybox,u.FL -> SMA pigtail,"u.FL/IPEX female na SMA female bulkhead, 10-15 cm, RG178",1,0,1,tme.eu,3.00,verified,"KIT MA U.FL, NIE SMA: bez pigtailu na vacsiu antenu nepripojis; 1x sonda, 1x gateway",1,NO,https://www.tme.eu/sk/katalog/?search=u.FL%20SMA%20pigtail%20RG178
 G06,drybox,Boost harvester,LTC3105EFE MPPT boost,1,0,0,tme.eu,5.0,verified,needed when EMF below bus,2,NO,
 G07,drybox,Buck,TPS62A02DRC step-down,1,0,0,tme.eu,2.5,verified,,2,NO,
 G08,drybox,Rectifier,Nexperia PMEG2010AEB 20V 1A SOD-523,6,0,0,tme.eu,0.15,verified,452k in stock,2,NO,
