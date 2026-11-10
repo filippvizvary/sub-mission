@@ -51,9 +51,11 @@ PARTS = [
     ("magcup_wet", "03_pohar.stl", True),
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
-    # ONE clamp for all four: the rotor's and both cup clamps are the same 19 mm
-    # part (verified identical vertex for vertex). Print four halves.
-    ("rotor_clamp", "07_upinac_polovica.stl", True),
+    # the clamp is one geometry in two versions, because the two halves do different
+    # jobs: 07a has ROUND Ø6.4 x 2.2 pockets for the screw heads, 07b has HEX 5.8 AF x
+    # 2.6 pockets for the nuts. Three clamps in the pod, so print 3 of each.
+    ("rotor_clamp", "07a_upinac_hlava.stl", True),
+    ("cup_clamp_wet", "07b_upinac_matica.stl", True),
     ("motor_plate", "09_motorova_doska.stl", True),           # print 1: test the pattern
     ("oldham_hub_a", "10_oldham_hub_hriadel.stl", False),
     ("oldham_disc", "11_oldham_kotuc.stl", False),

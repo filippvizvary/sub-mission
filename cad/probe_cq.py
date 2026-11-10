@@ -124,7 +124,7 @@ def make_hub():
     return hub
 
 
-def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
+def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     """One half of a two-piece shaft clamp, built properly.
 
     The split bolts live in EARS that stick out radially from the sleeve, not in the
@@ -158,32 +158,41 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
     # Even slots along the ear, one bolt per slot, sized so the 7.0 AF hex pockets can
     # never touch each other. Spacing them by "span/(n+1)" put them 4.7 mm apart with
     # 7.0 mm pockets - they merged into a scalloped slot, which is what Filip saw.
-    hole_r, hex_af = (1.7, 7.0) if screw == "M3" else (1.2, 4.4)
+    hole_r = 1.7 if screw == "M3" else 1.2
+    # the two halves do DIFFERENT jobs, so each gets its own pocket:
+    #   head half  round Ø6.4 x 2.2 - a DIN 84 pan head is Ø6.0 x 1.9
+    #   nut  half  hex 5.8 AF x 2.6 - a DIN 934 M3 nut is 5.5 AF x 2.4
+    hex_af = 5.8 if screw == "M3" else 4.0
     # polygon(6, 7.0) gives 6.06 across flats, and that is the pocket's real height.
     # The pockets all sit ABOVE the flange (z 5 and up), which is why the flange no
     # longer needs a notch: the ear's outer face is in the open air from z 5 to the
     # top, so a nut drops straight in from the side.
-    hex_h = hex_af * math.cos(math.pi / 6)
+    hex_h = (6.4 if kind == "head" else hex_af * math.cos(math.pi / 6))
     ear_z0 = 5.0
     gap = max(0.6, (L - ear_z0 - n_bolts * hex_h) / (n_bolts + 1))
     zs = [ear_z0 + gap + hex_h / 2 + i * (hex_h + gap) for i in range(n_bolts)]
     for sx in (-1, 1):
-        # ear from z 5, i.e. standing on the flange, not buried in it: the flange
-        # stays solid (Filip did not want trenches cut in its face) and the ear's
-        # outer face is in open air over its whole height
-        ear = (cq.Workplane("XY").box(11.5, 5, L - ear_z0)
-               .translate((sx * 15.25, 2.5, ear_z0 + (L - ear_z0) / 2)))
+        # ear from z 4.5 - half a mm INTO the flange, not resting exactly on its face:
+        # a tangent union makes the mesh non-manifold. The pockets still start above
+        # z 5, so the flange stays solid and the ear's outer face is in open air.
+        ear = (cq.Workplane("XY").box(11.5, 5, L - ear_z0 + 0.5)
+               .translate((sx * 15.25, 2.5, ear_z0 - 0.5 + (L - ear_z0 + 0.5) / 2)))
         body = body.union(ear)
     for sx in (-1, 1):
         for z in zs:
             body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
                 hole_r, 40, cq.Vector(sx * 16.0, 0, z), cq.Vector(0, 1, 0))))
-            # hex pocket from the ear's outer face: takes the screw head on one half
-            # and the nut on the other, so one STL still serves both halves
-            body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.4)
-                            .translate((sx * 16.0, 5.0, z)))
+            # pocket from the ear's outer face
+            if kind == "head":
+                body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                    3.2, 2.4, cq.Vector(sx * 16.0, 5.2, z), cq.Vector(0, -1, 0))))
+            else:
+                body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.6)
+                                .translate((sx * 16.0, 5.2, z)))
     # the split: keep y >= 0
-    body = body.cut(cq.Workplane("XY").box(160, 60, 60).translate((0, -30, 30)))
+    # the split box has to start BELOW z 0: with its bottom face exactly on the
+    # flange's bottom face it left sliver edges there (2 non-manifold edges)
+    body = body.cut(cq.Workplane("XY").box(160, 60, 62).translate((0, -30, 29)))
     return body
 
 
@@ -226,7 +235,7 @@ def make_rotor_clamp():
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
     # 21..40: between the rotor's hub face and the carrier boss. Identical to the cup's.
-    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 21.0))
+    solid = _clamp_body(19.0, 24.0, 2, "M3", "head").translate((0, 0, 21.0))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -264,7 +273,7 @@ def make_cup_clamp():
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
     # 54.35..73.35 - the same 19 mm part as the rotor clamp, so there is ONE clamp STL
     # printed four times
-    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 54.35))
+    solid = _clamp_body(19.0, 24.0, 2, "M3", "nut").translate((0, 0, 54.35))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
