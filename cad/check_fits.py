@@ -81,14 +81,14 @@ rotor = local("rotor")
 z0, z1 = zrange(rotor)
 ok(abs((z1 - z0) - 68.0) <= 1.5, "rotor height",
    f"{z1 - z0:.1f} mm, expected 68 (cone 40 + hub 28, no clamp boss)")
-sec = rotor.section(plane_origin=[0, 0, 20.0], plane_normal=[0, 0, 1])
+sec = rotor.section(plane_origin=[0, 0, 10.0], plane_normal=[0, 0, 1])
 _P = sec.vertices[:, :2]
 _bore = _P[np.hypot(_P[:, 0], _P[:, 1]) < 3.0]
 ok(np.hypot(_bore[:, 0], _bore[:, 1]).min() >= 2.55, "hub bore is round",
    f"min radius {np.hypot(_bore[:,0],_bore[:,1]).min():.2f} mm: round Ø5.2, clamped by 3 M3")
 # the aft face is flat now: the rotor prints on it, and the clamp is a separate
 # two-piece part bolted down onto it by four M3 x 12 at r 18.5
-aft_rs = radii_at(rotor, 26.5)           # inside the Ø30 x 3 centring recess
+aft_rs = radii_at(rotor, 18.5)           # inside the Ø30 x 3 centring recess
 ok(aft_rs.max() >= 14.9, "aft face recess", f"r {aft_rs.max():.2f} clears the clamp spigot Ø29.8")
 hub = local("rotor_clamp")
 c0, c1 = zrange(hub)
@@ -186,7 +186,7 @@ ok(float(rs76.min()) >= 2.95, "cup bore clears the shaft",
 # the clamp is the grip now, and this is where it has to reach
 cw_ = local("cup_clamp_wet")
 cwz = zrange(cw_)
-ok(abs(cwz[0] - 61.0) <= 0.3, "wet cup clamp reaches the bushing",
+ok(abs(cwz[0] - 54.35) <= 0.3, "wet cup clamp reaches the bushing",
    f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: butts the second bushing at 61 and the "
    "cover at 73.35 - 12.35 mm, that is the whole gap")
 ok(has_r(radii_at(cw_, 67.0), 11.0, 0.15), "cup clamp sleeve OD",
@@ -249,9 +249,9 @@ ok(has_r(rs, 4.0, 0.2) and has_r(rs, 12.0, 0.2), "cup thrust washer ring",
 # the hub must NOT touch the static spider - the cup sets the axial position
 rot = local("rotor"); car = local("wet_carrier")
 hub_aft = max(v[2] for v in rot.vertices if np.hypot(v[0], v[1]) < 31.0)
-ok(hub_aft <= 46.2 and car.bounds[0][2] >= 46.5, "hub clears the static spider",
-   f"hub aft face {hub_aft:.1f} mm against the spider at {car.bounds[0][2]:.1f} mm")
-
+ok(abs((car.bounds[0][2] - hub_aft) - 19.0) <= 0.8, "clamp fills the gap to the spider",
+   f"hub aft face {hub_aft:.1f} to the spider at {car.bounds[0][2]:.1f}: {car.bounds[0][2]-hub_aft:.1f} mm, "
+   "exactly the 19 mm clamp")
 
 # ---- clamps: three radial M3 holes per part, 120 deg apart, staggered in z.
 # Exact test on the solids (a section polygon cannot tell you where a hole is).
@@ -281,8 +281,8 @@ ok(_cup.isInside(cq.Vector(5.0, 0.0, 3.0)), "cup no hole where none belongs",
 _h = _solid(_mod.make_hub())
 ok(not _h.isInside(cq.Vector(2.8, 0.0, 14.0)), "hub clearance bore",
    "air at r 2.8: Ø6, the Ø5 shaft passes without binding on print tolerance")
-ok(not _h.isInside(cq.Vector(5.0, 0.0, 26.5)), "hub aft recess",
-   "air at r 5, z 26.5: Ø30 x 3 centring recess for the clamp spigot")
+ok(not _h.isInside(cq.Vector(5.0, 0.0, 26.6)), "hub aft recess",
+   "air at r 5, z 26.6 in the hub's own frame: Ø30 x 3 centring recess for the clamp spigot")
 ok(not _h.isInside(cq.Vector(13.08, 13.08, 25.5)), "hub aft clamp hole",
    "air at r 18.5 on the aft face: one of the four M3 x 12 for the clamp")
 ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",
@@ -296,8 +296,8 @@ ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",
 # the clamp has to reach that same bushing from the other side
 _cl = local("rotor_clamp")
 _clz = zrange(_cl)
-ok(abs(_clz[1] - 47.0) <= 0.3, "clamp reaches the bushing",
-   f"sleeve ends at z {_clz[1]:.1f}, {47.0 - _clz[1]:+.1f} mm from the bushing face")
+ok(abs(_clz[1] - 40.0) <= 0.3, "clamp reaches the bushing",
+   f"sleeve ends at z {_clz[1]:.1f}, {40.0 - _clz[1]:+.1f} mm from the bushing face")
 
 print(f"\n{checks} checks, {len(fails)} failed")
 sys.exit(1 if fails else 0)

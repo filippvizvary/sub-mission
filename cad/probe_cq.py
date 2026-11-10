@@ -162,10 +162,15 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
     zs = [1.0 + slot * (i + 0.5) for i in range(n_bolts)]
     hole_r, hex_af = (1.7, 7.0) if screw == "M3" else (1.2, 4.4)
     for sx in (-1, 1):
-        # inner face at x 9.5, i.e. 1.5 mm INSIDE the Ø22 sleeve, so the union is
-        # solid; at x 11 it only touched the sleeve's OD and the mesh came out
-        # non-manifold
-        ear = (cq.Workplane("XY").box(11.5, 5, L - 2).translate((sx * 15.25, 2.5, L / 2)))
+        # NOTCH FIRST, ear second. The ear sits at x 9.5..21, y 0..5, which is inside
+        # the flange's Ø48 footprint, so over the flange's 5 mm its outer face was
+        # buried in flange material - the nut could not be pushed into the lower
+        # pocket and the cut made a channel instead of a seat. Cutting the flange
+        # back to y 6 over the ear's x range, BEFORE the ear goes on, opens that face
+        # all the way down. The notch starts at x 11.5 so it never touches the Ø22
+        # sleeve.
+        body = body.cut(cq.Workplane("XY").box(10.5, 6, 6).translate((sx * 16.75, 3.0, 2.5)))
+        ear = (cq.Workplane("XY").box(11.5, 5, L - 1).translate((sx * 15.25, 2.5, (L - 1) / 2)))
         body = body.union(ear)
     for sx in (-1, 1):
         for z in zs:
@@ -218,7 +223,8 @@ def make_rotor_clamp():
         solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
-    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, HUB_LEN))   # 4 x M3 x 12
+    # 21..40: between the rotor's hub face and the carrier boss. Identical to the cup's.
+    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 21.0))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -254,10 +260,9 @@ def make_cup_clamp():
             3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
     # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
-    # 12.35 mm is ALL the space there is: the bushing's face is at 61, the cup's back
-    # face at 75.35, and the cover takes 2. Two bushings 14 mm apart and a 19 mm clamp
-    # cannot both exist in that stack - the numbers are in the reply.
-    solid = _clamp_body(12.35, 24.0, 1, "M3").translate((0, 0, 61.0))
+    # 54.35..73.35 - the same 19 mm part as the rotor clamp, so there is ONE clamp STL
+    # printed four times
+    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 54.35))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
@@ -715,10 +720,14 @@ def make_wet_carrier():
     # boss 47..61, Ø18, TWO iglidur bushings 14 mm apart - Filip is right that the
     # pair has to spread the propeller's bending moment, and he cuts the shaft to
     # whatever length the stack needs.
-    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 47))
-            .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 40))))
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47.5))
-    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 53.5))
+    # boss 40..54: two bushings, 14 mm of span end to end (40..47 and 47..54), so the
+    # pair still spreads the propeller's bending moment. Moving the boss 7 mm upstream
+    # is what buys the cup's clamp the same 19 mm the rotor's has - the shaft simply
+    # gets 7 mm longer at the propeller end, and Filip cuts it himself.
+    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 40))
+            .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 34))))
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 40))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47))
     boss = boss.cut(b1).cut(b2)
     # Three spokes 59..67. They must overlap the boss axially: the boss is Ø18
     # (r 9) and the spokes need a Ø15 hole for the cup's Ø14 clamp boss, so their
@@ -728,12 +737,14 @@ def make_wet_carrier():
     arms = None
     for i in range(3):
         a = (cq.Workplane("XY").box(48, 9, 6)
-             .translate((24, 0, 56))
+             .translate((24, 0, 49))
              .rotate((0, 0, 0), (0, 0, 1), i * 120))
         arms = a if arms is None else arms.union(a)
     arms = arms.cut(cq.Workplane("XY").circle(7.5).extrude(40).translate((0, 0, 40)))
     # ring 65..71 at r 42..48 sits on the four bulkhead bosses (71..81)
-    ring = cq.Workplane("XY").circle(47).circle(42).extrude(14).translate((0, 0, 57))
+    # ring 50..71, not 57..71: the spokes moved upstream with the boss (46..52), and
+    # at 57..71 they did not reach it at all - the carrier came out as two bodies
+    ring = cq.Workplane("XY").circle(47).circle(42).extrude(21).translate((0, 0, 50))
     body = boss.union(arms).union(ring)
     # 4 bolt ears at 45/135/225/315 deg (bisecting the arms), M4 clearance
     for i in range(4):
@@ -923,6 +934,9 @@ for i in range(BLADES):
 # swept volume. Merged, there is no joint at all and nothing to seal.
 parts["rotor"] = parts["rotor"].union(
     cq.Workplane("XY").circle(HUB_D/2).workplane(offset=-40).circle(6).loft().val(), clean=True)
+# the whole rotor moves 7 mm upstream so its hub face meets the clamp at 21 instead of
+# 28: that is the 7 mm which lets both clamps be the same 19 mm part
+parts["rotor"] = parts["rotor"].translate((0, 0, -7.0))
 # ---- explicit axial layout (local Z, before the pod is laid horizontal) ----
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
 Z_SHAFT   = 0     # shaft spans -37..78 (115 mm), hub grips at -31, cup at 67
