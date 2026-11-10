@@ -51,9 +51,8 @@ PARTS = [
     ("magcup_wet", "03_pohar.stl", True),
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
-    # BOTH clamps are now the same 19 mm part: the rotor's and the cup's.
-    # Print four halves, two per clamp.
-    ("rotor_clamp", "07_upinac_polovica.stl", True),
+    ("rotor_clamp", "07_upinac_vrtule_polovica.stl", True),    # print 2: 19.0 mm
+    ("cup_clamp_wet", "08_upinac_pohara_polovica.stl", True),  # print 2: 12.35 mm
     ("motor_plate", "09_motorova_doska.stl", True),           # print 1: test the pattern
     ("oldham_hub_a", "10_oldham_hub_hriadel.stl", False),
     ("oldham_disc", "11_oldham_kotuc.stl", False),

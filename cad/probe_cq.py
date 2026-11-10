@@ -165,7 +165,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
         # inner face at x 9.5, i.e. 1.5 mm INSIDE the Ø22 sleeve, so the union is
         # solid; at x 11 it only touched the sleeve's OD and the mesh came out
         # non-manifold
-        ear = (cq.Workplane("XY").box(11.5, 7, L - 2).translate((sx * 15.25, 3.5, L / 2)))
+        ear = (cq.Workplane("XY").box(11.5, 5, L - 2).translate((sx * 15.25, 2.5, L / 2)))
         body = body.union(ear)
     for sx in (-1, 1):
         for z in zs:
@@ -173,8 +173,8 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
                 hole_r, 40, cq.Vector(sx * 16.0, 0, z), cq.Vector(0, 1, 0))))
             # hex pocket from the ear's outer face: takes the screw head on one half
             # and the nut on the other, so one STL still serves both halves
-            body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.6)
-                            .translate((sx * 16.0, 7.0, z)))
+            body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.4)
+                            .translate((sx * 16.0, 5.0, z)))
     # the split: keep y >= 0
     body = body.cut(cq.Workplane("XY").box(160, 60, 60).translate((0, -30, 30)))
     return body
@@ -254,9 +254,10 @@ def make_cup_clamp():
             3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
     # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
-    # same 19 mm part as the rotor clamp: anything shorter slips on the shaft under
-    # the 84 N of magnet pull, and the sleeve's friction scales with its length
-    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 54.35))
+    # 12.35 mm is ALL the space there is: the bushing's face is at 61, the cup's back
+    # face at 75.35, and the cover takes 2. Two bushings 14 mm apart and a 19 mm clamp
+    # cannot both exist in that stack - the numbers are in the reply.
+    solid = _clamp_body(12.35, 24.0, 1, "M3").translate((0, 0, 61.0))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
@@ -711,14 +712,14 @@ def make_wet_carrier():
     it occupies. A flat spider put the three arms through the cup body - measured
     3963 mm3 of interference at 0.25 mm resolution, i.e. the cup could not turn.
     """
-    # boss 47..54.35, Ø18, ONE iglidur JSM-0507-05 (7 mm) instead of two. That is the
-    # price of giving the cup the same 19 mm clamp as the rotor: the clamp runs
-    # 54.35..73.35 and has to reach the cup's cover. Two bushings would need 14 mm of
-    # boss and there is no room left.
-    boss = (cq.Workplane("XY").circle(9).extrude(7.35).translate((0, 0, 47))
+    # boss 47..61, Ø18, TWO iglidur bushings 14 mm apart - Filip is right that the
+    # pair has to spread the propeller's bending moment, and he cuts the shaft to
+    # whatever length the stack needs.
+    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 47))
             .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 40))))
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47))
-    boss = boss.cut(b1)
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47.5))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 53.5))
+    boss = boss.cut(b1).cut(b2)
     # Three spokes 59..67. They must overlap the boss axially: the boss is Ø18
     # (r 9) and the spokes need a Ø15 hole for the cup's Ø14 clamp boss, so their
     # inner edge can never reach the boss radially - at 61..69 the two only met
@@ -726,13 +727,13 @@ def make_wet_carrier():
     # a notch in it. At 59..67 there are 2 mm of real 3D overlap.
     arms = None
     for i in range(3):
-        a = (cq.Workplane("XY").box(48, 9, 6.5)
-             .translate((24, 0, 50.75))
+        a = (cq.Workplane("XY").box(48, 9, 6)
+             .translate((24, 0, 56))
              .rotate((0, 0, 0), (0, 0, 1), i * 120))
         arms = a if arms is None else arms.union(a)
     arms = arms.cut(cq.Workplane("XY").circle(7.5).extrude(40).translate((0, 0, 40)))
     # ring 65..71 at r 42..48 sits on the four bulkhead bosses (71..81)
-    ring = cq.Workplane("XY").circle(47).circle(42).extrude(21).translate((0, 0, 50))
+    ring = cq.Workplane("XY").circle(47).circle(42).extrude(14).translate((0, 0, 57))
     body = boss.union(arms).union(ring)
     # 4 bolt ears at 45/135/225/315 deg (bisecting the arms), M4 clearance
     for i in range(4):
