@@ -266,11 +266,20 @@ def make_pod():
     # PTFE in the same 4.4 mm window, so the magnetic gap does not move.
     pod = pod.cut(cq.Workplane("XY").circle(35).circle(3).extrude(1.5)
                   .translate((0, 0, -WALL_T - 0.5)))
-    # four spider bosses on the wet face
+    # Four spider bosses on the wet face, with BLIND M4 insert seats. The seat is
+    # Ø6.3 x 7 from the boss's wet end, so it bottoms 7 mm short of the dry face
+    # and the 4 mm wall behind it is untouched: a section through the wall is a
+    # continuous disc at every depth (checked). This is the difference between a
+    # blind boss and a hole through the barrier - and it also fixes the screw:
+    # M4x20 through a 6 mm ear would travel 14 mm and land exactly ON the dry
+    # face. M4x12 is the length that fits.
     for i in range(4):
         a = math.radians(45 + 90 * i)
+        x, y = 45 * math.cos(a), 45 * math.sin(a)
         pod = pod.union(cq.Workplane("XY").circle(5.5).extrude(11)
-                        .translate((45 * math.cos(a), 45 * math.sin(a), -14)))
+                        .translate((x, y, -14)))
+        pod = pod.cut(cq.Workplane("XY").circle(3.15).extrude(7)
+                      .translate((x, y, -14)))
     # O-ring groove on the downstream face
     # Groove for an NBR70 Ø100 x 2.5 ring: 3.0 wide x 1.8 deep. It was 2.2 wide,
     # which gives 2.2*1.8 = 4.0 mm2 of groove for 4.9 mm2 of cord rubber - the

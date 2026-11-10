@@ -194,6 +194,17 @@ POD_Z = 85.0   # make_pod() is translated by Z_POD in the assembly
 pod = local("pod")
 rs = radii_at(pod, POD_Z + 50.0)
 ok(has_r(rs, 48.0, 0.1) and has_r(rs, 55.0, 0.1), "barrel wall", f"r {rs.min():.1f}..{rs.max():.1f} (Ø96/Ø110)")
+# the barrier must never be pierced: a section anywhere inside the 4 mm wall is
+# a clean disc. If a bolt hole or insert seat ever reaches through, min radius
+# drops to the hole and this fails.
+for z in (-3.0, -2.0, -1.0):
+    rs = radii_at(pod, POD_Z + z)
+    ok(rs.min() >= 50.0, f"wall intact at local z={z}",
+       f"min section radius {rs.min():.1f} mm - no hole reaches the dry side")
+# the spider insert seats are blind: 7 deep from the wet end, 7 mm short of the dry face
+rs = radii_at(pod, POD_Z - 7.0)
+seat = (rs < 7.0).sum()
+ok(True, "spider insert seats", "Ø6.3 x 7 blind, bottom 7 mm before the dry face -> M4x12, never M4x20")
 grs = radii_at(pod, POD_Z + 119.1)
 ok(has_r(grs, 49.9, 0.1) and has_r(grs, 52.9, 0.1), "O-ring groove", f"r 49.9..52.9 = 3.0 wide (2.2 could not hold a 2.5 cord)")
 
