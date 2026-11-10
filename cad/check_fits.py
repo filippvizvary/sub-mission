@@ -167,7 +167,10 @@ ok(np.ptp(car.vertices[:, 0]) <= 111, "spider clears the barrel bore", f"Ø{np.p
 mw, md = world("magnets_wet"), world("magnets_dry")
 cw, cd = world("magcup_wet"), world("magcup_dry")
 gap = md.bounds[0][1] - mw.bounds[1][1]
-ok(abs(gap - 4.4) <= 0.05, "magnet face gap", f"{gap:.2f} mm -> slip 0.95 N*m vs 0.164 N*m load = 5.8x")
+# 12 magnets per cup instead of 8: torque scales with the magnet count for the same
+# geometry, so 0.95 -> ~1.4 N*m at the same 4.4 mm gap
+ok(abs(gap - 4.4) <= 0.05, "magnet face gap",
+   f"{gap:.2f} mm -> slip ~1.4 N*m vs 0.164 N*m load = 8.6x (was 5.8x at 8 magnets)")
 rec_w = cw.bounds[1][1] - mw.bounds[1][1]
 rec_d = md.bounds[0][1] - cd.bounds[0][1]
 ok(abs(rec_w - 0.2) <= 0.01 and abs(rec_d - 0.2) <= 0.01, "magnet recess (epoxy plug)",

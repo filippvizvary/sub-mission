@@ -37,7 +37,9 @@ THICKNESS = 0.20
 STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
             (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; CUP_BODY = 10.0; WALL_T = 4.0
-MAG_D = 10.0; MAG_H = 5.0; MAG_N = 8
+MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
+                                     # over 12 lifts the coupling from 0.95 to
+                                     # ~1.4 N*m without changing anything else
 POD_OD = 110.0; POD_ID = 96.0; POD_LEN = 120.0
 CAGE_LEN = 200.0; CAGE_OD = 130.0; CAGE_WALL = 4.0; CAGE_SLOTS = 12
 ARM_OD = 28.0; BOX_Z = 1710.0   # underside of the dry box
