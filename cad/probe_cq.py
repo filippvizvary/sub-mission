@@ -18,13 +18,13 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------- parameters ----------------
-ROTOR_R = 100.0           # Ø200, not Ø220: a 4-blade Ø220 is 220x220 and the MK3S bed is 250x210
+ROTOR_R = 115.0
 HUB_D, HUB_LEN = 64.0, 28.0
 CLAMP_R, CLAMP_LEN = 8.0, 14.0   # Ø16 x 14 clamp boss on the hub's aft face
 HEAD_D, HEAD_H = 6.2, 1.9          # flat pad under the M3 head, MEASURED:
                                    # head is Ø5.90 x 1.90 with a flat underside,
                                    # so 1.9 deep puts it exactly flush with the boss OD
-BLADES = 4
+BLADES = 3
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
 # is 1.0 mm of ABS. Bending the blade out of the rotor plane as a tapered
@@ -35,7 +35,7 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # anyway: the thin one separates.
 THICKNESS = 0.24            # 24 %, not 20: the D200 chords are 9 % shorter, so the blade
                             # was 19 mm of tip deflection at 1 m/s. t^3 buys 1.7x stiffness.
-STATIONS = [(0.20, 31.6, 38.7), (0.35, 20.3, 25.9), (0.50, 14.7, 19.9), (0.65, 11.5, 16.6), (0.80, 9.4, 14.5), (1.00, 7.5, 12.6)]
+STATIONS = [(0.20, 43.4, 38.7), (0.35, 27.9, 25.9), (0.50, 20.2, 19.9), (0.65, 15.8, 16.6), (0.80, 12.9, 14.5), (1.00, 10.3, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12

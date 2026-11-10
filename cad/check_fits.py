@@ -103,25 +103,25 @@ ok(has_r(_rr, 11.0, 0.2), "clamp sleeve OD",
    f"r 11 present at the split-bolt level: Ø22 sleeve, the ears reach r 21 outside it")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
-ok(abs(r_all.max() - 100.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 100)")
+ok(abs(r_all.max() - 115.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 115)")
 # blade stiffness: measure chord and thickness off the model, then bend the
 # blade as a tapered cantilever out of the rotor plane (thrust is axial).
-BLADES_IN_MODEL = 4
+BLADES_IN_MODEL = 3
 ST = [(0.35, 25.9), (0.50, 19.9), (0.65, 16.6), (0.80, 14.5), (0.98, 12.7)]
 xs, cs, ts = [], [], []
 cy = 0.5 * (rotor.bounds[0][1] + rotor.bounds[1][1])
 for rf, pitch in ST:
-    sec = rotor.section(plane_origin=[100 * rf, cy, 0], plane_normal=[1, 0, 0])
+    sec = rotor.section(plane_origin=[115 * rf, cy, 0], plane_normal=[1, 0, 0])
     P = sec.vertices[:, 1:]
     th = np.radians(pitch)
     chord_ext = np.ptp(P @ np.array([np.cos(th), np.sin(th)]))
     thick_ext = np.ptp(P @ np.array([-np.sin(th), np.cos(th)]))
-    xs.append(100 * rf); cs.append(chord_ext); ts.append(thick_ext)
+    xs.append(115 * rf); cs.append(chord_ext); ts.append(thick_ext)
     if rf > 0.95:      # a plane exactly at the tip is tangent and returns nothing
-        xs.append(100.0); cs.append(chord_ext); ts.append(thick_ext)
+        xs.append(115.0); cs.append(chord_ext); ts.append(thick_ext)
 ok(np.ptp(rotor.vertices[:, 0] ** 0 + np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])) > 0, "x", "x")
-ok(abs(np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max() - 100.0) <= 0.5,
-   "rotor reaches R (second measure)", f"r {np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max():.2f} mm (nominal 100)")
+ok(abs(np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max() - 115.0) <= 0.5,
+   "rotor reaches R (second measure)", f"r {np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max():.2f} mm (nominal 115)")
 
 x = np.array(xs); c = np.array(cs); t = np.array(ts)
 ok(c[0] > c[-1] + 5, "blade tapers root->tip", f"chord {c[0]:.1f} -> {c[-1]:.1f} mm")
