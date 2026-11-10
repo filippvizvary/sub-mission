@@ -221,6 +221,31 @@ def make_dry_bearing():
             .translate((0, 0, 105)))
 
 
+def make_motor_plate():
+    """Ø44 x 4 plate carrying the motor, bolted to the frame's cradle by four
+    M3 x 12 on r 17 - a SEPARATE part on purpose: if the bolt pattern is wrong,
+    he reprints 20 minutes' worth, not the 12 hour frame.
+
+    Pattern from Filip's caliper, measured inner wall to inner wall: two holes
+    13.60 mm apart, the other pair 16.60 mm. Centre to centre is that plus one hole
+    diameter; at Ø3.0 that is 16.6 x 19.6, i.e. (+-8.3, +-9.9), r 12.9. A rectangle,
+    not a square - normal on a 2208. Motor thread is only 3 mm deep, so the plate is
+    4 mm: M3 x 8 = 4 (plate) + 3 (motor) + 1 spare.
+    """
+    plate = cq.Workplane("XY").circle(22).extrude(4)
+    plate = plate.cut(cq.Workplane("XY").circle(7).extrude(12).translate((0, 0, -4)))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                1.7, 10, cq.Vector(sx * 8.3, sy * 9.9, -4), cq.Vector(0, 0, 1))))
+    for ang in (0.0, 90.0, 180.0, 270.0):
+        a = math.radians(ang)
+        plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 10, cq.Vector(17 * math.cos(a), 17 * math.sin(a), -4),
+            cq.Vector(0, 0, 1))))
+    return plate
+
+
 def make_oldham():
     """Three printed parts: two hubs with one slot each, and a centre disc with
     tongues on both faces, rotated 90 deg. It transmits 0.164 N*m and ZERO axial
@@ -268,8 +293,14 @@ def make_engine_block():
     # rotating bell - gripping it would clamp the rotor and cook the motor. The
     # static part is the base, so the plate butts the base and the bell hangs
     # upstream from it toward the Oldham.
-    cradle = cq.Workplane("XY").circle(20).extrude(5).translate((0, 0, 159))
-    cradle = cradle.cut(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, 156)))
+    # the motor plate bolts on here: Ø44 ring, four tapped M3 at r 17
+    cradle = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 160))
+    cradle = cradle.cut(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, 157)))
+    for ang in (0.0, 90.0, 180.0, 270.0):
+        a = math.radians(ang)
+        cradle = cradle.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.3, 6.0, cq.Vector(17 * math.cos(a), 17 * math.sin(a), 160),
+            cq.Vector(0, 0, 1))))
     legs = None
     for i in range(3):
         leg = (cq.Workplane("XY").box(21, 12, 40).translate((37, 0, 184))
@@ -780,6 +811,7 @@ parts["dry_bearing"] = make_dry_bearing()
 
 parts["oldham"]      = make_oldham()
 parts["generator"]   = make_generator().translate((0,0,133))
+parts["motor_plate"] = make_motor_plate().translate((0, 0, 156))
 parts["engine_block"]= make_engine_block()
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
@@ -803,7 +835,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham","cup_clamp_wet","cup_clamp_dry","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -817,7 +849,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20),
+    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
     "oldham": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

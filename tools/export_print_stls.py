@@ -51,6 +51,7 @@ PARTS = [
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
     ("rotor_clamp", "07_upinac_vrtule_polovica.stl", True),   # print 2: one clamp
     ("cup_clamp_wet", "08_upinac_pohara_polovica.stl", True), # print 4: 2 per cup
+    ("motor_plate", "09_motorova_doska.stl", True),           # print 1: test the pattern
 ]
 
 
