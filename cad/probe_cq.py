@@ -119,7 +119,7 @@ def make_hub():
     """
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
-           .cut(cq.Workplane("XY").circle(15.0).extrude(1.05).translate((0, 0, HUB_LEN - 1.05))))
+           .cut(cq.Workplane("XY").circle(15.0).extrude(2.55).translate((0, 0, HUB_LEN - 2.55))))
     # Heat-set inserts, not captive nuts. A captive nut cannot work here and the
     # arithmetic is short: the screw enters at the hub's AFT face (z 28) and travels
     # toward z 0, so the nut would have to sit 3 mm deeper - 22.9..20.6 - with its
@@ -164,7 +164,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # is 1 mm and centres in either. It was in the original hand-written clamp and got
     # lost when the body was rewritten; without it the clamp can be bolted on 0.5 mm off
     # centre and the magnet gap goes with it.
-    body = body.union(cq.Workplane("XY").circle(14.8).extrude(1.0).translate((0, 0, -1.0)))
+    body = body.union(cq.Workplane("XY").circle(14.8).extrude(2.5).translate((0, 0, -2.5)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
@@ -217,54 +217,24 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # the split: keep y >= 0
     # the split box has to start BELOW z 0: with its bottom face exactly on the
     # flange's bottom face it left sliver edges there (2 non-manifold edges)
-    body = body.cut(cq.Workplane("XY").box(160, 60, 62).translate((0, -30, 29)))
+    # and it must start below the SPIGOT too: the spigot reaches z -2.5, so a box that
+    # began at -2 left a 0.5 mm crescent of its lower half behind and the part came
+    # out 38.8 mm wide in Y instead of 24
+    body = body.cut(cq.Workplane("XY").box(160, 60, 68).translate((0, -30, 26)))
     return body
 
 
 def make_rotor_clamp():
-    """ONE HALF of the rotor's shaft clamp. Print twice, mate 180 deg apart.
+    """ONE HALF of the rotor's shaft clamp - the shared 19 mm clamp, head pockets.
 
-    Same scheme as the stop collars, scaled up for the torque: two M3 x 12 across
-    the split squeeze a Ø20 x 15 sleeve onto the Ø5 shaft, so the force comes from
-    a bolt preload and never from a grub tip biting plastic. The sleeve carries a
-    Ø44 flange with two counterbored M3 x 12 that go straight into the rotor's
-    flat aft face - four screws for the pair, at r 18.5.
-
-    Grip: 15 mm of Ø5.05 bore at 1800 N of clamp force gives ~0.9 N*m of friction
-    against the 0.164 N*m the rotor actually sees, and the two split bolts sit at
-    z 37, i.e. 9 mm clear of the rotor's face instead of 3 mm.
+    The body used to be hand-written here, with its own flange, sleeve, spigot, four
+    mount holes and its own split cut, and _clamp_body() was called at the very end and
+    threw all of it away. That dead code was not harmless: the extra split cut then ran
+    on an already-split half, and once the centring spigot grew past z 0 the two split
+    planes met and OCC answered "Courbes non jointives". Everything is now in
+    _clamp_body(), which does the split once.
     """
-    z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 19.0      # 25..47, right up to the bushing
-    R_F = 24.0
-    solid = cq.Workplane("XY").circle(R_F).extrude(7).translate((0, 0, HUB_LEN))   # flange 7 mm
-    solid = solid.union(cq.Workplane("XY").circle(11).extrude(12).translate((0, 0, HUB_LEN + 7)))
-    solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
-    # Ø4.90, NOT Ø5.05. A split clamp with a clearance bore does nothing: once the
-    # halves touch at the split, the bolt's tension goes into the mating faces and
-    # never into the shaft. Undersize it and the shaft props the halves apart, so
-    # the preload becomes radial squeeze - a collet, not a spacer.
-    #
-    # 0.10 and no more. These halves are rigid bodies, so closing the split is a
-    # rigid-body motion: the only thing that deforms is the bore where it meets the
-    # shaft. 0.10 mm makes the plastic yield into a full wrap and grips. 0.20 would
-    # just print a polygon into the shaft and put the split line under a load it
-    # does not need.
-    solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(40).translate((0, 0, z_bot - 5)))
-    # four M3 x 12 into the rotor, two of them land in this half
-    for ang in (45.0, 135.0):
-        a = math.radians(ang)
-        x, y = 18.5 * math.cos(a), 18.5 * math.sin(a)
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 12.0, cq.Vector(x, y, HUB_LEN - 2), cq.Vector(0, 0, 1))))
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
-    # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
-    # 21..40: between the rotor's hub face and the carrier boss. Identical to the cup's.
-    # ONE bolt per side, sitting low: 6.6 mm of plastic above the head pocket.
-    solid = _clamp_body(19.0, 24.0, 1, "M3", "head").translate((0, 0, 21.0))
-    # the split: keep y >= 0
-    solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
-    return solid
+    return _clamp_body(19.0, 24.0, 1, "M3", "head").translate((0, 0, 21.0))
 
 
 def make_cup_clamp():
