@@ -311,22 +311,24 @@ def make_oldham():
 
 
 def make_engine_block():
-    """The whole dry train on ONE removable plate. Everything that has to be
-    inserted goes in from this end, so nothing inside the barrel can be in the
-    way: the dry cup and shaft slide in first, then this block drops over the
-    shaft and bolts to the barrel's flange.
+    """The whole dry train on ONE removable part: bearing boss, motor mount, closing
+    plate and cable glands. It slides in from behind, bolts to the barrel's flange,
+    and the sensor cage then bolts to its outer face.
 
-    Layout, all of it inside the Ø96 bore except the closing plate:
-      136..161  Ø40 cradle, Ø27.7 through bore for the GB2208 body (clamped)
-      161..204  three legs, r 27..48
-      193..205  Ø96 spigot into the bore
-      205..211  Ø136 plate, 6x M4 on r 61.5 with head counterbores
+    NOTHING but the motor lives inside. Filip's call: the electronics go out on the
+    pole, which the prototype does not have, so the pod carries the motor and the
+    sensors - which is why there is no PCB shelf in here.
 
-    The motor's own bolt circle is unpublished and not yet measured, so the
-    cradle is a bore plus a clamp slot - it gets replaced by the real pattern.
+      105..115     Ø20 bearing boss, Ø13 pocket from behind; the shoulder at 105 stops
+                   the 695ZZ and the dry cup's clamp butts its inner ring
+      106..114     four spokes out to r 30
+      110..205     four arms at r 25..45, clear of hub B and the Ø44 motor plate
+      161.5..166.5 Ø52 motor ring, four tapped M3 at r 17, Ø12.8 centre
+      193..205     Ø96 spigot, a RING (r 42..50) not a disc: 26 cm3 instead of 87
+      205..211     Ø136 plate ring, 6x M4 at r 61.5, two Ø8 cable glands at r 30
     """
-    plate = cq.Workplane("XY").circle(68).extrude(6).translate((0, 0, 205))
-    plate = plate.union(cq.Workplane("XY").circle(48).extrude(12).translate((0, 0, 193)))
+    plate = cq.Workplane("XY").circle(68).circle(47).extrude(6).translate((0, 0, 205))
+    plate = plate.union(cq.Workplane("XY").circle(48).circle(42).extrude(12).translate((0, 0, 193)))
     for i in range(6):
         a = math.radians(60 * i)
         x, y = 61.5 * math.cos(a), 61.5 * math.sin(a)
@@ -334,24 +336,36 @@ def make_engine_block():
             2.25, 24, cq.Vector(x, y, 200), cq.Vector(0, 0, 1))))
         plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.75, 3.4, cq.Vector(x, y, 211.5), cq.Vector(0, 0, -1))))
-    # MOUNTING PLATE, not a clamp bore. On an outrunner the Ø27.5 shell IS the
-    # rotating bell - gripping it would clamp the rotor and cook the motor. The
-    # static part is the base, so the plate butts the base and the bell hangs
-    # upstream from it toward the Oldham.
-    # the motor plate bolts on here: Ø44 ring, four tapped M3 at r 17
-    cradle = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 161.5))
-    cradle = cradle.cut(cq.Workplane("XY").circle(6.4).extrude(12).translate((0, 0, 158)))
+    for ang in (30.0, 210.0):
+        a = math.radians(ang)
+        x, y = 30 * math.cos(a), 30 * math.sin(a)
+        plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            4.0, 24, cq.Vector(x, y, 190), cq.Vector(0, 0, 1))))
+        plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            5.5, 3.0, cq.Vector(x, y, 205), cq.Vector(0, 0, 1))))
+    ring = cq.Workplane("XY").circle(26).circle(6.4).extrude(5).translate((0, 0, 161.5))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
-        cradle = cradle.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        ring = ring.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             1.3, 6.0, cq.Vector(17 * math.cos(a), 17 * math.sin(a), 161.5),
             cq.Vector(0, 0, 1))))
-    legs = None
-    for i in range(3):
-        leg = (cq.Workplane("XY").box(21, 12, 40).translate((37, 0, 184))
-               .rotate((0, 0, 0), (0, 0, 1), 60 + 120 * i))
-        legs = leg if legs is None else legs.union(leg)
-    return plate.union(cradle).union(legs)
+    arms = None
+    for i in range(4):
+        leg = (cq.Workplane("XY").box(20, 8, 95).translate((35, 0, 157.5))
+               .rotate((0, 0, 0), (0, 0, 1), 45 + 90 * i))
+        arms = leg if arms is None else arms.union(leg)
+    boss = (cq.Workplane("XY").circle(10).extrude(10).translate((0, 0, 105))
+            .cut(cq.Workplane("XY").circle(2.7).extrude(30).translate((0, 0, 95)))
+            .cut(cq.Workplane("XY").circle(6.5).extrude(10).translate((0, 0, 105))))
+    sp = None
+    for i in range(4):
+        # pulled in to 18: at 20 the spoke only TOUCHED the Ø20 boss at r 10, a
+        # coincident face OCC leaves as a separate body. 2 mm of real overlap now.
+        spoke = (cq.Workplane("XY").box(20, 10, 8).translate((18, 0, 110))
+                 .rotate((0, 0, 0), (0, 0, 1), 45 + 90 * i))
+        sp = spoke if sp is None else sp.union(spoke)
+    return plate.union(ring).union(arms).union(boss).union(sp)
+
 
 
 def make_shaft():
