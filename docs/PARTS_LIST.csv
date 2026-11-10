@@ -1,34 +1,37 @@
 id,subsystem,part,spec,qty_probe,qty_site,qty_gateway,source,price_eur,status,notes,phase,owned,link
-A01,rotor,Blade,triple-blade rotor blade NACA4412 D220mm root pitch 28deg tip 2deg,3,0,0,printed in-house,-,printed,ASA or ASA-CF; 6 perimeters; epoxy coat; spare blade = fuse for branch strike,1,NO,
-A02,rotor,Hub,Ø64x46mm with 2x M4 heat-set inserts and Ø5 H7 shaft bore,1,0,0,printed in-house,-,printed,brass inserts M4 from TME,1,NO,
+A01,rotor,Blade,"triple-blade rotor NACA4412 D220mm, TSR5 alpha5: pitch 38.7deg root -> 12.6deg tip, chords 34.8->8.3mm, 0.5mm blunt TE",3,0,0,printed in-house,-,printed,"nose cone merged into the blade/hub print; blade is the designed fuse (breaks free, 40-min reprint); carry 2 spares",1,NO,
+A02,rotor,Hub,Ø64x46mm with 2x M4 heat-set inserts and Ø5 H7 shaft bore,1,0,0,printed in-house,-,printed,print bore undersize ~4.8 and ream to 5.000-5.012; 2x M4 dog-point on filed flats; insert bores modelled Ø4.4 - drill to the insert OD after printing,1,NO,
 A03,rotor,Wet shaft,316L Ø5 h6 x 115mm ground; 2 flats each end,1,0,0,nerezmaterial.cz,2.6,verified,"lokalny zeleziar / Hornbach M5 A4 srob - 4. obchod sa nerata, nema postu; 3m bar 63.1 CZK makes ~26 shafts",1,NO,
 A04,rotor,Wet bearing,igus iglidur J plain bearing JSM-0507-05 5x7x5mm,2,0,0,tme.eu,1.18,verified,83 pcs in stock; JFM-0507-05 flanged 1.48 USD alt,1,NO,https://www.tme.eu/sk/details/jsm-0507-05/klzne-loziska/igus/
 A05,rotor,Bearing carrier tube,316L Ø12xØ8x55mm,1,0,0,nerezmaterial.cz,1.2,quote,CUT: superseded - the bearing carrier is the printed spider (wet_carrier),cut,NO,
 A06,rotor,Set screw,M4x8 316SS cup point ISO 4029,2,0,0,tme.eu,1.0,verified,,1,NO,https://www.tme.eu/sk/katalog/?search=ISO%204029%20M4x8
 A07,rotor,Weed guard ring,Ø250 printed ring + 3 struts 40mm upstream of blade plane,1,0,0,printed in-house,-,printed,CUT: killed by design - replaced by the nose cone D64->D12; a ring on struts upstream is an algae scythe,cut,NO,
 A08,rotor,Blade safety retainer,3mm stainless lanyard + crimp ferrule,3,0,0,tme.eu,2.0,verified,"CUT: killed by design - a tether on a 110 mm blade is a flail, and the hole is a stress riser at the root",cut,NO,
+A09,rotor,Shaft collar Ø5,"Ø5 shaft collar, M3 grub screw, 4mm wide (axial stop between spider boss and wet cup)",1,0,0,local / TME,1.5,todo,NOT in the model before this pass - without it the rotating stack has no axial stop,1,NO,
+A10,rotor,Dry shaft,"316L Ø5 h9 x 65mm, from the same 3m bar as A03",1,0,0,nerezmaterial.cz,0.4,verified,runs in the 695ZZ; carries cup B + the Oldham hub,1,NO,
+A11,rotor,Dry bearing,"695ZZ 5x13x4, 2Z metal shield (never 2RS - rubber seal drag is visible at 100mW)",1,0,0,eshop.valiveloziska.sk / loziskaelm.sk,5.0,todo,was missing from this list entirely; presses into the Ø13 H7 seat in the barrel's dry bearing boss,1,NO,
 B01,coupling,Magnet,"N52 D10x5 axially magnetised, canned 316L or epoxy potted",16,0,0,supermagnete.cz,0.55,verified,"16x N52 D10x5 (S-10-05-N52N, 3.3 kg); magsy 10x5 N52 nemá overený",1,NO,https://www.supermagnete.cz/kotoucove-magnety-neodymove/kotoucovy-magnet-10mm-5mm_S-10-05-N52N
 B02,coupling,Magnet cup,"D70 rim, 8 pockets D10.2x5.2, printed ASA",2,0,0,printed in-house,,printed,"pockets 10.2 dia (magnet 10 + 0.2 glue), 0.2 mm epoxy recess",1,NO,
-B03,coupling,Separation wall,D106 x 4 mm - RECOMMENDED integral with the pod bulkhead (no separate part),1,0,0,nerezmaterial.cz / printed,,quote,"4 mm per CAD, not 5; integral removes O-ring C03 and screws C05",1,NO,
+B03,coupling,Separation wall,D106 x 4 mm - RECOMMENDED integral with the pod bulkhead (no separate part),1,0,0,nerezmaterial.cz / printed,,cut,"CUT: the 4mm bulkhead is printed as part of the barrel (cad/probe_cq.py make_pod) - nothing pierces the barrier, so there is no separate wall to seal",1,NO,
 B04,coupling,Potting compound,3M Scotch-Weld DP270 black 25ml,1,0,0,techfun.sk,14.0,verified,"techfun nema DP270; silikonova zalievacia hmota staci na test, epoxid je tuhsi",1,NO,https://techfun.sk/produkt/ag-termopasty-priehladna-silikonova-zalievacia-hmota-037-100g/
-C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,printed in-house,-,printed,in model as pod,1,NO,
+C01,pod,Pod barrel,Ø110x120mm printed ASA wall 2.4mm + epoxy barrier,1,0,0,printed in-house,-,printed,one print: barrel + 4mm bulkhead + dry bearing boss (Ø13H7 seat for 695ZZ) + 4 spider bosses + O-ring groove + 6 clamp lugs,1,NO,
 C02,pod,Tail cone,printed integral,1,0,0,printed in-house,-,printed,,1,NO,
-C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,zadny spoj podu - bez neho sa pri ponoreni natecie,1,NO,https://www.tme.eu/sk/katalog/?search=O-krouzek%20100x2.5
-C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,todo,NOT YET IN MODEL - add to pod,1,NO,
+C03,pod,Pod O-ring,NBR 70 Ø100x2.5,1,0,0,tme.eu,3.0,verified,NBR70 Ø100x2.5 (mars.sk code 879) seals the adapter joint at the barrel's downstream face,1,NO,https://www.tme.eu/sk/katalog/?search=O-krouzek%20100x2.5
+C04,pod,O-ring groove,2.2mm wide x 1.8mm deep machined/printed into pod rim,1,0,0,in CAD,-,printed,"groove is modelled in the barrel's downstream face: r 50.8-53.0, 2.2 x 1.8, printed on a flat top face",1,NO,
 C05,pod,Pod clamp screws,M4x30 A4 + washers,1,0,0,tme.eu,3.0,verified,drzi zadny spoj; integralny bulkhead riesi len prednu stranu,1,NO,https://www.tme.eu/sk/katalog/?search=sroub%20M4x30%20A4
 C06,pod,Desiccant,5g silica gel with indicator,2,0,0,local shop,2.0,verified,replace at service,1,NO,https://www.hornbach.sk/
 C07,pod,Cable gland wet side,Lapp Skintop MS-M 12x1.5 + Scotchcast 2131,1,0,0,tme.eu,12.0,verified,NOT YET IN MODEL - add boss,1,NO,https://www.tme.eu/sk/katalog/?search=Skintop%20M12
 C08,pod,Generator,T-Motor GB2208 KV128 or X-TEAM XTG3506 (24N22P 6ohm w/ AS5048A encoder),1,0,0,sk.x-teamrc.com / tmotor,26.0,verified,"TEST BEZ GENERATORA: klietka + senzory stacia, generator je dalsi nakup; XTG3506 preferred: encoder = free RPM/flow",1,NO,https://www.x-teamrc.com/product/x-team-3506-gimbal-brushless-motor/
-C09,pod,Generator mount,printed cradle + 4x M3x8 A4,1,0,0,printed in-house,1.0,printed,,1,NO,
+C09,pod,Generator mount,printed cradle + 4x M3x8 A4,1,0,0,printed in-house,1.0,printed,GB2208 cradle: bolts to the motor's own base bolt circle - measure the pattern on arrival; Oldham hub B on the bell's 4x M3 face,1,NO,
 D01,sensors,pH electrode,DFRobot SEN0161-V2 Gravity pH kit + E201 BNC probe,1,0,0,techfun.sk,39.0,verified,"pH kit: 39 EUR, 14-30 dni servis | OPTIONAL per site; 14-30 day service; +-0.1 pH after 2-pt cal",2,NO,
 D02,sensors,pH spare electrode,E201-C BNC,2,0,0,techfun.sk,9.0,verified,pH spare electrodes: 18 EUR | consumable,2,NO,
 D03,sensors,pH buffer,2x250ml pH7 + pH10,1,0,0,techfun.sk,12.0,verified,pH buffers: 12 EUR | consumable,2,NO,
 D04,sensors,Temperature,DS18B20 waterproof 1m cable,1,0,0,techfun.sk,5.0,verified,in model as sensor_ntc,1,NO,https://techfun.sk/produkt/dfrobot-vodeodolny-senzor-teploty-ds18b20/
-D09,sensors,Dissolved oxygen kit,"DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L, BNC probe, 2m cable",1,0,0,global-ic.sk / botland.cz,175.0,verified,"DO: 175 EUR, membrana 1-2 mesiace - prvy kandidat | HIGHEST-VALUE channel (Budca = hypoxia); membrane 1-2 months in muddy water; 0.5M NaOH filling solution NOT shipped by air - source locally",2,NO,
 D05,sensors,Level / stage probe,"Submersible IP68 316L, 0-1 mH2O, 0.5-4.5V out, 5m cable, permanent immersion rated",1,0,0,TME / sensorsone (quote),110.0,quote,"level: 110 EUR, quote; bez varovania pred povodnou | MS5837-30BA REJECTED: gel element must be dried daily, 24h max submersion",2,NO,
 D06,sensors,EC/TDS,DFRobot SEN0244 Gravity analog TDS module + probe,1,0,0,tme.eu,14.0,verified,"+-10% FS is the weakest sensor; use as trend indicator, site-calibrate",1,NO,https://www.tme.eu/sk/katalog/?search=SEN0244
 D07,sensors,Turbidity,DFRobot SEN0189 (0-4.5V analog),1,0,0,techfun.sk,12.45,verified,6 in stock; in model as sensor_turb,1,NO,https://techfun.sk/produkt/dfrobot-turbidity-senzor-zakalu-vody/
 D08,sensors,Sensor cable,4x2x0.5mm shielded PUR outdoor,1,0,0,tme.eu,20.0,verified,sensor cable 20 EUR - F01 8-zilovy to unesie | ,2,NO,
+D09,sensors,Dissolved oxygen kit,"DFRobot SEN0237-A Gravity analog DO, 0-20 mg/L, BNC probe, 2m cable",1,0,0,global-ic.sk / botland.cz,175.0,verified,"DO: 175 EUR, membrana 1-2 mesiace - prvy kandidat | HIGHEST-VALUE channel (Budca = hypoxia); membrane 1-2 months in muddy water; 0.5M NaOH filling solution NOT shipped by air - source locally",2,NO,
 E01,cage,Sensor cage,Ø130x150 printed ASA 12 slots,1,0,0,printed in-house,-,printed,in model as cage,1,NO,
 E02,cage,Cage fasteners,M3x10 A4 + nylok,1,0,0,tme.eu,6.0,verified,,1,NO,https://www.tme.eu/sk/katalog/?search=sroub%20M3x10%20A4
 E03,cage,Sensor holders,printed clips for pH/TDS/turbidity/NTC/MS5837,5,0,0,printed in-house,-,printed,in model as sensor bodies,1,NO,

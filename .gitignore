@@ -13,3 +13,7 @@ __pycache__/
 
 # local render output
 renders/
+
+# generated print artefacts (never commit meshes)
+print/
+*.bak

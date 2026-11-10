@@ -21,9 +21,10 @@ os.makedirs(OUT, exist_ok=True)
 ROTOR_R = 110.0
 HUB_D, HUB_LEN = 64.0, 46.0
 BLADES = 3
+TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
             (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
-MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
+MAGCUP_D = 70.0; MAGCUP_H = 18.0; CUP_BODY = 10.0; WALL_T = 4.0
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 8
 POD_OD = 110.0; POD_ID = 96.0; POD_LEN = 120.0
 CAGE_LEN = 200.0; CAGE_OD = 130.0; CAGE_WALL = 4.0; CAGE_SLOTS = 12
@@ -33,10 +34,15 @@ POLE_OD = 60.0; POLE_H = 2600.0
 ARM_LEN = 1200.0
 
 # ---------------- NACA 4412 (finite TE for kernel stability) ---------------
-def naca4412_pts(n=64):
+def naca4412_pts(n=64, te_half=0.0):
+    """te_half = minimum half-thickness at the trailing edge, as a FRACTION of
+    the chord. The raw NACA 4412 closes to 0.12% of chord (0.02 mm at the tip),
+    which is a razor the slicer cannot print and the first reed will fray.
+    Pass 0.25/chord for a 0.5 mm blunt TE."""
     m,p,t = 0.04, 0.4, 0.12
     def yt(x):
-        return 5*t*(0.2969*math.sqrt(x)-0.1260*x-0.3516*x*x+0.2843*x**3-0.1016*x**4)
+        return max(5*t*(0.2969*math.sqrt(x)-0.1260*x-0.3516*x*x+0.2843*x**3-0.1016*x**4),
+                   te_half)
     def yc(x):
         return m/(p*p)*(2*p*x-x*x) if x<p else m/((1-p)**2)*((1-2*p)+2*p*x-x*x)
     def dyc(x):
@@ -52,9 +58,9 @@ def naca4412_pts(n=64):
 
 # ---------------- blade: loft between matched-section NACA profiles ---------
 def make_blade():
-    n_pts = naca4412_pts(64)
     sections = []
     for rf, chord, twist in STATIONS:
+        n_pts = naca4412_pts(64, te_half=(TE_MM / 2.0) / chord)
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
@@ -86,21 +92,35 @@ def make_hub():
     return hub
 
 def make_shaft():
-    return cq.Workplane("XY").circle(2.5).extrude(115).translate((0,0,-HUB_LEN/2-26))
+    return cq.Workplane("XY").circle(2.5).extrude(115).translate((0,0,-37))
 
-def make_cup(dry=False):
-    """Solid disc with 8 blind magnet pockets on the +Z face and a bore for
-    the shaft. Pockets are real pockets: the magnet sits 5 mm deep with
-    0.2 mm of epoxy over it, not floating in an open dish."""
-    cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(MAGCUP_H)
-    # bore for shaft / wet carrier
-    cup = cup.cut(cq.Workplane("XY").circle(10).extrude(MAGCUP_H + 10).translate((0, 0, -5)))
+def make_cup(flavour="wet"):
+    """Solid disc with 8 blind magnet pockets on the +Z face and a bore for the
+    shaft. Pockets are real pockets: the magnet sits 5 mm deep with 0.2 mm of
+    epoxy over it, not floating in an open dish.
+
+    Body is CUP_BODY (10 mm) thick so the 5.2 mm pocket leaves 4.8 mm of plastic
+    behind it. The centre carries a Ø14 clamp boss on the -Z face, which the Ø5
+    shaft passes through; a Ø2 cross pin through boss and shaft is the drive, so
+    no printed thread sits anywhere in the torque path.
+    """
+    cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
+    cup = cup.union(cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, -6)))
+    # Ø5 through bore
+    cup = cup.cut(cq.Workplane("XY").circle(2.5).extrude(40).translate((0, 0, -20)))
+    # Ø2.1 cross pin hole through the clamp boss, 4 mm from its upstream end
+    cup = cup.cut(cq.Workplane("YZ").circle(1.05).extrude(24).translate((-12, 0, -3)))
+    if flavour == "dry":
+        # the dry cup rides on the dry shaft and turns around the bulkhead's
+        # Ø20 dry bearing boss, so its centre is a Ø22 clearance bore - the load
+        # path is the boss, not the cup's plastic.
+        cup = cup.cut(cq.Workplane("XY").circle(11).extrude(CUP_BODY))
     # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
         r = MAGCUP_D / 2 - MAG_D / 2 - 2
         pocket = (cq.Workplane("XY").circle(MAG_D / 2 + 0.1).extrude(MAG_H + 0.2)
-                  .translate((r * math.cos(th), r * math.sin(th), MAGCUP_H - MAG_H - 0.2)))
+                  .translate((r * math.cos(th), r * math.sin(th), CUP_BODY - MAG_H - 0.2)))
         cup = cup.cut(pocket)
     return cup
 
@@ -115,7 +135,7 @@ def make_magnets(dry=False):
         r = MAGCUP_D / 2 - MAG_D / 2 - 2
         m = (cq.Workplane("XY").circle(MAG_D / 2).extrude(MAG_H)
              .translate((r * math.cos(th), r * math.sin(th),
-                         MAGCUP_H - MAG_H - 0.2)))
+                         CUP_BODY - MAG_H - 0.2)))
         out = m if out is None else out.union(m)
     return out
 
@@ -126,24 +146,54 @@ def make_generator():
     return body.union(shaft)
 
 def make_pod():
-    # main barrel + tail cone
-    barrel = cq.Workplane("XY").circle(POD_OD/2).extrude(POD_LEN)
-    cone   = (cq.Workplane("XY")
-              .circle(POD_OD/2)
-              .workplane(offset=POD_LEN)
-              .circle(1.0)
-              .loft(combine="s"))
-    pod = barrel.union(cq.Workplane("XY")
-              .circle(POD_OD/2)
-              .workplane(offset=POD_LEN)
-              .transformed().circle(POD_OD/2).loft(combine="s") if False else barrel)
-    # tail cone done properly
-    pod = barrel
-    # the coupling wall is a separate part (see make_coupling_wall) so the
-    # exploded view can show it; here we only keep the barrel
-    # bore
-    pod = pod.cut(cq.Workplane("XY").circle(POD_ID/2).extrude(POD_LEN+POD_OD))
-    # bearings live in the wet carrier, ahead of the wall -- nothing protrudes here
+    """Barrel + integrated bulkhead, printed as ONE part. Nothing pierces the
+    barrier, so there is no fastener to seal and no O-ring on the coupling face.
+
+    local Z 0 = world 85 (assembly translate Z_POD).
+      -4..0        bulkhead Ø110 x WALL_T - this 4 mm disc IS the magnet wall,
+                   so the face gap stays wall + 2 x 0.2 = 4.4 mm
+      -14..-4      four bosses at r 45 on the WET face: blind M4 heat-set
+                   inserts, opened from the wet side, so no thread reaches the
+                   dry volume
+       0..10       reinforcement rib r 40..48 on the dry face - it carries the
+                   load from the four spider bosses into the barrel without
+                   thinning the magnet wall
+       0..5        695ZZ seat, Ø13 H7 x 5, pressed in from the dry face
+       0..POD_LEN   barrel Ø110 / Ø96
+     118.2..120    O-ring groove r 50.8..53.0, 2.2 x 1.8, on the downstream face
+     108..120      six lugs r 48..58 with Ø4.5 holes; upstream edge rounded
+                   (R6.5 cylinder) so the flow slides past instead of hitting a
+                   flat block
+    """
+    tube = cq.Workplane("XY").circle(POD_OD / 2).extrude(POD_LEN)
+    tube = tube.cut(cq.Workplane("XY").circle(POD_ID / 2).extrude(POD_LEN + 20)
+                    .translate((0, 0, -10)))
+    wall = cq.Workplane("XY").circle(POD_OD / 2).extrude(WALL_T).translate((0, 0, -WALL_T))
+    rib = cq.Workplane("XY").circle(POD_ID / 2).circle(40).extrude(10)
+    pod = tube.union(wall).union(rib)
+    # dry bearing boss: Ø20 x 10 standing on the bulkhead's dry face. The 695ZZ
+    # (5x13x4) presses into a Ø13 H7 x 5 seat cut into this boss from the dry
+    # side, so 5 mm of plastic plus the 4 mm wall sit behind it. The dry cup's
+    # own bearing is this boss, not a seat in the thin bulkhead.
+    pod = pod.union(cq.Workplane("XY").circle(10).extrude(10))
+    pod = pod.cut(cq.Workplane("XY").circle(6.5).extrude(5))
+    # four spider bosses on the wet face
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        pod = pod.union(cq.Workplane("XY").circle(5.5).extrude(10)
+                        .translate((45 * math.cos(a), 45 * math.sin(a), -14)))
+    # O-ring groove on the downstream face
+    pod = pod.cut(cq.Workplane("XY").circle(53).circle(50.8).extrude(1.8)
+                  .translate((0, 0, POD_LEN - 1.8)))
+    # six lugs: flat plate + rounded upstream edge, then drill
+    for i in range(6):
+        plate = cq.Workplane("XY").box(12, 14, 6).translate((52, 0, POD_LEN - 3))
+        round_edge = cq.Workplane(obj=cq.Solid.makeCylinder(
+            6.5, 14, cq.Vector(52, -7, POD_LEN - 6), cq.Vector(0, 1, 0)))
+        lug = (plate.union(round_edge)
+               .cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                   2.25, 26, cq.Vector(52.5, -13, POD_LEN - 8), cq.Vector(0, 1, 0)))))
+        pod = pod.union(lug.rotate((0, 0, 0), (0, 0, 1), 60 * i))
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------
@@ -204,21 +254,46 @@ def make_site():
 
 # ---------------- wet-side bearing carrier (A04, A05) ----------------------
 def make_wet_carrier():
-    """STATIC spider: bolts to the pod face and carries the rotor shaft in two
-    bushings. This is what holds the wet assembly axially - not the magnets."""
-    ring = (cq.Workplane("XY").circle(48).circle(42).extrude(7)
-            .translate((0, 0, 74)))
+    """STATIC spider, bolted to the bulkhead's wet face. It carries the wet shaft
+    in two plain bushings and traps it in both directions; the magnets transmit
+    torque and nothing else.
+
+    CAGE, not a flat spider: the longerons run at r 42-48 (outside the Ø70 magnet
+    cup) and the spokes sit in the band in front of the cup (Z 63-71), so no part
+    of this static body shares an axial band with a rotating cup at a radial band
+    it occupies. A flat spider put the three arms through the cup body - measured
+    3963 mm3 of interference at 0.25 mm resolution, i.e. the cup could not turn.
+    """
+    # boss: 47..61, Ø18, carries the two iglidur bushings; Ø5 shaft bore clear through
+    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 47))
+            .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 40))))
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 48))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 56))
+    boss = boss.cut(b1).cut(b2)
+    # three spokes 61..69, r 8..48, cut clear of the shaft collar (r 7, 61..65)
+    # and of the cup's Ø14 clamp boss (r 7, 65..71)
     arms = None
     for i in range(3):
-        a = (cq.Workplane("XY").box(40, 9, 6)
-             .translate((22, 0, 74))
+        a = (cq.Workplane("XY").box(48, 9, 8)
+             .translate((24, 0, 65))
              .rotate((0, 0, 0), (0, 0, 1), i * 120))
         arms = a if arms is None else arms.union(a)
-    boss = cq.Workplane("XY").circle(9).extrude(30).translate((0, 0, 47))
-    body = ring.union(arms.cut(cq.Workplane("XY").circle(9).extrude(20).translate((0,0,74)))).union(boss)
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 50))
-    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 68))
-    return body.cut(b1).cut(b2)
+    arms = arms.cut(cq.Workplane("XY").circle(8.0).extrude(24).translate((0, 0, 57)))
+    # ring 65..71 at r 42..48 sits on the four bulkhead bosses (71..81)
+    ring = cq.Workplane("XY").circle(48).circle(42).extrude(6).translate((0, 0, 65))
+    body = boss.union(arms).union(ring)
+    # 4 bolt ears at 45/135/225/315 deg (bisecting the arms), M4 clearance
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        ear = (cq.Workplane("XY").circle(5.5).extrude(6)
+               .translate((45 * math.cos(a), 45 * math.sin(a), 65)))
+        body = body.union(ear)
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        hole = (cq.Workplane("XY").circle(2.1).extrude(20)
+                .translate((45 * math.cos(a), 45 * math.sin(a), 63)))
+        body = body.cut(hole)
+    return body
 
 
 def make_shaft_collars():
@@ -389,11 +464,18 @@ parts["rotor"] = cq.Workplane("XY").add(make_hub().val())
 for i in range(BLADES):
     b = make_blade().rotate((0,0,0),(0,0,1), i*120)
     parts["rotor"] = parts["rotor"].union(b.val(), clean=True)
+# nose cone is PART OF THE ROTOR, not a separate bolt-on: a Ø64 -> Ø12 cone over
+# 40 mm on the hub's upstream face. As a separate part placed at Z -23 it shared
+# 44355 mm3 with the hub, and every fastening option for it sat in the blade
+# swept volume. Merged, there is no joint at all and nothing to seal.
+parts["rotor"] = parts["rotor"].union(
+    cq.Workplane("XY").circle(HUB_D/2).workplane(offset=-40).circle(6).loft()
+    .translate((0,0,-HUB_LEN)).val(), clean=True)
 # ---- explicit axial layout (local Z, before the pod is laid horizontal) ----
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
-Z_SHAFT   = 0     # shaft spans 0..66
-Z_CARRIER = 15    # wet bearing carrier 15..70
-Z_WETCUP  = 63    # wet cup 63..81, face on the wall face
+Z_SHAFT   = 0     # shaft spans -37..78 (115 mm), hub grips at -31, cup at 67
+Z_CARRIER = 15    # wet bearing carrier 47..71
+Z_WETCUP  = 71    # wet cup body 71..81, magnet face on the bulkhead face
 Z_POD     = 85    # pod: wall 80..85, barrel 85..205
 Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
 Z_ADAPTER = 205   # transition cone 205..225
@@ -402,17 +484,24 @@ Z_GUARD   = -50   # weed guard ring, upstream of the blade plane
 
 parts["shaft"]       = make_shaft().translate((0,0,Z_SHAFT))
 parts["wet_carrier"] = make_wet_carrier()
-parts["collars"]     = make_shaft_collars()
-parts["nose_cone"]   = make_nose_cone().translate((0,0,-23))
+# the two Ø14 collars are gone: the shaft is trapped by the hub's aft face on
+# one side of the spider boss and by the cup's clamp boss on the other, with a
+# 1 mm PTFE thrust washer at -46..-47. Nothing rides on a grub screw in shear.
+parts["thrust_washer"] = cq.Workplane("XY").circle(7).circle(2.5).extrude(1).translate((0,0,46))
+# bought Ø5 shaft collar (A09, M3 grub): the rotating stack is trapped between
+# this collar and the hub's aft face - the magnet pull loads the collar, never
+# the plastic of the static spider.
+parts["shaft_collar"] = cq.Workplane("XY").circle(7).circle(2.5).extrude(4).translate((0,0,61))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
-parts["pod_seal"]    = make_pod_seal().translate((0,0,Z_POD))
-parts["coupling_wall"] = make_coupling_wall().translate((0,0,Z_POD - WALL_T))
-parts["magcup_dry"]  = make_cup().mirror("XZ").translate((0,0,Z_DRYCUP + MAGCUP_H))
+# mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
+# flips Y and is a no-op on a body of revolution - it silently leaves the cup
+# facing the wrong way, with its magnet pockets pointing into the cage.
+parts["magcup_dry"]  = make_cup("dry").mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
 parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
-parts["magnets_dry"] = make_magnets(dry=True).mirror("XZ").translate((0,0,Z_DRYCUP + MAGCUP_H))
+parts["magnets_dry"] = make_magnets(dry=True).mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
 parts["generator"] = make_generator().translate((0,0,Z_POD+60))
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
@@ -436,7 +525,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","collars","nose_cone","sensors","pod_seal","cage_adapter","generator","joints","magnets_wet","magnets_dry","coupling_wall"]
+             "wet_carrier","thrust_washer","shaft_collar","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -449,8 +538,8 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "nose_cone": (0.10, 0.55, 0.25),
-    "pod": (0.10, 0.42, 0.30), "pod_seal": (0.18, 0.50, 0.36),
+    "wet_carrier": (0.45, 0.50, 0.58), "thrust_washer": (0.90, 0.90, 0.60),
+    "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
     "guys": (0.30, 0.30, 0.32), "safety_cable": (0.70, 0.70, 0.72),
