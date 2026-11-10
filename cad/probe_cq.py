@@ -125,27 +125,29 @@ def make_hub():
 
 
 def _split_bolts(solid, R_F, xs, z_list):
-    """M2 x 8 across the split, head one side and hex nut the other, so one STL
-    prints twice and the pair needs no mirrored model.
+    """M3 x 25 across the split, in the FLANGE, head one side and M3 nut the other.
 
-    The bolts live in the SLEEVE, not the flange: at x 7.6 a Ø4.4 head pocket sits
-    between r 5.4 and 9.8, inside a Ø22 sleeve with room to spare. In the flange the
-    same pocket would have to cross 20 mm of material - an M2 x 25 that does not
-    exist - and an M3 head (Ø6.2) is taller than the flange is thick, which is what
-    cut the old version in half. The pocket is anchored on the real OD, sqrt(R^2-x^2),
-    so it can never end up out in the air again.
+    Two earlier versions were wrong in ways only a render showed. The pockets were
+    cut along the sleeve's axis (Y) but opened on a curved surface 50 deg off that
+    axis, so a roof of plastic was left in front of every screw head - fine for a nut,
+    which slides in from the side, impossible for a screw, which must go in along its
+    own axis. The flange is a flat disc, so at x +-6 the surface normal is only 14 deg
+    off Y and the pocket has a real mouth.
+
+    The pocket is Ø6.2 x 2.6 in a 7 mm flange: an M3 head needs 6.2 mm and the flange
+    used to be 5, which is why the pocket used to cut both faces open.
     """
     for z in z_list:
         for x, kind in ((xs, "head"), (-xs, "nut")):
             y_surf = math.sqrt(R_F * R_F - x * x)
             solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.1, 60, cq.Vector(x, 0, z), cq.Vector(0, 1, 0))))
+                1.7, 60, cq.Vector(x, 0, z), cq.Vector(0, 1, 0))))
             if kind == "head":
                 solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                    2.2, 2.6, cq.Vector(x, y_surf, z), cq.Vector(0, -1, 0))))
+                    3.1, 2.8, cq.Vector(x, y_surf + 0.2, z), cq.Vector(0, -1, 0))))
             else:
-                solid = solid.cut(cq.Workplane("XZ").polygon(6, 4.0).extrude(2.6)
-                                  .translate((x, y_surf, z)))
+                solid = solid.cut(cq.Workplane("XZ").polygon(6, 6.6).extrude(2.8)
+                                  .translate((x, y_surf + 0.2, z)))
     return solid
 
 
@@ -164,8 +166,8 @@ def make_rotor_clamp():
     """
     z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 19.0      # 25..47, right up to the bushing
     R_F = 24.0
-    solid = cq.Workplane("XY").circle(R_F).extrude(5).translate((0, 0, HUB_LEN))   # flange
-    solid = solid.union(cq.Workplane("XY").circle(11).extrude(14).translate((0, 0, HUB_LEN + 5)))
+    solid = cq.Workplane("XY").circle(R_F).extrude(7).translate((0, 0, HUB_LEN))   # flange 7 mm
+    solid = solid.union(cq.Workplane("XY").circle(11).extrude(12).translate((0, 0, HUB_LEN + 7)))
     solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
     # Ø4.90, NOT Ø5.05. A split clamp with a clearance bore does nothing: once the
     # halves touch at the split, the bolt's tension goes into the mating faces and
@@ -187,7 +189,7 @@ def make_rotor_clamp():
         solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
-    solid = _split_bolts(solid, 11.0, 8.5, (35.5, 40.5))
+    solid = _split_bolts(solid, 24.0, 6.0, (31.5, 37.5))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -210,8 +212,8 @@ def make_cup_clamp():
              flange and the flange is 5.
     """
     R_F = 25.0        # flange Ø50: at Ø44 the Ø6.2 head pockets left a 0.4 mm rim
-    solid = cq.Workplane("XY").circle(R_F).extrude(5)
-    solid = solid.union(cq.Workplane("XY").circle(11).extrude(7.35).translate((0, 0, 5)))
+    solid = cq.Workplane("XY").circle(R_F).extrude(7)
+    solid = solid.union(cq.Workplane("XY").circle(11).extrude(5.35).translate((0, 0, 7)))
     solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
     # four M3 into the cup
     for ang in (45.0, 135.0):
@@ -223,7 +225,7 @@ def make_cup_clamp():
             3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
     # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
-    solid = _split_bolts(solid, 11.0, 8.5, (8.6,))
+    solid = _split_bolts(solid, 25.0, 6.0, (3.5,))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 

@@ -191,8 +191,9 @@ cw_ = local("cup_clamp_wet")
 cwz = zrange(cw_)
 ok(abs(cwz[0] - 61.0) <= 0.3, "wet cup clamp reaches the bushing",
    f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: sleeve end butts the second igus bushing at 61")
-ok(has_r(radii_at(cw_, cwz[0] + 1.0), 10.0, 0.15), "cup clamp sleeve OD",
-   f"r {radii_at(cw_, cwz[0]+1.0).max():.1f} at the sleeve: it turns inside a Ø15 hole in the cage")
+ok(has_r(radii_at(cw_, cwz[0] + 1.5), 11.0, 0.15), "cup clamp sleeve OD",
+   f"r {radii_at(cw_, cwz[0]+1.5).max():.1f} at the sleeve end, Ø22; the cage's spokes "
+   "stop at z 59, so the clamp at 61 turns clear of them")
 # the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
 # the body must be solid between the bore and the magnet pockets at every height, so
 # the four clamp screws (r 18.5) always have plastic around them
