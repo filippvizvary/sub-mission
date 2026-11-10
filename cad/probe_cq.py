@@ -21,6 +21,8 @@ os.makedirs(OUT, exist_ok=True)
 ROTOR_R = 110.0
 HUB_D, HUB_LEN = 64.0, 28.0
 CLAMP_R, CLAMP_LEN = 8.0, 14.0   # Ø16 x 14 clamp boss on the hub's aft face
+HEAD_D, HEAD_H = 6.2, 1.7          # flat pad under the M3 head; HEAD_H = the
+                                   # measured head height, so it sits flush
 BLADES = 3
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
@@ -128,7 +130,11 @@ def make_hub():
         # translate ALONG X first, then rotate: rotating after the offset put the
         # pad 7 mm off the radial line, so it was mangling the boss face instead
         # of flatting it under the head.
-        pad = (cq.Workplane("YZ").circle(2.9).extrude(2.5).translate((7.0, 0, 0))
+        # Ø6.2 flat, HEAD_H deep: the head is a low mushroom with a FLAT
+        # underside (Ø5.7 x ~1.7), so it needs a flat seat, not a countersink.
+        # 6.2 wide and 1.7 deep still leaves 3.7 mm of thread engagement.
+        pad = (cq.Workplane("YZ").circle(HEAD_D / 2).extrude(4.0)
+               .translate((CLAMP_R - HEAD_H, 0, 0))
                .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
         hub = hub.cut(pad)
     return hub
