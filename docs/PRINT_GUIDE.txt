@@ -99,6 +99,16 @@ Co tu NIE je (a preco)
 cage_adapter    zatial plny kuzel v modeli = zátka, nie prechodka. Caka na
                 roztec M3 dier na motore + prevedenie kabelaze.
 
+ZALIEVANIE MAGNETOV (24 kaps, 12 na pohar)
+  Epoxid West 105 + 206 (J03) pri 22 st. C: pracovna doba 20-25 min, gél 2-3 h,
+  rucna pevnost 10-15 h, plna pevnost 5-7 dni. Pod 15 st. C takmer netuhne.
+  - miesaj po 3-4 kusoch, nie vsetkych 12 naraz; v hrubsej vrstve tuhne rychlejsie
+  - zhustni kremicinou (colloidal silica), aby nestekal z kapsy
+  - magnet 0.2 mm pod celom, prebytok zotri skor nez zgelovatí
+  - polarita: postav oba pohare celami k sebe a pustaj magnety do druheho -
+    v zlej orientacii sa odtlaknu samy. Potom zaliat.
+  - 24 h pred montazou, 3 dni pred tym, nez to uvidi 84 N tahu
+
 MONTÁŽ SUCHÉ STRANY (poradie je dané geometriou, nedá sa obísť):
  1. ložisko 695ZZ zatlačiť do pavúka v bareli (z 101..106) - z vnútra, kým je
     barel prázdny.
