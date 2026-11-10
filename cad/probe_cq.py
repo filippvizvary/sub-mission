@@ -161,10 +161,9 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     hole_r = 1.7 if screw == "M3" else 1.2
     # the two halves do DIFFERENT jobs, so each gets its own pocket:
     #   head half  round Ø6.4 x 2.2 - a DIN 84 pan head is Ø6.0 x 1.9
-    #   nut  half  hex 6.3 AF x 2.6 - Filip measured HIS M3 nuts at 6.10 across
-    #              flats, not the 5.5 of a DIN 934, so the pocket is built around the
-    #              nut that will actually go in
-    hex_af = 6.3 if screw == "M3" else 4.0
+    #   nut  half  hex 5.8 AF x 2.6 - his nut measures 5.4 across flats and 2.3 thick,
+    #              i.e. a standard DIN 934, so 0.2 per side of clearance
+    hex_af = 5.8 if screw == "M3" else 4.0
     # polygon(6, 7.0) gives 6.06 across flats, and that is the pocket's real height.
     # The pockets all sit ABOVE the flange (z 5 and up), which is why the flange no
     # longer needs a notch: the ear's outer face is in the open air from z 5 to the
@@ -237,7 +236,7 @@ def make_rotor_clamp():
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
     # 21..40: between the rotor's hub face and the carrier boss. Identical to the cup's.
-    solid = _clamp_body(19.0, 24.0, 1, "M3", "head").translate((0, 0, 21.0))
+    solid = _clamp_body(19.0, 24.0, 2, "M3", "head").translate((0, 0, 21.0))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -275,9 +274,7 @@ def make_cup_clamp():
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
     # 54.35..73.35 - the same 19 mm part as the rotor clamp, so there is ONE clamp STL
     # printed four times
-    # ONE bolt per side, not two: a 6.3 AF pocket is 6.3 tall and only 14 mm of ear
-    # stand above the flange, so two of them need 12.6 mm plus three walls
-    solid = _clamp_body(19.0, 24.0, 1, "M3", "nut").translate((0, 0, 54.35))
+    solid = _clamp_body(19.0, 24.0, 2, "M3", "nut").translate((0, 0, 54.35))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
