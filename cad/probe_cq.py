@@ -174,6 +174,10 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     ear_z0 = 5.0
     gap = max(0.6, (L - ear_z0 - n_bolts * hex_h) / (n_bolts + 1))
     zs = [ear_z0 + gap + hex_h / 2 + i * (hex_h + gap) for i in range(n_bolts)]
+    if n_bolts == 1:
+        # one bolt sits LOW so all the spare material ends up ABOVE the pocket: Filip
+        # asked for a thick band on top, not an even one
+        zs = [ear_z0 + 1.0 + hex_h / 2]
     for sx in (-1, 1):
         # ear from z 4.5 - half a mm INTO the flange, not resting exactly on its face:
         # a tangent union makes the mesh non-manifold. The pockets still start above
@@ -238,9 +242,8 @@ def make_rotor_clamp():
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
     # 21..40: between the rotor's hub face and the carrier boss. Identical to the cup's.
-    # TWO bolts per side, as Filip wants: 4 M3 x 8 across the split. The wall over each
-    # head pocket is then only 0.40 mm - measured, and stated to him. He decides.
-    solid = _clamp_body(19.0, 24.0, 2, "M3", "head").translate((0, 0, 21.0))
+    # ONE bolt per side, sitting low: 6.6 mm of plastic above the head pocket.
+    solid = _clamp_body(19.0, 24.0, 1, "M3", "head").translate((0, 0, 21.0))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -258,7 +261,7 @@ def make_cup_clamp():
     The 7 mm flange replaces the deleted 2 mm magnet cover: without that 2 mm the clamp
     would stop 2 mm short of the cup, and M3 x 12 would not reach.
     """
-    return _clamp_body(19.0, 24.0, 2, "M3", "nut")   # two per side, see make_rotor_clamp
+    return _clamp_body(19.0, 24.0, 1, "M3", "nut")   # one per side, low, see make_rotor_clamp
 
 
 def make_shaft_collar(thickness, z0=0.0):
