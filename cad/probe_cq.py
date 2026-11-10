@@ -158,19 +158,21 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
     # Even slots along the ear, one bolt per slot, sized so the 7.0 AF hex pockets can
     # never touch each other. Spacing them by "span/(n+1)" put them 4.7 mm apart with
     # 7.0 mm pockets - they merged into a scalloped slot, which is what Filip saw.
-    slot = (L - 2.0) / n_bolts
-    zs = [1.0 + slot * (i + 0.5) for i in range(n_bolts)]
     hole_r, hex_af = (1.7, 7.0) if screw == "M3" else (1.2, 4.4)
+    # polygon(6, 7.0) gives 6.06 across flats, and that is the pocket's real height.
+    # The pockets all sit ABOVE the flange (z 5 and up), which is why the flange no
+    # longer needs a notch: the ear's outer face is in the open air from z 5 to the
+    # top, so a nut drops straight in from the side.
+    hex_h = hex_af * math.cos(math.pi / 6)
+    ear_z0 = 5.0
+    gap = max(0.6, (L - ear_z0 - n_bolts * hex_h) / (n_bolts + 1))
+    zs = [ear_z0 + gap + hex_h / 2 + i * (hex_h + gap) for i in range(n_bolts)]
     for sx in (-1, 1):
-        # NOTCH FIRST, ear second. The ear sits at x 9.5..21, y 0..5, which is inside
-        # the flange's Ø48 footprint, so over the flange's 5 mm its outer face was
-        # buried in flange material - the nut could not be pushed into the lower
-        # pocket and the cut made a channel instead of a seat. Cutting the flange
-        # back to y 6 over the ear's x range, BEFORE the ear goes on, opens that face
-        # all the way down. The notch starts at x 11.5 so it never touches the Ø22
-        # sleeve.
-        body = body.cut(cq.Workplane("XY").box(10.5, 6, 6).translate((sx * 16.75, 3.0, 2.5)))
-        ear = (cq.Workplane("XY").box(11.5, 5, L - 1).translate((sx * 15.25, 2.5, (L - 1) / 2)))
+        # ear from z 5, i.e. standing on the flange, not buried in it: the flange
+        # stays solid (Filip did not want trenches cut in its face) and the ear's
+        # outer face is in open air over its whole height
+        ear = (cq.Workplane("XY").box(11.5, 5, L - ear_z0)
+               .translate((sx * 15.25, 2.5, ear_z0 + (L - ear_z0) / 2)))
         body = body.union(ear)
     for sx in (-1, 1):
         for z in zs:
