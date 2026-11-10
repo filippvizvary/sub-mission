@@ -22,6 +22,14 @@ ROTOR_R = 110.0
 HUB_D, HUB_LEN = 64.0, 46.0
 BLADES = 3
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
+# Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
+# is 1.0 mm of ABS. Bending the blade out of the rotor plane as a tapered
+# cantilever (thrust 8 N per blade, spread as annular area) gives 44 mm of tip
+# deflection - 57 % of the span, i.e. the tip sags most of its own length.
+# 20 % gives 9.6 mm at the design flow and 2.4 mm at 0.5 m/s, root stress falls
+# from 6.2 to 2.2 MPa, and at Re 30-40k a thick section is the better foil
+# anyway: the thin one separates.
+THICKNESS = 0.20
 STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
             (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; CUP_BODY = 10.0; WALL_T = 4.0
@@ -34,15 +42,19 @@ POLE_OD = 60.0; POLE_H = 2600.0
 ARM_LEN = 1200.0
 
 # ---------------- NACA 4412 (finite TE for kernel stability) ---------------
-def naca4412_pts(n=64, te_half=0.0):
+def naca4_pts(n=64, te_half=0.0, t=THICKNESS):
     """te_half = minimum half-thickness at the trailing edge, as a FRACTION of
     the chord. The raw NACA 4412 closes to 0.12% of chord (0.02 mm at the tip),
     which is a razor the slicer cannot print and the first reed will fray.
     Pass 0.25/chord for a 0.5 mm blunt TE."""
-    m,p,t = 0.04, 0.4, 0.12
+    m,p = 0.04, 0.4
     def yt(x):
+        # the TE floor has to vanish at the leading edge, or the same max() that
+        # blunts the tail also gives the nose a 0.5 mm flat face - and at 20 %
+        # thickness that folded the profile onto itself (2 non-manifold edges
+        # at r 56 mm). x**4 keeps the nose exactly sharp and the tail square.
         return max(5*t*(0.2969*math.sqrt(x)-0.1260*x-0.3516*x*x+0.2843*x**3-0.1016*x**4),
-                   te_half)
+                   te_half * x**4)
     def yc(x):
         return m/(p*p)*(2*p*x-x*x) if x<p else m/((1-p)**2)*((1-2*p)+2*p*x-x*x)
     def dyc(x):
@@ -60,7 +72,7 @@ def naca4412_pts(n=64, te_half=0.0):
 def make_blade():
     sections = []
     for rf, chord, twist in STATIONS:
-        n_pts = naca4412_pts(64, te_half=(TE_MM / 2.0) / chord)
+        n_pts = naca4_pts(64, te_half=(TE_MM / 2.0) / chord, t=THICKNESS)
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
@@ -85,13 +97,18 @@ def make_hub():
     # 92 mm long instead of the 46 the BOM (A02) specifies - half the rotor's
     # volume and 46 mm of axial envelope that nothing needed.
     hub = cq.Workplane("XY").circle(HUB_D/2).circle(5/2).extrude(HUB_LEN)
-    # radial bores for M4 set-screw inserts (2 at 90deg, 15mm from aft face)
-    for ang in (0,90):
-        bore = (cq.Workplane("YZ")
-                .circle(4.4/2)
-                .extrude(HUB_D/2+2)
-                .rotate((0,0,0),(0,0,1), ang))
-        hub = hub.cut(bore.translate((0,0,HUB_LEN-15)))
+    # Radial set screws, at 60 and 180 deg so they land between the blades.
+    # The wall is 29.5 mm thick (Ø64 hub, Ø5 shaft), so an M4x8 grub screw in a
+    # plain hole never reaches the shaft - it just rattles in a 30 mm bore. The
+    # screw has to be long enough to bridge it: M4x30 from the OD, threaded
+    # through a heat-set insert seated at the mouth, tip on a filed flat.
+    for ang in (60, 180):
+        bore = (cq.Workplane("YZ").circle(4.5/2).extrude(HUB_D/2+2)
+                .rotate((0,0,0),(0,0,1), ang).translate((0,0,HUB_LEN-15)))
+        hub = hub.cut(bore)
+        seat = (cq.Workplane("YZ").circle(6.4/2).extrude(10)
+                .rotate((0,0,0),(0,0,1), ang).translate((-1,0,HUB_LEN-15)))
+        hub = hub.cut(seat)
     return hub
 
 def make_shaft():
@@ -189,7 +206,12 @@ def make_pod():
         pod = pod.union(cq.Workplane("XY").circle(5.5).extrude(10)
                         .translate((45 * math.cos(a), 45 * math.sin(a), -14)))
     # O-ring groove on the downstream face
-    pod = pod.cut(cq.Workplane("XY").circle(53).circle(50.8).extrude(1.8)
+    # Groove for an NBR70 Ø100 x 2.5 ring: 3.0 wide x 1.8 deep. It was 2.2 wide,
+    # which gives 2.2*1.8 = 4.0 mm2 of groove for 4.9 mm2 of cord rubber - the
+    # ring would have had to extrude out of the joint. 3.0 x 1.8 = 5.4 mm2 holds
+    # the displaced volume, mean Ø102.8 against a 102.5 cord mean is ~0 stretch,
+    # squeeze (2.5-1.8)/2.5 = 28%, and both lands stay over 1.8 mm.
+    pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(1.8)
                   .translate((0, 0, POD_LEN - 1.8)))
     # six lugs: flat plate + rounded upstream edge, then drill
     for i in range(6):

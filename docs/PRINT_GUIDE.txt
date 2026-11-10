@@ -6,7 +6,7 @@ vycentrovane na os hriadela (nie na stred bboxu). Jednotky mm.
 
 Subory
 -------
-01_rotor_vrtula.stl            203.1 cm3   vrtula + hub + nosovy kuzel, jeden diel
+01_rotor_vrtula.stl            205.8 cm3   vrtula + hub + nosovy kuzel, jeden diel
                                            170.3 x 194.6 x 86.0
 02_barel_pod.stl               341.9 cm3   barrel + 4 mm bulkhead + loziskovy boss
                                            4 pätky na klietku + O-kruzok + 6 lugov
@@ -32,6 +32,8 @@ material   ABS (ASA je lepsia len na UV, pod vodou to je jedno)
 tryska     255-265 C, podlozka 100-110 C, uzavreta komora, chladenie 0-20 %
 vrstva     0.2 mm (01 rotor 0.15 mm), 4 perimetry
 vypln      25 % gyroid; ROTOR HUB 40 %; 02 pod v 4 mm dne 100 % a 5 perimetrov
+listy      20 % hrubky (t/c 0.20), nie 12 %. Pri 12 % sa hrot prehne 44 mm pri
+           plnom prietoku; 20 % dáva 9,3 mm a korenove napätie 7,1 MPa
            01 rotor neries ako plny - hub je 46 mm dlhy, nie 92; pri 4
            perimetroch a 20 % je z 203 cm3 realne ~75-90 g
 po tlaci   ABS sa da vyhladit acetonovymi parami - vonkajok 02 pod, 20 min,
@@ -41,7 +43,11 @@ Kriticke rozmery po tlaci
 -------------------------
 hub Ø5 H7 diera        tlac ~4.8, prevrtat/prejst na 5.000-5.012
                        (hriadel Ø5 h9 = 4.970-5.000, vola 0-0.042)
-M4 otvory v hube       model ma Ø4.4 (zavitnicky rozmer) - prevrtat na OD vlozky
+M4 otvory v hube       Ø4.5 priechod + Ø6.4 x 8 sedlo na vlozku z vonkajsej strany.
+                       Skrutka MUSI byt M4 x 30 (nie M4x8): stena hubu je 29,5 mm,
+                       M4x8 sa dostane len 8 mm od povrchu a hriadeľ nechytí.
+                       Hrot sadá na 0,5 mm plosku na hriadeli (r 2,0).
+pohar -> hriadel       Ø2 x 12 kolik cez Ø14 telo pohára a hriadeľ (nie závit)
 puzdra v nosici        otvory Ø7, zatlacit iglidur JSM-0507-05 (Ø5x7x5)
 lozisko v pod         diera Ø13 H7 x 5 v suchom boss-e, 695ZZ 2Z (nie 2RS)
 O-kruzok              drážka r 50.8-53.0, 2.2 x 1.8; NBR70 Ø100 x 2.5

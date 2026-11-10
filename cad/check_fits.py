@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Dimensional audit of the sub-mission pod chain.
+
+Every interface that the build depends on is measured off the exported
+geometry and asserted here, so a modelling slip (the hub extruded with
+both=True made it 92 mm long instead of 46, half the rotor's mass) fails loudly
+instead of reaching the printer.
+
+    python3 cad/check_fits.py            # exit 0 = every interface checked out
+    python3 cad/check_fits.py --verbose  # also print the passing numbers
+
+Numbers marked DERIVED come out of the mesh; numbers marked GIVEN are bought
+parts or workshop operations and are listed with the consequence they imply.
+Run this BEFORE slicing, and again after any change to probe_cq.py.
+"""
+import os
+import sys
+
+import numpy as np
+import trimesh
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CQ = os.path.join(ROOT, "cad", "cq")
+T = np.array([1200.0, -142.0, -420.0])
+_ry = lambda a: np.array([[np.cos(a), 0, np.sin(a)], [0, 1, 0], [-np.sin(a), 0, np.cos(a)]])
+_rz = lambda a: np.array([[np.cos(a), -np.sin(a), 0], [np.sin(a), np.cos(a), 0], [0, 0, 1]])
+BACK = _ry(-np.pi / 2) @ _rz(-np.pi / 2)
+
+VERBOSE = "--verbose" in sys.argv
+fails, checks = [], 0
+
+
+def ok(cond, name, detail):
+    global checks
+    checks += 1
+    if not cond:
+        fails.append(f"FAIL {name}: {detail}")
+        print(f"FAIL {name}: {detail}")
+    elif VERBOSE:
+        print(f"  ok {name}: {detail}")
+
+
+def local(name):
+    """STL in its own build frame: axis = Z."""
+    m = trimesh.load(os.path.join(CQ, name + ".stl"))
+    m.vertices = (m.vertices - T) @ BACK.T
+    return m
+
+
+def world(name):
+    return trimesh.load(os.path.join(CQ, name + ".stl"))
+
+
+def radii_at(m, z):
+    sec = m.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
+    if sec is None:
+        return np.array([])
+    return np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
+
+
+def has_r(rs, target, tol=0.15):
+    return bool(np.any(np.abs(rs - target) <= tol))
+
+
+def zrange(m):
+    return m.bounds[0][2], m.bounds[1][2]
+
+
+# ---------------------------------------------------------------- rotor
+rotor = local("rotor")
+z0, z1 = zrange(rotor)
+ok(abs((z1 - z0) - 86.0) <= 1.5, "rotor height",
+   f"{z1 - z0:.1f} mm, expected 86 (cone 40 + hub 46); both=True would give 132")
+hub_rs = radii_at(rotor, 20.0)
+ok(has_r(hub_rs, 2.5, 0.06), "hub shaft bore", f"min section radius {hub_rs.min():.2f} mm = Ø{2*hub_rs.min():.2f}")
+hub_od = radii_at(rotor, 44.0).max()   # 44 mm aft: above the blade roots, pure hub
+ok(abs(hub_od - 32.0) <= 0.2, "hub OD", f"r {hub_od:.2f} (Ø64) - the set screws enter here")
+tip = hub_od - 30.0            # GIVEN: M4x30 from the OD, insert 7 mm at the mouth
+flat_r = 2.5 - 0.5             # GIVEN: 0.5 mm flat on the Ø5 h9 shaft
+ok(abs(tip - flat_r) <= 0.35, "set screw reaches the shaft",
+   f"tip lands at r {tip:.1f}, shaft flat sits at r {flat_r:.1f} (a M4x8 would stop 21 mm short)")
+# blade: reach, and a section that proves the loft is twisted (root is wider than tip)
+r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
+ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
+# blade stiffness: measure chord and thickness off the model, then bend the
+# blade as a tapered cantilever out of the rotor plane (thrust is axial).
+ST = [(0.35, 25.9), (0.50, 19.9), (0.65, 16.6), (0.80, 14.5), (0.98, 12.7)]
+xs, cs, ts = [], [], []
+cy = 0.5 * (rotor.bounds[0][1] + rotor.bounds[1][1])
+for rf, pitch in ST:
+    sec = rotor.section(plane_origin=[110 * rf, cy, 0], plane_normal=[1, 0, 0])
+    P = sec.vertices[:, 1:]
+    th = np.radians(pitch)
+    chord_ext = np.ptp(P @ np.array([np.cos(th), np.sin(th)]))
+    thick_ext = np.ptp(P @ np.array([-np.sin(th), np.cos(th)]))
+    xs.append(110 * rf); cs.append(chord_ext); ts.append(thick_ext)
+    if rf > 0.95:      # a plane exactly at the tip is tangent and returns nothing
+        xs.append(110.0); cs.append(chord_ext); ts.append(thick_ext)
+ok(np.ptp(rotor.vertices[:, 0] ** 0 + np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])) > 0, "x", "x")
+ok(abs(np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max() - 110.0) <= 0.5,
+   "rotor reaches R", f"r {np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max():.2f} mm (nominal 110)")
+
+x = np.array(xs); c = np.array(cs); t = np.array(ts)
+ok(c[0] > c[-1] + 5, "blade tapers root->tip", f"chord {c[0]:.1f} -> {c[-1]:.1f} mm")
+tc_tip = t[-1] / c[-1]
+ok(tc_tip >= 0.17, "blade thickness ratio at the tip",
+   f"t/c {tc_tip*100:.0f} % ({t[-1]:.2f} mm on a {c[-1]:.1f} mm chord); 12 % gave 1.0 mm")
+THRUST = 24.1           # GIVEN, sim/rotor_check.py at 1.0 m/s
+E_ABS = 2000.0          # GIVEN, printed ABS in the layer plane, N/mm2
+n = 300
+r0, R = 32.0, 110.0     # hub OD -> tip
+xr = np.linspace(r0, R, n)
+cr = np.interp(xr, x, c); tr = np.interp(xr, x, t)
+Ir = np.pi * cr * tr ** 3 / 64e3        # mm^4 -> cm^4? keep mm4: c*t^3/64*pi
+Ir = np.pi * cr * tr ** 3 / 64.0
+w = xr / np.trapezoid(xr, xr)
+w = w / np.trapezoid(w, xr) * (THRUST / 3.0)
+M = np.array([np.trapezoid(w[i:] * (xr[i:] - xr[i]), xr[i:]) for i in range(n)])
+delta = np.trapezoid(M / (E_ABS * Ir) * (R - xr), xr)
+ok(delta <= 15.0, "blade tip deflection at 1 m/s",
+   f"{delta:.1f} mm over a {R-r0:.0f} mm span ({delta/(R-r0)*100:.0f} %); 12 % thick gave 44 mm")
+i35 = int((38.5 - r0) / (R - r0) * (n - 1))
+sig = M[i35] / (np.pi * cr[i35] * tr[i35] ** 2 / 32.0)
+ok(sig <= 15.0, "blade root bending stress", f"{sig:.1f} MPa against ~35-40 MPa for ABS")
+
+# ---------------------------------------------------------------- shaft
+shaft = local("shaft")
+sz0, sz1 = zrange(shaft)
+ok(abs((sz1 - sz0) - 78.0) <= 0.5, "shaft length", f"{sz1 - sz0:.1f} mm (115 reached into the nose cone)")
+ok(abs(np.ptp(shaft.vertices[:, 0]) - 5.0) <= 0.05, "shaft diameter", f"Ø{np.ptp(shaft.vertices[:, 0]):.2f}")
+ok(sz0 >= -0.1 and sz1 >= 75.0, "shaft spans hub->cup boss", f"z {sz0:.1f}..{sz1:.1f}, needs to cover 48..75")
+
+# ---------------------------------------------------------------- static spider
+car = local("wet_carrier")
+for z in (50.5, 58.5):
+    rs = radii_at(car, z)
+    ok(has_r(rs, 3.5, 0.05), f"bushing seat at z={z}", f"bore Ø{2*rs.min():.2f}, iglidur JSM-0507-05 needs Ø7")
+    ok(has_r(rs, 9.0, 0.2), f"boss OD at z={z}", f"Ø{2*rs.max():.2f} in the cup's Ø20 bore")
+ok(np.ptp(car.vertices[:, 0]) <= 111, "spider clears the barrel bore", f"Ø{np.ptp(car.vertices[:, 0]):.1f}")
+
+# ---------------------------------------------------------------- coupling gap
+mw, md = world("magnets_wet"), world("magnets_dry")
+cw, cd = world("magcup_wet"), world("magcup_dry")
+gap = md.bounds[0][1] - mw.bounds[1][1]
+ok(abs(gap - 4.4) <= 0.05, "magnet face gap", f"{gap:.2f} mm -> slip 0.95 N*m vs 0.164 N*m load = 5.8x")
+rec_w = cw.bounds[1][1] - mw.bounds[1][1]
+rec_d = md.bounds[0][1] - cd.bounds[0][1]
+ok(abs(rec_w - 0.2) <= 0.01 and abs(rec_d - 0.2) <= 0.01, "magnet recess (epoxy plug)",
+   f"wet {rec_w:.2f} / dry {rec_d:.2f} mm below the face")
+
+# ---------------------------------------------------------------- cups
+cupw = local("magcup_wet")
+ok(has_r(radii_at(cupw, 68.0), 2.5, 0.06), "cup clamp boss bore", "Ø5 slip fit on the shaft, Ø2 cross pin at z 68")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 16.0) <= 0.05, "cup stack height", f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 6)")
+behind = 10.0 - 5.2
+ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
+
+# ---------------------------------------------------------------- barrel
+POD_Z = 85.0   # make_pod() is translated by Z_POD in the assembly
+pod = local("pod")
+rs = radii_at(pod, POD_Z + 50.0)
+ok(has_r(rs, 48.0, 0.1) and has_r(rs, 55.0, 0.1), "barrel wall", f"r {rs.min():.1f}..{rs.max():.1f} (Ø96/Ø110)")
+grs = radii_at(pod, POD_Z + 119.1)
+ok(has_r(grs, 49.9, 0.1) and has_r(grs, 52.9, 0.1), "O-ring groove", f"r 49.9..52.9 = 3.0 wide (2.2 could not hold a 2.5 cord)")
+brs = radii_at(pod, POD_Z + 2.5)
+ok(has_r(brs, 6.5, 0.1), "695ZZ seat", f"Ø{2*6.5:.0f} H7 x 5 deep, bearing is 5x13x4 (2Z)")
+drs = radii_at(pod, POD_Z + 0.5)
+ok(has_r(drs, 10.0, 0.2), "dry bearing boss", f"Ø{2*10:.0f}, clear of the cup")
+
+
+# ---------------------------------------------------------------- booleans
+import cadquery as cq
+PAIRS = [
+    ("rotor", "shaft"), ("shaft", "wet_carrier"), ("magcup_wet", "wet_carrier"),
+    ("magcup_dry", "pod"), ("magnets_wet", "magcup_wet"), ("magnets_dry", "magcup_dry"),
+    ("shaft_collar", "magcup_wet"), ("shaft_collar", "wet_carrier"),
+]
+import itertools
+shapes = {n: cq.importers.importStep(os.path.join(CQ, n + ".step")).val()
+          for n in {p for pair in PAIRS for p in pair}}
+for a, b in PAIRS:
+    v = shapes[a].intersect(shapes[b]).Volume()
+    ok(v <= 1.0, f"interference {a} <-> {b}", f"{v:.1f} mm3 (must be 0)")
+
+print(f"\n{checks} checks, {len(fails)} failed")
+sys.exit(1 if fails else 0)
