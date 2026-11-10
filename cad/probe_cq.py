@@ -160,6 +160,74 @@ def make_shaft_collar(thickness, z0=0.0):
                             .translate((x, 7.6, thickness / 2)))
     return half
 
+
+def make_dry_shaft():
+    """Ø5 x 42, from inside the dry cup (85) out to the Oldham hub A (127).
+    Grip points: the cup's 3 M3 at 95..101, a stop collar at 106, hub A at 113."""
+    return cq.Workplane("XY").circle(2.5).extrude(42).translate((0, 0, 85))
+
+
+def make_dry_bearing():
+    """Placeholder for the 695ZZ (13 x 5 x 4, 2Z) in the barrel's internal spider.
+    It is what takes the 56 N of magnet pull off the motor: the dry collar at 106
+    pushes the inner ring, the boss holds the outer ring."""
+    return (cq.Workplane("XY").circle(6.5).circle(2.5).extrude(4)
+            .translate((0, 0, 101)))
+
+
+def make_oldham():
+    """Three printed parts: two hubs with one slot each, and a centre disc with
+    tongues on both faces, rotated 90 deg. It transmits 0.164 N*m and ZERO axial
+    force, so the motor's bearings never see the 56 N pull. Tongue radius 8 mm,
+    loads ~20 N per tongue, 0.85 MPa in ABS."""
+    out = None
+    for z0, bore in ((113.0, True), (125.0, False)):
+        hub = (cq.Workplane("XY").circle(14).circle(2.6 if bore else 5.5)
+               .extrude(8).translate((0, 0, z0)))
+        # slot for the centre disc's tongue
+        hub = hub.cut(cq.Workplane("XY").box(20, 4.0, 4.0).translate((0, 0, z0 + 2)))
+        out = hub if out is None else out.union(hub)
+    disc = (cq.Workplane("XY").circle(13).circle(2.6).extrude(4)
+            .translate((0, 0, 121)))
+    for zc in (121.0, 123.0):
+        disc = disc.cut(cq.Workplane("XY").box(20, 3.6, 2.6).translate((0, 0, zc)))
+    return out.union(disc)
+
+
+def make_engine_block():
+    """The whole dry train on ONE removable plate. Everything that has to be
+    inserted goes in from this end, so nothing inside the barrel can be in the
+    way: the dry cup and shaft slide in first, then this block drops over the
+    shaft and bolts to the barrel's flange.
+
+    Layout, all of it inside the Ø96 bore except the closing plate:
+      136..161  Ø40 cradle, Ø27.7 through bore for the GB2208 body (clamped)
+      161..204  three legs, r 27..48
+      193..205  Ø96 spigot into the bore
+      205..211  Ø136 plate, 6x M4 on r 61.5 with head counterbores
+
+    The motor's own bolt circle is unpublished and not yet measured, so the
+    cradle is a bore plus a clamp slot - it gets replaced by the real pattern.
+    """
+    plate = cq.Workplane("XY").circle(68).extrude(6).translate((0, 0, 205))
+    plate = plate.union(cq.Workplane("XY").circle(48).extrude(12).translate((0, 0, 193)))
+    for i in range(6):
+        a = math.radians(60 * i)
+        x, y = 61.5 * math.cos(a), 61.5 * math.sin(a)
+        plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            2.25, 24, cq.Vector(x, y, 200), cq.Vector(0, 0, 1))))
+        plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            3.75, 3.4, cq.Vector(x, y, 211.5), cq.Vector(0, 0, -1))))
+    cradle = cq.Workplane("XY").circle(20).extrude(25).translate((0, 0, 136))
+    cradle = cradle.cut(cq.Workplane("XY").circle(13.85).extrude(30).translate((0, 0, 134)))
+    legs = None
+    for i in range(3):
+        leg = (cq.Workplane("XY").box(21, 12, 43).translate((37, 0, 182.5))
+               .rotate((0, 0, 0), (0, 0, 1), 60 + 120 * i))
+        legs = leg if legs is None else legs.union(leg)
+    return plate.union(cradle).union(legs)
+
+
 def make_shaft():
     # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
     # 115 mm version reached 37 mm into what is now the nose cone and shared
@@ -236,10 +304,9 @@ def make_magnets(dry=False):
     return out
 
 def make_generator():
-    # GB2208-class outrunner: Ø27.5 x 23 mm body, 3 mm shaft
-    body = cq.Workplane("XY").circle(27.5/2).extrude(23)
-    shaft = cq.Workplane("XY").circle(1.5).extrude(12).translate((0, 0, -12))
-    return body.union(shaft)
+    """T-Motor GB2208: Ø27.5 x 23, Ø6 through bore, bell at the upstream end."""
+    body = cq.Workplane("XY").circle(27.5 / 2).extrude(23)
+    return body.cut(cq.Workplane("XY").circle(3).extrude(30).translate((0, 0, -3)))
 
 def make_pod():
     """Barrel + integrated bulkhead, printed as ONE part. Nothing pierces the
@@ -323,8 +390,10 @@ def make_pod():
         x, y = 61.5 * math.cos(a), 61.5 * math.sin(a)
         pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             2.25, 20, cq.Vector(x, y, POD_LEN - 10), cq.Vector(0, 0, 1))))
-        pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(   # head counterbore
-            3.75, 5.0, cq.Vector(x, y, POD_LEN - 5.2), cq.Vector(0, 0, 1))))
+        # nut pocket instead: the screw comes from behind the engine block,
+        # so its head seats on the adapter and the nut sits here on the inner face.
+        pod = pod.cut(cq.Workplane("XY").polygon(6, 6.8).extrude(3.6)
+                      .translate((x, y, POD_LEN - 6)))
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------
@@ -642,7 +711,12 @@ parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
 parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
 parts["magnets_dry"] = make_magnets(dry=True).mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
-parts["generator"] = make_generator().translate((0,0,Z_POD+60))
+parts["dry_shaft"]   = make_dry_shaft()
+parts["dry_bearing"] = make_dry_bearing()
+parts["dry_collar"]  = make_shaft_collar(4.0).translate((0, 0, 106))
+parts["oldham"]      = make_oldham()
+parts["generator"]   = make_generator().translate((0,0,133))
+parts["engine_block"]= make_engine_block()
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
 parts["sensors"]     = make_sensors().translate((0,0,Z_CAGE))
@@ -665,7 +739,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","collar_up","collar_dn","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","collar_up","collar_dn","dry_shaft","dry_bearing","dry_collar","oldham","engine_block","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -678,7 +752,9 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "collar_up": (0.85, 0.70, 0.30), "collar_dn": (0.85, 0.70, 0.30),
+    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "collar_up": (0.85, 0.70, 0.30), "collar_dn": (0.85, 0.70, 0.30), "dry_shaft": (0.55,0.55,0.58),
+    "dry_bearing": (0.75,0.75,0.78), "dry_collar": (0.85,0.70,0.30),
+    "oldham": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
