@@ -243,7 +243,7 @@ def make_motor_plate():
     5.5 mm - and NO counterbore, which would only push the tip further in.
     """
     plate = cq.Workplane("XY").circle(22).extrude(5.5)
-    plate = plate.cut(cq.Workplane("XY").circle(6.2).extrude(16).translate((0, 0, -5)))
+    plate = plate.cut(cq.Workplane("XY").circle(6.4).extrude(16).translate((0, 0, -5)))
     for sx in (-1, 1):
         for sy in (-1, 1):
             plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
@@ -340,7 +340,7 @@ def make_engine_block():
     # upstream from it toward the Oldham.
     # the motor plate bolts on here: Ø44 ring, four tapped M3 at r 17
     cradle = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 161.5))
-    cradle = cradle.cut(cq.Workplane("XY").circle(6.2).extrude(12).translate((0, 0, 158)))
+    cradle = cradle.cut(cq.Workplane("XY").circle(6.4).extrude(12).translate((0, 0, 158)))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
         cradle = cradle.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
