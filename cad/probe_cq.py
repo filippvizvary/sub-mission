@@ -140,13 +140,13 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
                holes Ø3.4 with a hex pocket 6.4 AF x 2.5 on the outer face, which
                takes the screw head on one half and the M3 nut on the other
     """
-    # flange 7, not 5: the 2 mm cover is gone, and its thickness has to come from
-    # somewhere or the cup sits 2 mm short of the clamp and the magnet gap grows
-    body = cq.Workplane("XY").circle(R_F).extrude(7)
+    # flange 5 - exactly the version Filip approved. The 2 mm the deleted magnet cover
+    # used to fill is his to solve at assembly; he asked me not to keep chasing it.
+    body = cq.Workplane("XY").circle(R_F).extrude(5)
     # sleeve starts at 4.5, not 5: a plane exactly on the flange's face is a
     # coincident surface, and OCC leaves slivers there that put vertices inside
     # the bore and make the mesh non-watertight
-    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 6.5).translate((0, 0, 6.5)))
+    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 4.5).translate((0, 0, 4.5)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
@@ -155,7 +155,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
         body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             1.7, 20, cq.Vector(x, y, -8), cq.Vector(0, 0, 1))))
         body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            3.1, 2.1, cq.Vector(x, y, 7.1), cq.Vector(0, 0, -1))))
+            3.1, 2.1, cq.Vector(x, y, 5.1), cq.Vector(0, 0, -1))))
     # ears + split bolts
     # Even slots along the ear, one bolt per slot, sized so the 7.0 AF hex pockets can
     # never touch each other. Spacing them by "span/(n+1)" put them 4.7 mm apart with
@@ -171,7 +171,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # longer needs a notch: the ear's outer face is in the open air from z 5 to the
     # top, so a nut drops straight in from the side.
     hex_h = (6.4 if kind == "head" else hex_af * math.cos(math.pi / 6))
-    ear_z0 = 7.0
+    ear_z0 = 5.0
     gap = max(0.6, (L - ear_z0 - n_bolts * hex_h) / (n_bolts + 1))
     zs = [ear_z0 + gap + hex_h / 2 + i * (hex_h + gap) for i in range(n_bolts)]
     for sx in (-1, 1):
