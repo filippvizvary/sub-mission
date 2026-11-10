@@ -209,7 +209,8 @@ for a, b in PAIRS:
 w = local("cup_washer")
 ok(abs(np.ptp(w.vertices[:, 2]) - 1.0) <= 0.02, "cup thrust washer thickness", f"{np.ptp(w.vertices[:, 2]):.2f} mm")
 rs = radii_at(w, (w.bounds[0][2] + w.bounds[1][2]) / 2)
-ok(has_r(rs, 12.0, 0.2) and has_r(rs, 34.0, 0.2), "cup thrust washer ring", f"r {rs.min():.1f}..{rs.max():.1f} (Ø24/Ø68)")
+ok(has_r(rs, 4.0, 0.2) and has_r(rs, 12.0, 0.2), "cup thrust washer ring",
+   f"r {rs.min():.1f}..{rs.max():.1f} (Ø8/Ø24 - printed ABS, low PV, replaceable)")
 # the hub must NOT touch the static spider - the cup sets the axial position
 rot = local("rotor"); car = local("wet_carrier")
 hub_aft = max(v[2] for v in rot.vertices if np.hypot(v[0], v[1]) < 31.0)

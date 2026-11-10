@@ -60,8 +60,11 @@ magnety               kapse Ø10.2 x 5.2, magnet 0.2 mm pod epoxidom.
                        Zaliat KAZDU kapsu: naplnit ~60 %, vlozit magnet, vytlacit,
                        stiahnut na 0.2 mm. NIE vrstva cez cele celo - kazda 0.1 mm
                        na celo ide priamo do 4.4 mm medzery a znizuje slip.
-thrust washer          PTFE Ø68/Ø24 x 1 do recessu v mokrom cele bulkheadu.
-                       Na nom sedi celo pohara a ide cez neho 56 N od magnetov.
+thrust washer          06_podlozka_pohara.stl - ABS Ø24/Ø8 x 1 (r 4..12), do recessu
+                       v mokrom cele barelu. Na nom sedi celo pohara a ide cez neho
+                       56 N od magnetov. Nic sa nekupuje - je to spotrebak,
+                       pretlac ho znovu za 4 minuty. Kontakt je zamerne maly:
+                       0.14 MPa pri 0.36 m/s = PV 0.05 MPa*m/s, co ABS vo vode da.
 
 Hriadel (A03): 78 mm, nie 115. Od cela hubu (0) po telo upinacej diery pohára
 (78). Dlhsi kus zasahoval do nosoveho kuzela.

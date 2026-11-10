@@ -550,7 +550,13 @@ parts["wet_carrier"] = make_wet_carrier()
 # 1 mm PTFE thrust washer at -46..-47. Nothing rides on a grub screw in shear.
 # No washer in the hub's clearance any more: the cup pressed on the bulkhead
 # sets the axial position, so a second thrust surface at 46..47 would fight it.
-parts["cup_washer"] = (cq.Workplane("XY").circle(34).circle(12).extrude(1)
+# PRINTED, not bought: ABS ring Ø24/Ø8 x 1 (r 4..12). It is a consumable - 4
+# minutes on the printer. Putting the contact ring small matters: at r 4..12 the
+# mean sliding speed is 0.36 m/s and the pressure 0.14 MPa, i.e. PV 0.05
+# MPa*m/s, which ABS in water handles. The same ring at r 12..34 would run at
+# 0.73 m/s and 0.09 MPa on a much bigger area, and it was the version that
+# grooved.
+parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 # bought Ø5 shaft collar (A09, M3 grub): the rotating stack is trapped between
 # this collar and the hub's aft face - the magnet pull loads the collar, never

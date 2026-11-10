@@ -48,6 +48,7 @@ PARTS = [
     ("magcup_wet", "03_magnetovy_pohar_mokry.stl", False),   # pockets up
     ("magcup_dry", "04_magnetovy_pohar_suchy.stl", True),    # pockets up
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
+    ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
 ]
 
 
