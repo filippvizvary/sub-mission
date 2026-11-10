@@ -79,16 +79,28 @@ def zrange(m):
 # ---------------------------------------------------------------- rotor
 rotor = local("rotor")
 z0, z1 = zrange(rotor)
-ok(abs((z1 - z0) - 82.0) <= 1.5, "rotor height",
-   f"{z1 - z0:.1f} mm, expected 82 (cone 40 + hub 28 + clamp boss 14)")
+ok(abs((z1 - z0) - 68.0) <= 1.5, "rotor height",
+   f"{z1 - z0:.1f} mm, expected 68 (cone 40 + hub 28, no clamp boss)")
 sec = rotor.section(plane_origin=[0, 0, 20.0], plane_normal=[0, 0, 1])
 _P = sec.vertices[:, :2]
 _bore = _P[np.hypot(_P[:, 0], _P[:, 1]) < 3.0]
 ok(np.hypot(_bore[:, 0], _bore[:, 1]).min() >= 2.55, "hub bore is round",
    f"min radius {np.hypot(_bore[:,0],_bore[:,1]).min():.2f} mm: round Ø5.2, clamped by 3 M3")
-boss_rs = radii_at(rotor, 35.0)          # inside the Ø16 clamp boss (28..42)
-ok(abs(boss_rs.max() - 8.0) <= 0.15, "clamp boss OD",
-   f"r {boss_rs.max():.2f} (Ø16): an M3 from here reaches the shaft in 5.5 mm, not 29.5")
+# the aft face is flat now: the rotor prints on it, and the clamp is a separate
+# two-piece part bolted down onto it by four M3 x 12 at r 18.5
+aft_rs = radii_at(rotor, 26.5)           # inside the Ø30 x 3 centring recess
+ok(aft_rs.max() >= 14.9, "aft face recess", f"r {aft_rs.max():.2f} clears the clamp spigot Ø29.8")
+hub = local("rotor_clamp")
+c0, c1 = zrange(hub)
+ok(abs((c1 - c0) - 18.0) <= 0.4, "rotor clamp length",
+   f"{c1 - c0:.1f} mm: Ø20 sleeve 15 mm on the shaft + 3 mm spigot")
+sec = hub.section(plane_origin=[0, 0, 37.0], plane_normal=[0, 0, 1])
+_H = sec.vertices[:, :2]
+_b = _H[np.hypot(_H[:, 0], _H[:, 1]) < 3.0]
+ok(np.hypot(_b[:, 0], _b[:, 1]).min() >= 2.45, "clamp bore",
+   f"Ø{2*np.hypot(_b[:,0],_b[:,1]).min():.2f}: slip fit on Ø5 h9")
+_rim = np.hypot(_H[:, 0], _H[:, 1]).max()
+ok(abs(_rim - 10.0) <= 0.2, "clamp sleeve OD", f"r {_rim:.2f} (Ø20), split bolts at x ±7.6")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
 ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
@@ -244,13 +256,25 @@ def _solid(wp):
 
 
 _pat = [(5.0, 0.0), (-2.5, 4.33), (-2.5, -4.33)]
-for _sol, _name, _zs, _solidz in ((_solid(_mod.make_hub()), "hub", (30.0, 34.0, 38.0), 26.0),
-                                  (_solid(_mod.make_cup()), "cup", (-5.5, -4.0, -2.5), -0.5)):
-    for (_x, _y), _z in zip(_pat, _zs):
-        ok(not _sol.isInside(cq.Vector(_x, _y, _z)), f"{_name} clamp hole at z {_z}",
-           "air at r 5, so the M3 reaches the shaft")
-    ok(_sol.isInside(cq.Vector(5.0, 0.0, _solidz)), f"{_name} no hole where none belongs",
-       f"material at (5,0,{_solidz})")
+_cup = _solid(_mod.make_cup())
+for (_x, _y), _z in zip(_pat, (-5.5, -4.0, -2.5)):
+    ok(not _cup.isInside(cq.Vector(_x, _y, _z)), f"cup clamp hole at z {_z}",
+       "air at r 5, so the M3 reaches the shaft")
+ok(_cup.isInside(cq.Vector(5.0, 0.0, -0.5)), "cup no hole where none belongs",
+   "material at (5,0,-0.5)")
+
+# The hub has NO clamp holes any more - the grip moved into the separate two-piece
+# clamp (Filip's design), so what has to be right here is the bore, the centring
+# recess and the four M3 holes on the flat aft face.
+_h = _solid(_mod.make_hub())
+ok(not _h.isInside(cq.Vector(2.8, 0.0, 14.0)), "hub clearance bore",
+   "air at r 2.8: Ø6, the Ø5 shaft passes without binding on print tolerance")
+ok(not _h.isInside(cq.Vector(5.0, 0.0, 26.5)), "hub aft recess",
+   "air at r 5, z 26.5: Ø30 x 3 centring recess for the clamp spigot")
+ok(not _h.isInside(cq.Vector(13.08, 13.08, 25.5)), "hub aft clamp hole",
+   "air at r 18.5 on the aft face: one of the four M3 x 12 for the clamp")
+ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",
+   "material at r 12, z 20 - the four screws get 6 mm of thread")
 
 cu, cd_ = local("collar_up"), local("collar_dn")
 ok(abs(abs(cu.volume) - abs(cd_.volume)) < 1.0, "collar halves identical",

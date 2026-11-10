@@ -97,48 +97,68 @@ def make_blade():
 
 # ---------------- hub + shaft + cups ---------------------------------------
 def make_hub():
-    """Ø64 x 24 hub with a Ø16 x 14 CLAMP BOSS on its aft face.
+    """Ø64 x 28 rotor hub, FLAT aft face, no clamp boss.
 
-    That boss is the whole point: the hub's OD is 32 mm from the shaft, where a
-    set screw cannot reach (29.5 mm of wall). A Ø16 boss puts the screw 8 mm from
-    the shaft - the same proportions as a Prusa GT2 pulley, which is exactly the
-    pattern Filip pointed at. Two M3 x 8 grub screws at 90 deg, printed Ø2.6 and
-    tapped in, clamp the shaft; the D-bore flat is the torque key, so the screws
-    only hold it axially. Nothing is glued, everything comes apart.
+    The boss is gone. Filip's call and the right one: a Ø16 column bonded to the
+    body through one layer of layer adhesion is exactly the joint that creeps
+    apart, and it forces the rotor to print as a Ø64 plate on a Ø16 stalk with a
+    64 mm unsupported underside. Now the aft face is a flat disc that goes
+    straight onto the build plate, the rotor is 68 mm tall instead of 82, and the
+    shaft clamp is a separate two-piece part bolted to that face.
 
-    The 46 mm body was only ever there to have somewhere to glue to. 28 mm is the
-    shortest that still swallows the blade roots - the root section is 25.5 mm
-    tall axially, so at 24 mm the roots poked through both end faces and pinched
-    the union (2 non-manifold edges at r 56, z 11). It also frees the shaft band
-    28..47 for this clamp boss.
+    The face carries: Ø6 clearance bore, a Ø30 x 3 centring recess for the clamp's
+    spigot, and four Ø2.6 x 6 holes on r 18.5 for M3 x 12 (printed, tapped).
     """
-    body = cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
-    boss = cq.Workplane("XY").circle(CLAMP_R).extrude(CLAMP_LEN).translate((0, 0, HUB_LEN))
-    hub = body.union(boss)
-    total = HUB_LEN + CLAMP_LEN
-    # plain round bore Ø5.2 - the shaft is round bar and stays round
-    hub = hub.cut(cq.Workplane("XY").circle(2.6).extrude(total + 20).translate((0, 0, -10)))
-    # THREE M3 clamps at 120 deg, staggered in z inside the boss (28..42), for
-    # the same reason as on the cup: two opposite each other fight, and a single
-    # screw lets the shaft rock off-centre against a 60 N pull.
-    for ang, z in ((0.0, 31.0), (120.0, 34.5), (240.0, 38.0)):
-        hole = (cq.Workplane("YZ").circle(1.3).extrude(CLAMP_R + 3)
-                .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
-        hub = hub.cut(hole)
-        # FLAT PAD, 1.0 mm deep, Ø5.8. On a Ø16 cylinder a screw head only
-        # touches along a line and walks off centre when you tighten it. The pad
-        # gives it a real seat and leaves 3.4 mm of wall to the Ø5.2 bore.
-        # translate ALONG X first, then rotate: rotating after the offset put the
-        # pad 7 mm off the radial line, so it was mangling the boss face instead
-        # of flatting it under the head.
-        # Ø6.2 flat, HEAD_H deep: the head is a low mushroom with a FLAT
-        # underside (Ø5.7 x ~1.7), so it needs a flat seat, not a countersink.
-        # 6.2 wide and 1.7 deep still leaves 3.7 mm of thread engagement.
-        pad = (cq.Workplane("YZ").circle(HEAD_D / 2).extrude(4.0)
-               .translate((CLAMP_R - HEAD_H, 0, 0))
-               .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
-        hub = hub.cut(pad)
+    hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
+           .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
+           .cut(cq.Workplane("XY").circle(15.0).extrude(3.0).translate((0, 0, HUB_LEN - 3))))
+    for ang in (45.0, 135.0, 225.0, 315.0):
+        a = math.radians(ang)
+        hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.3, 6.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 6.0),
+            cq.Vector(0, 0, 1))))
     return hub
+
+
+def make_rotor_clamp():
+    """ONE HALF of the rotor's shaft clamp. Print twice, mate 180 deg apart.
+
+    Same scheme as the stop collars, scaled up for the torque: two M3 x 12 across
+    the split squeeze a Ø20 x 15 sleeve onto the Ø5 shaft, so the force comes from
+    a bolt preload and never from a grub tip biting plastic. The sleeve carries a
+    Ø44 flange with two counterbored M3 x 12 that go straight into the rotor's
+    flat aft face - four screws for the pair, at r 18.5.
+
+    Grip: 15 mm of Ø5.05 bore at 1800 N of clamp force gives ~0.9 N*m of friction
+    against the 0.164 N*m the rotor actually sees, and the two split bolts sit at
+    z 37, i.e. 9 mm clear of the rotor's face instead of 3 mm.
+    """
+    z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 15.0      # 25..43
+    solid = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, HUB_LEN))     # flange
+    solid = solid.union(cq.Workplane("XY").circle(10).extrude(10).translate((0, 0, HUB_LEN + 5)))
+    solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
+    solid = solid.cut(cq.Workplane("XY").circle(2.525).extrude(40).translate((0, 0, z_bot - 5)))
+    # four M3 x 12 into the rotor, two of them land in this half
+    for ang in (45.0, 135.0):
+        a = math.radians(ang)
+        x, y = 18.5 * math.cos(a), 18.5 * math.sin(a)
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 12.0, cq.Vector(x, y, HUB_LEN - 2), cq.Vector(0, 0, 1))))
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
+    # split bolts across y=0: head one side, nut the other, so one STL prints twice
+    for x, kind in ((7.6, "head"), (-7.6, "nut")):
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 12.0, cq.Vector(x, 0, 37.0), cq.Vector(0, 1, 0))))
+        if kind == "head":
+            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                3.1, 3.2, cq.Vector(x, 10.2, 37.0), cq.Vector(0, -1, 0))))
+        else:
+            solid = solid.cut(cq.Workplane("XZ").polygon(6, 6.6).extrude(3.2)
+                              .translate((x, 10.2, 37.0)))
+    # the split: keep y >= 0
+    solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
+    return solid
 
 
 def make_shaft_collar(thickness, z0=0.0):
@@ -723,6 +743,7 @@ parts["wet_carrier"] = make_wet_carrier()
 # grooved.
 parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
+parts["rotor_clamp"] = make_rotor_clamp()
 parts["collar_up"]   = make_shaft_collar(4.0).translate((0, 0, 43.0))
 parts["collar_dn"]   = make_shaft_collar(4.0).translate((0, 0, 61.0))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
@@ -763,7 +784,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","collar_up","collar_dn","dry_shaft","dry_bearing","dry_collar","oldham","engine_block","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","collar_up","collar_dn","dry_shaft","dry_bearing","dry_collar","oldham","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -777,7 +798,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "collar_up": (0.85, 0.70, 0.30), "collar_dn": (0.85, 0.70, 0.30), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "dry_collar": (0.85,0.70,0.30),
+    "dry_bearing": (0.75,0.75,0.78), "dry_collar": (0.85,0.70,0.30), "rotor_clamp": (0.95,0.62,0.20),
     "oldham": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

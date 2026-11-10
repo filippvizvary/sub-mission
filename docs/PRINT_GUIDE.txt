@@ -44,7 +44,9 @@ po tlaci   ABS sa da vyhladit acetonovymi parami - vonkajok 02 pod, 20 min,
 Kriticke rozmery po tlaci
 -------------------------
 hub                    okruhla diera Ø5.2, ziadna ploska. Na zadnej strane Ø16 x 14
-                       upinacie telo s 3x M3 dierou Ø2.6 na z 31/34.5/38 po 120 st.
+                       ZADNE upinacie telo - je oddelene (diel 08). Na zadnom
+                       celom su 4 diery Ø2.6 x 6 mm na r 18.5 (45/135/225/315),
+                       Ø6 priechod a Ø30 x 3 vybranie na vystredenie.
                        Pod kazdou je plocha Ø6.2 x 1.9 hlboka - hlava Ø5.90 x 1.90
                        je v nej LIC so stenou tela, takze sa nema o co opriet
                        a nesklzne po valci. Prejst zavitnikom M3, vlozka sa

@@ -50,6 +50,7 @@ PARTS = [
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
     ("collar_up", "07_kruzok_hriadele_polovica.stl", False),  # print 4: 2 per collar
+    ("rotor_clamp", "08_upinac_vrtule_polovica.stl", True),   # print 2: one clamp
 ]
 
 
