@@ -113,18 +113,12 @@ def make_hub():
     boss = cq.Workplane("XY").circle(CLAMP_R).extrude(CLAMP_LEN).translate((0, 0, HUB_LEN))
     hub = body.union(boss)
     total = HUB_LEN + CLAMP_LEN
-    # D-bore through body and boss
+    # plain round bore Ø5.2 - the shaft is round bar and stays round
     hub = hub.cut(cq.Workplane("XY").circle(2.6).extrude(total + 20).translate((0, 0, -10)))
-    lens = (cq.Workplane("XY").circle(2.6).extrude(total)
-            .intersect(cq.Workplane("XY").box(10, 12, total + 20).translate((7.05, 0, 0))))
-    hub = hub.union(lens)
-    # Two M3 clamps, both inside the BOSS (28..42) - a hole at z 27 is still in
-    # the Ø64 body where the wall is back to 29.4 mm and the screw reaches
-    # nothing. Angles: 180 deg pushes the shaft ACROSS onto the flat (maximum
-    # form engagement), 90 deg locks rotation. 90 and 270 opposite each other
-    # fight: each pushes the shaft away from the other and neither holds it on
-    # the flat.
-    for ang, z in ((180.0, 32.0), (90.0, 38.0)):
+    # THREE M3 clamps at 120 deg, staggered in z inside the boss (28..42), for
+    # the same reason as on the cup: two opposite each other fight, and a single
+    # screw lets the shaft rock off-centre against a 60 N pull.
+    for ang, z in ((0.0, 30.0), (120.0, 34.0), (240.0, 38.0)):
         hole = (cq.Workplane("YZ").circle(1.3).extrude(CLAMP_R + 3)
                 .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
         hub = hub.cut(hole)
@@ -135,17 +129,10 @@ def make_shaft():
     # 115 mm version reached 37 mm into what is now the nose cone and shared
     # 275 mm3 with it.
     #
-    # ONE flat, 0.5 mm deep and 3 mm wide, running z 16..76. It does three jobs
-    # and therefore needs no cross-drilled hole: the hub's M4x30 tips land on
-    # it (r 2.0), the bought Ø5 collar grips it, and the cup's D-bore is driven
-    # by it. A Ø2 cross pin would have meant drilling Ø2 through a Ø5 stainless
-    # bar - a drill-press job with a drill that walks on a round surface, and a
-    # hand drill is how a 1.5 mm bit snaps in 316L.
+    # Plain round bar, Ø5 x 78, no flat and no cross hole. Everything grips it
+    # from the side with M3 screws instead: 3 at the hub, 3 at the cup.
     sh = cq.Workplane("XY").circle(2.5).extrude(78)
-    # the flat runs the FULL length: a flat that stops short leaves a round
-    # 2 mm tip that sits inside the cup's D-bore (measured 1.8 mm3 of
-    # interference at the end of the shaft).
-    return sh.cut(cq.Workplane("XY").box(10, 12, 100).translate((7.0, 0, 39)))
+    return sh
 
 def make_cup(flavour="wet"):
     """Solid disc with 8 blind magnet pockets on the +Z face and a bore for the
@@ -163,8 +150,11 @@ def make_cup(flavour="wet"):
     # bought Ø5 collar is needed - that was A09, now cut.
     cup = cup.union(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, -10)))
     # Ø5 through bore
-    # D-bore: Ø5.2 slip fit plus the same 0.5 mm flat the shaft carries, 0.05 mm
-    # clearance on the flat. The flat is the drive (no pin, no printed thread).
+    # ROUND bore, Ø5.2. No flat, no key: the shaft is round bar and Filip is not
+    # willing to file one (and one flat on one side is a one-sided drive anyway).
+    # The torque goes through THREE M3 clamps at 120 deg, staggered in z, each tip
+    # into a 1 mm dimple drilled in the round shaft. 3 x 120 deg means the clamps
+    # oppose each other in a triangle, so nothing can rock off-centre.
     cup = cup.cut(cq.Workplane("XY").circle(2.6).extrude(40).translate((0, 0, -20)))
     # The chord must be cut ONLY between the flat and the bore wall: the lens
     # x 2.05..2.60, y +-1.60. A 10 x 12 mm box here reaches past the bore into
@@ -175,20 +165,16 @@ def make_cup(flavour="wet"):
     # and to the flat's corners at y = +-1.60 produces zero-thickness contacts
     # and OCC silently returns the uncut solid - which is why the first attempt
     # at the small box left the bore a perfect circle.
-    lens = (cq.Workplane("XY").circle(2.6).extrude(20).translate((0, 0, -10))
-            .intersect(cq.Workplane("XY").box(10, 12, 24).translate((7.05, 0, 0))))
-    # ...and UNION it back. A D-bore is a round hole with material added on one
-    # side where the flat is - subtracting the lens removes air (the lens lies
-    # entirely inside the Ø5.2 bore), so the first two attempts left a perfect
-    # circle and the "flat" existed only in a comment.
-    cup = cup.union(lens)
-    # one M3 clamp in the boss (Ø14, 5.4 mm wall - tapped, no insert), at z 66,
-    # 90 deg to the flat. Its tip presses the shaft, and a 1 mm dimple drilled in
-    # the shaft under it makes the axial location POSITIVE: without it the cup is
-    # free to slide, and nothing then holds the wet shaft against the magnet pull.
-    bossclamp = (cq.Workplane("XZ").circle(1.3).extrude(9)
-                 .rotate((0, 0, 0), (0, 0, 1), 90).translate((0, 0, -4)))
-    cup = cup.cut(bossclamp)
+
+    # THREE M3 clamps at 120 deg, staggered so two can sit on the same shaft
+    # section without fighting: z 65.5, 67.5, 69.5 (the boss is 61..71).
+    for ang, z in ((0.0, -5.5), (120.0, -3.5), (240.0, -1.5)):
+        # YZ, not XZ: the YZ workplane's normal is +X, so the extrude runs RADIALLY
+        # out of the bore. On XZ it ran along Y straight through the axis, which
+        # cut a tunnel across the boss instead of three screw holes.
+        hole = (cq.Workplane("YZ").circle(1.3).extrude(9)
+                .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
+        cup = cup.cut(hole)
     # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N

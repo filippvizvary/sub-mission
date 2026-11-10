@@ -84,8 +84,8 @@ ok(abs((z1 - z0) - 82.0) <= 1.5, "rotor height",
 sec = rotor.section(plane_origin=[0, 0, 20.0], plane_normal=[0, 0, 1])
 _P = sec.vertices[:, :2]
 _bore = _P[np.hypot(_P[:, 0], _P[:, 1]) < 3.0]
-ok(abs(_bore[:, 0].max() - 2.05) <= 0.08, "hub D-bore key",
-   f"flat at x {_bore[:, 0].max():.2f} mm: the flat is the torque key, epoxy holds it axially")
+ok(np.hypot(_bore[:, 0], _bore[:, 1]).min() >= 2.55, "hub bore is round",
+   f"min radius {np.hypot(_bore[:,0],_bore[:,1]).min():.2f} mm: round Ø5.2, clamped by 3 M3")
 boss_rs = radii_at(rotor, 35.0)          # inside the Ø16 clamp boss (28..42)
 ok(abs(boss_rs.max() - 8.0) <= 0.15, "clamp boss OD",
    f"r {boss_rs.max():.2f} (Ø16): an M3 from here reaches the shaft in 5.5 mm, not 29.5")
@@ -137,8 +137,9 @@ ok(sig <= 15.0, "blade root bending stress", f"{sig:.1f} MPa against ~35-40 MPa 
 shaft = local("shaft")
 sz0, sz1 = zrange(shaft)
 ok(abs((sz1 - sz0) - 78.0) <= 0.5, "shaft length", f"{sz1 - sz0:.1f} mm (115 reached into the nose cone)")
-ok(abs(np.ptp(shaft.vertices[:, 1]) - 5.0) <= 0.05, "shaft diameter (across the flat)",
-   f"Ø{np.ptp(shaft.vertices[:, 1]):.2f} across, {np.ptp(shaft.vertices[:, 0]):.2f} over the flat")
+ok(abs(np.ptp(shaft.vertices[:, 1]) - 5.0) <= 0.05 and abs(np.ptp(shaft.vertices[:, 0]) - 5.0) <= 0.05,
+   "shaft is plain round Ø5",
+   f"Ø{np.ptp(shaft.vertices[:, 1]):.2f} round, no flat, no cross hole")
 ok(sz0 >= -0.1 and sz1 >= 75.0, "shaft spans hub->cup boss", f"z {sz0:.1f}..{sz1:.1f}, needs to cover 48..75")
 
 # ---------------------------------------------------------------- static spider
@@ -164,8 +165,8 @@ cupw = local("magcup_wet")
 sec = cupw.section(plane_origin=[0, 0, 68.0], plane_normal=[0, 0, 1])
 P = sec.vertices[:, :2]
 bore = P[np.hypot(P[:, 0], P[:, 1]) < 3.0]     # the bore region, not the Ø14 boss
-ok(abs(bore[:, 0].max() - 2.05) <= 0.08, "cup D-bore flat",
-   f"flat at x {bore[:, 0].max():.2f} mm: it is the drive, the Ø5.2 bore is the slip fit")
+ok(np.hypot(bore[:, 0], bore[:, 1]).min() >= 2.55, "cup bore is round",
+   f"min bore radius {np.hypot(bore[:,0],bore[:,1]).min():.2f} mm - no flat, no key")
 ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
    f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
 ok(has_r(radii_at(cupw, 62.0), 7.0, 0.1), "cup boss OD in the spoke cage",
@@ -176,14 +177,6 @@ for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss its
     r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
     stray = ((r > 3.5) & (r < 21.0)).sum()
     ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
-# the shaft carries the matching flat
-sh_local = local("shaft")
-sec = sh_local.section(plane_origin=[0, 0, 40.0], plane_normal=[0, 0, 1])
-P = sec.vertices[:, :2]
-flat_x = P[:, 0].max()          # the flat is cut on +X
-ok(abs(flat_x - 2.0) <= 0.06, "shaft flat depth",
-   f"flat at x {flat_x:.2f} mm = 0.50 mm deep, 3.0 mm wide; hub screws, collar and cup all grip it")
-ok(abs(P[:, 0].min() + 2.5) <= 0.06, "shaft still Ø5 opposite the flat", f"x {P[:, 0].min():.2f}")
 ok(abs(np.ptp(cupw.vertices[:, 2]) - 20.0) <= 0.05, "cup stack height",
    f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 10; the boss butts the spider at 61)")
 behind = 10.0 - 5.2
@@ -234,6 +227,30 @@ rot = local("rotor"); car = local("wet_carrier")
 hub_aft = max(v[2] for v in rot.vertices if np.hypot(v[0], v[1]) < 31.0)
 ok(hub_aft <= 46.2 and car.bounds[0][2] >= 46.5, "hub clears the static spider",
    f"hub aft face {hub_aft:.1f} mm against the spider at {car.bounds[0][2]:.1f} mm")
+
+
+# ---- clamps: three radial M3 holes per part, 120 deg apart, staggered in z.
+# Exact test on the solids (a section polygon cannot tell you where a hole is).
+import types as _types
+_src = open(os.path.join(ROOT, "cad", "probe_cq.py")).read()
+_src = _src.replace('OUT = "/home/filip/sub-mission/cad/cq"', 'OUT = "/tmp/cm_check"')
+_mod = _types.ModuleType("pcq")
+exec(compile(_src[:_src.index("# ---------------- assembly ---")], "probe_cq.py", "exec"), _mod.__dict__)
+
+
+def _solid(wp):
+    v = wp.val()
+    return v.Solids()[0] if hasattr(v, "Solids") and len(v.Solids()) == 1 else v
+
+
+_pat = [(5.0, 0.0), (-2.5, 4.33), (-2.5, -4.33)]
+for _sol, _name, _zs, _solidz in ((_solid(_mod.make_hub()), "hub", (30.0, 34.0, 38.0), 26.0),
+                                  (_solid(_mod.make_cup()), "cup", (-5.5, -3.5, -1.5), -9.0)):
+    for (_x, _y), _z in zip(_pat, _zs):
+        ok(not _sol.isInside(cq.Vector(_x, _y, _z)), f"{_name} clamp hole at z {_z}",
+           "air at r 5, so the M3 reaches the shaft")
+    ok(_sol.isInside(cq.Vector(5.0, 0.0, _solidz)), f"{_name} no hole where none belongs",
+       f"material at (5,0,{_solidz})")
 
 print(f"\n{checks} checks, {len(fails)} failed")
 sys.exit(1 if fails else 0)
