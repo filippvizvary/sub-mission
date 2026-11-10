@@ -178,20 +178,20 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
         # ear from z 4.5 - half a mm INTO the flange, not resting exactly on its face:
         # a tangent union makes the mesh non-manifold. The pockets still start above
         # z 5, so the flange stays solid and the ear's outer face is in open air.
-        ear = (cq.Workplane("XY").box(11.5, 5, L - ear_z0 + 0.5)
-               .translate((sx * 15.25, 2.5, ear_z0 - 0.5 + (L - ear_z0 + 0.5) / 2)))
+        ear = (cq.Workplane("XY").box(13.5, 5, L - ear_z0 + 0.5)
+               .translate((sx * 16.25, 2.5, ear_z0 - 0.5 + (L - ear_z0 + 0.5) / 2)))
         body = body.union(ear)
     for sx in (-1, 1):
         for z in zs:
             body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                hole_r, 40, cq.Vector(sx * 16.0, 0, z), cq.Vector(0, 1, 0))))
+                hole_r, 40, cq.Vector(sx * 15.75, 0, z), cq.Vector(0, 1, 0))))
             # pocket from the ear's outer face
             if kind == "head":
                 body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                    3.2, 2.4, cq.Vector(sx * 16.0, 5.2, z), cq.Vector(0, -1, 0))))
+                    3.2, 2.4, cq.Vector(sx * 15.75, 5.2, z), cq.Vector(0, -1, 0))))
             else:
                 body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.6)
-                                .translate((sx * 16.0, 5.2, z)))
+                                .translate((sx * 15.75, 5.2, z)))
     # the split: keep y >= 0
     # the split box has to start BELOW z 0: with its bottom face exactly on the
     # flange's bottom face it left sliver edges there (2 non-manifold edges)
