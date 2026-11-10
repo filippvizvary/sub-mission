@@ -233,10 +233,11 @@ def make_motor_plate():
     rotating boss. They cannot be the same four - the motor's screws have to end
     inside the motor.
 
-    Hole diameters: an M3 thread has one tapping size, Ø2.5, which is why the pattern
-    is 13.60 + 2.5 = 16.1 and 16.60 + 2.5 = 19.1. So the motor's holes sit at
-    (±8.05, ±9.55). The plate's holes are Ø3.4 clearance so the screw slides through
-    and threads into the motor.
+    Pattern is straight off the GB2208 datasheet: 4-M3 on 16 x 19 mm centre to
+    centre, so (±8.0, ±9.5). Filip's caliper read 13.60 and 16.60 inner wall to inner
+    wall, which is 16.1 and 19.1 once the Ø2.5 tapping size is added - a tenth off.
+    The plate's holes are Ø3.4 clearance so the screw slides through and threads into
+    the motor.
 
     Thickness: the motor's threads are 2.5 deep and the shortest M3 he has is x8, so
     5.5 mm - and NO counterbore, which would only push the tip further in.
@@ -246,7 +247,7 @@ def make_motor_plate():
     for sx in (-1, 1):
         for sy in (-1, 1):
             plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.7, 12, cq.Vector(sx * 8.05, sy * 9.55, -4), cq.Vector(0, 0, 1))))
+                1.7, 12, cq.Vector(sx * 8.0, sy * 9.5, -4), cq.Vector(0, 0, 1))))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
         plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
@@ -289,16 +290,16 @@ def make_oldham_disc():
 
 
 def make_oldham_hub_b():
-    """127.5..133, bolted to the motor's rotating bell with four M2 on an 8.85 mm
-    square: 7.25 inner to inner + Ø1.6, the tapping size of an M2, same rule as the
-    M3 pattern. 5.5 mm thick because the bell's M2 threads are 2.5 mm deep and the
-    shortest M2 he has is x8."""
+    """127.5..133, bolted to the motor's rotating bell: 4-M2 at 4.5 mm from the axis
+    on both axes, i.e. a 9 mm square on a Ø12.7 bolt circle - datasheet, and it agrees
+    with Filip's 7.25 inner-to-inner + 1.6 tapping size = 8.85. 5.5 mm thick because
+    the bell's M2 threads are 2.5 mm deep and the shortest M2 he has is x8."""
     h = cq.Workplane("XY").circle(13).circle(4).extrude(5.5).translate((0, 0, 127.5))
     h = h.cut(cq.Workplane("XY").box(3.4, 10.4, 1.5).translate((0, 0, 128.25)))
     for sx in (-1, 1):
         for sy in (-1, 1):
             h = h.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.2, 12, cq.Vector(sx * 4.425, sy * 4.425, 126), cq.Vector(0, 0, 1))))
+                1.2, 12, cq.Vector(sx * 4.5, sy * 4.5, 126), cq.Vector(0, 0, 1))))
     return h
 
 
