@@ -73,7 +73,7 @@ def make_blade():
             y_l = u * math.cos(th) - v * math.sin(th)
             z_l = u * math.sin(th) + v * math.cos(th)
             # span along +X at this station
-            pts3d.append((r, y_l, z_l))
+            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 5.4))
         wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
         sections.append(wire)
     blade = cq.Solid.makeLoft(sections, ruled=True)
@@ -81,18 +81,24 @@ def make_blade():
 
 # ---------------- hub + shaft + cups ---------------------------------------
 def make_hub():
-    hub = cq.Workplane("XY").circle(HUB_D/2).circle(5/2).extrude(HUB_LEN, both=True)
+    # extrude() is one-directional on purpose: "both=True" made this Ø64 hub
+    # 92 mm long instead of the 46 the BOM (A02) specifies - half the rotor's
+    # volume and 46 mm of axial envelope that nothing needed.
+    hub = cq.Workplane("XY").circle(HUB_D/2).circle(5/2).extrude(HUB_LEN)
     # radial bores for M4 set-screw inserts (2 at 90deg, 15mm from aft face)
     for ang in (0,90):
         bore = (cq.Workplane("YZ")
                 .circle(4.4/2)
                 .extrude(HUB_D/2+2)
                 .rotate((0,0,0),(0,0,1), ang))
-        hub = hub.cut(bore.translate((0,0,-HUB_LEN/2+15)))
+        hub = hub.cut(bore.translate((0,0,HUB_LEN-15)))
     return hub
 
 def make_shaft():
-    return cq.Workplane("XY").circle(2.5).extrude(115).translate((0,0,-37))
+    # 78 mm, from the hub's front face (0) to the cup's pin boss (78). The old
+    # 115 mm version reached 37 mm into what is now the nose cone and shared
+    # 275 mm3 with it.
+    return cq.Workplane("XY").circle(2.5).extrude(78)
 
 def make_cup(flavour="wet"):
     """Solid disc with 8 blind magnet pockets on the +Z face and a bore for the
@@ -469,8 +475,7 @@ for i in range(BLADES):
 # 44355 mm3 with the hub, and every fastening option for it sat in the blade
 # swept volume. Merged, there is no joint at all and nothing to seal.
 parts["rotor"] = parts["rotor"].union(
-    cq.Workplane("XY").circle(HUB_D/2).workplane(offset=-40).circle(6).loft()
-    .translate((0,0,-HUB_LEN)).val(), clean=True)
+    cq.Workplane("XY").circle(HUB_D/2).workplane(offset=-40).circle(6).loft().val(), clean=True)
 # ---- explicit axial layout (local Z, before the pod is laid horizontal) ----
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
 Z_SHAFT   = 0     # shaft spans -37..78 (115 mm), hub grips at -31, cup at 67

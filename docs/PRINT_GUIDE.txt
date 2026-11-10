@@ -1,0 +1,59 @@
+sub-mission v1 - parts ready to print
+=====================================
+Generovane z cad/probe_cq.py, export: python3 tools/export_print_stls.py
+Vsetky STL su watertight, orientovane na podlozku (z=0), os dielu = Z,
+vycentrovane na os hriadela (nie na stred bboxu). Jednotky mm.
+
+Subory
+-------
+01_rotor_vrtula.stl            203.1 cm3   vrtula + hub + nosovy kuzel, jeden diel
+                                           170.3 x 194.6 x 86.0
+02_barel_pod.stl               341.9 cm3   barrel + 4 mm bulkhead + loziskovy boss
+                                           4 pätky na klietku + O-kruzok + 6 lugov
+                                           117.0 x 110.0 x 134.5
+03_magnetovy_pohar_mokry.stl    35.6 cm3   8 slepych kapes na magnety, Ø14 upinacie telo
+04_magnetovy_pohar_suchy.stl    32.0 cm3   to iste, s Ø22 priechodnou dierou na boss
+05_nosic_hriadela_klietka.stl   21.8 cm3   staticka klietka, 2 puzdra + 4 bolt usi
+
+Orientacia (uz nastavena, netreba otacat)
+------------------------------------------
+01 rotor      na podlozke zadna strana hubu (Ø64), kuzel hore
+              tree support LEN pod cele listy, nie do kuzela
+02 pod        na podlozke bulkhead (dno), O-kruzok hore na hladkej vrstve
+              4 pätky su na podlozke, do vnutra netreba support
+03/04 pohar   na podlozke Ø14 telo, magnetove kapse hore (ciste, bez supportu)
+              pod Ø70 telom treba support po obvode, inak sa prevesi
+05 nosic      na podlozke celo Ø18 telesa, krize a prstenec hore
+              support pod krize a prstenec
+
+Tlac
+----
+material   ABS (ASA je lepsia len na UV, pod vodou to je jedno)
+tryska     255-265 C, podlozka 100-110 C, uzavreta komora, chladenie 0-20 %
+vrstva     0.2 mm (01 rotor 0.15 mm), 4 perimetry
+vypln      25 % gyroid; ROTOR HUB 40 %; 02 pod v 4 mm dne 100 % a 5 perimetrov
+           01 rotor neries ako plny - hub je 46 mm dlhy, nie 92; pri 4
+           perimetroch a 20 % je z 203 cm3 realne ~75-90 g
+po tlaci   ABS sa da vyhladit acetonovymi parami - vonkajok 02 pod, 20 min,
+           maskuj drážku O-kruzku. Vnutro potom este epoxid (J03).
+
+Kriticke rozmery po tlaci
+-------------------------
+hub Ø5 H7 diera        tlac ~4.8, prevrtat/prejst na 5.000-5.012
+                       (hriadel Ø5 h9 = 4.970-5.000, vola 0-0.042)
+M4 otvory v hube       model ma Ø4.4 (zavitnicky rozmer) - prevrtat na OD vlozky
+puzdra v nosici        otvory Ø7, zatlacit iglidur JSM-0507-05 (Ø5x7x5)
+lozisko v pod         diera Ø13 H7 x 5 v suchom boss-e, 695ZZ 2Z (nie 2RS)
+O-kruzok              drážka r 50.8-53.0, 2.2 x 1.8; NBR70 Ø100 x 2.5
+magnety               kapse Ø10.2 x 5.2, magnet 0.2 mm pod epoxidom
+
+Hriadel (A03): 78 mm, nie 115. Od cela hubu (0) po telo upinacej diery pohára
+(78). Dlhsi kus zasahoval do nosoveho kuzela.
+
+Co tu NIE je (a preco)
+----------------------
+cage_adapter    zatial plny kuzel v modeli = zátka, nie prechodka. Caka na
+                roztec M3 dier na motore + prevedenie kabelaze.
+Oldham (3 diely) a suchy hriadel - dalsi blok prace, caka na rovnake meranie.
+cage (E01)      klietka je watertight, ale jej priruba sa bude menit podla
+                adaptera - netlacit, kym nie je adapter hotovy.

@@ -1,7 +1,7 @@
 id,subsystem,part,spec,qty_probe,qty_site,qty_gateway,source,price_eur,status,notes,phase,owned,link
 A01,rotor,Blade,"triple-blade rotor NACA4412 D220mm, TSR5 alpha5: pitch 38.7deg root -> 12.6deg tip, chords 34.8->8.3mm, 0.5mm blunt TE",3,0,0,printed in-house,-,printed,"nose cone merged into the blade/hub print; blade is the designed fuse (breaks free, 40-min reprint); carry 2 spares",1,NO,
 A02,rotor,Hub,Ø64x46mm with 2x M4 heat-set inserts and Ø5 H7 shaft bore,1,0,0,printed in-house,-,printed,print bore undersize ~4.8 and ream to 5.000-5.012; 2x M4 dog-point on filed flats; insert bores modelled Ø4.4 - drill to the insert OD after printing,1,NO,
-A03,rotor,Wet shaft,316L Ø5 h6 x 115mm ground; 2 flats each end,1,0,0,nerezmaterial.cz,2.6,verified,"lokalny zeleziar / Hornbach M5 A4 srob - 4. obchod sa nerata, nema postu; 3m bar 63.1 CZK makes ~26 shafts",1,NO,
+A03,rotor,Wet shaft,316L Ø5 h9 x 78mm drawn; 2 flats for the hub set screws at 15mm from the aft face,1,0,0,nerezmaterial.cz,2.6,verified,"lokalny zeleziar / Hornbach M5 A4 srob - 4. obchod sa nerata, nema postu; 3m bar 63.1 CZK makes ~38 shafts; 78 not 115 - the longer one reached into the nose cone",1,NO,
 A04,rotor,Wet bearing,igus iglidur J plain bearing JSM-0507-05 5x7x5mm,2,0,0,tme.eu,1.18,verified,83 pcs in stock; JFM-0507-05 flanged 1.48 USD alt,1,NO,https://www.tme.eu/sk/details/jsm-0507-05/klzne-loziska/igus/
 A05,rotor,Bearing carrier tube,316L Ø12xØ8x55mm,1,0,0,nerezmaterial.cz,1.2,quote,CUT: superseded - the bearing carrier is the printed spider (wet_carrier),cut,NO,
 A06,rotor,Set screw,M4x8 316SS cup point ISO 4029,2,0,0,tme.eu,1.0,verified,,1,NO,https://www.tme.eu/sk/katalog/?search=ISO%204029%20M4x8
