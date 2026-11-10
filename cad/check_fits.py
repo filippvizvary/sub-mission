@@ -127,7 +127,8 @@ ok(sig <= 15.0, "blade root bending stress", f"{sig:.1f} MPa against ~35-40 MPa 
 shaft = local("shaft")
 sz0, sz1 = zrange(shaft)
 ok(abs((sz1 - sz0) - 78.0) <= 0.5, "shaft length", f"{sz1 - sz0:.1f} mm (115 reached into the nose cone)")
-ok(abs(np.ptp(shaft.vertices[:, 0]) - 5.0) <= 0.05, "shaft diameter", f"Ø{np.ptp(shaft.vertices[:, 0]):.2f}")
+ok(abs(np.ptp(shaft.vertices[:, 1]) - 5.0) <= 0.05, "shaft diameter (across the flat)",
+   f"Ø{np.ptp(shaft.vertices[:, 1]):.2f} across, {np.ptp(shaft.vertices[:, 0]):.2f} over the flat")
 ok(sz0 >= -0.1 and sz1 >= 75.0, "shaft spans hub->cup boss", f"z {sz0:.1f}..{sz1:.1f}, needs to cover 48..75")
 
 # ---------------------------------------------------------------- static spider
@@ -195,6 +196,7 @@ PAIRS = [
     ("rotor", "shaft"), ("shaft", "wet_carrier"), ("magcup_wet", "wet_carrier"),
     ("magcup_dry", "pod"), ("magnets_wet", "magcup_wet"), ("magnets_dry", "magcup_dry"),
     ("shaft_collar", "magcup_wet"), ("shaft_collar", "wet_carrier"),
+    ("cup_washer", "magcup_wet"), ("cup_washer", "pod"),
 ]
 import itertools
 shapes = {n: cq.importers.importStep(os.path.join(CQ, n + ".step")).val()
@@ -202,6 +204,17 @@ shapes = {n: cq.importers.importStep(os.path.join(CQ, n + ".step")).val()
 for a, b in PAIRS:
     v = shapes[a].intersect(shapes[b]).Volume()
     ok(v <= 1.0, f"interference {a} <-> {b}", f"{v:.1f} mm3 (must be 0)")
+
+# cup thrust washer: the magnet pull has to land on PTFE, not on the barrel wall
+w = local("cup_washer")
+ok(abs(np.ptp(w.vertices[:, 2]) - 1.0) <= 0.02, "cup thrust washer thickness", f"{np.ptp(w.vertices[:, 2]):.2f} mm")
+rs = radii_at(w, (w.bounds[0][2] + w.bounds[1][2]) / 2)
+ok(has_r(rs, 12.0, 0.2) and has_r(rs, 34.0, 0.2), "cup thrust washer ring", f"r {rs.min():.1f}..{rs.max():.1f} (Ø24/Ø68)")
+# the hub must NOT touch the static spider - the cup sets the axial position
+rot = local("rotor"); car = local("wet_carrier")
+hub_aft = max(v[2] for v in rot.vertices if np.hypot(v[0], v[1]) < 31.0)
+ok(hub_aft <= 46.2 and car.bounds[0][2] >= 46.5, "hub clears the static spider",
+   f"hub aft face {hub_aft:.1f} mm against the spider at {car.bounds[0][2]:.1f} mm")
 
 print(f"\n{checks} checks, {len(fails)} failed")
 sys.exit(1 if fails else 0)

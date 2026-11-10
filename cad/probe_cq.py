@@ -123,7 +123,10 @@ def make_shaft():
     # bar - a drill-press job with a drill that walks on a round surface, and a
     # hand drill is how a 1.5 mm bit snaps in 316L.
     sh = cq.Workplane("XY").circle(2.5).extrude(78)
-    return sh.cut(cq.Workplane("XY").box(10, 12, 60).translate((7.0, 0, 46)))
+    # the flat runs the FULL length: a flat that stops short leaves a round
+    # 2 mm tip that sits inside the cup's D-bore (measured 1.8 mm3 of
+    # interference at the end of the shaft).
+    return sh.cut(cq.Workplane("XY").box(10, 12, 100).translate((7.0, 0, 39)))
 
 def make_cup(flavour="wet"):
     """Solid disc with 8 blind magnet pockets on the +Z face and a bore for the
@@ -224,6 +227,13 @@ def make_pod():
     # own bearing is this boss, not a seat in the thin bulkhead.
     pod = pod.union(cq.Workplane("XY").circle(10).extrude(10))
     pod = pod.cut(cq.Workplane("XY").circle(6.5).extrude(5))
+    # 1 mm recess in the WET face for the cup's PTFE thrust washer. The magnets
+    # pull the wet cup downstream with ~56 N; without a washer that is ABS
+    # sliding on ABS at 0.73 m/s, which grooves in hours and the groove changes
+    # the magnet gap. The washer takes 1 mm out of the wall and puts 1 mm of
+    # PTFE in the same 4.4 mm window, so the magnetic gap does not move.
+    pod = pod.cut(cq.Workplane("XY").circle(35).circle(3).extrude(1)
+                  .translate((0, 0, -WALL_T)))
     # four spider bosses on the wet face
     for i in range(4):
         a = math.radians(45 + 90 * i)
@@ -538,7 +548,10 @@ parts["wet_carrier"] = make_wet_carrier()
 # the two Ø14 collars are gone: the shaft is trapped by the hub's aft face on
 # one side of the spider boss and by the cup's clamp boss on the other, with a
 # 1 mm PTFE thrust washer at -46..-47. Nothing rides on a grub screw in shear.
-parts["thrust_washer"] = cq.Workplane("XY").circle(7).circle(2.5).extrude(1).translate((0,0,46))
+# No washer in the hub's clearance any more: the cup pressed on the bulkhead
+# sets the axial position, so a second thrust surface at 46..47 would fight it.
+parts["cup_washer"] = (cq.Workplane("XY").circle(34).circle(12).extrude(1)
+                       .translate((0, 0, Z_POD - WALL_T)))
 # bought Ø5 shaft collar (A09, M3 grub): the rotating stack is trapped between
 # this collar and the hub's aft face - the magnet pull loads the collar, never
 # the plastic of the static spider.
@@ -576,7 +589,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","thrust_washer","shaft_collar","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","shaft_collar","cup_washer","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -589,7 +602,7 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "thrust_washer": (0.90, 0.90, 0.60),
+    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
