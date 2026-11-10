@@ -47,7 +47,9 @@ M4 otvory v hube       Ø4.5 priechod + Ø6.4 x 8 sedlo na vlozku z vonkajsej st
                        Skrutka MUSI byt M4 x 30 (nie M4x8): stena hubu je 29,5 mm,
                        M4x8 sa dostane len 8 mm od povrchu a hriadeľ nechytí.
                        Hrot sadá na 0,5 mm plosku na hriadeli (r 2,0).
-pohar -> hriadel       Ø2 x 12 kolik cez Ø14 telo pohára a hriadeľ (nie závit)
+pohar -> hriadel       D-diera: Ø5.2 klzná + ploska na x 2.05; pohan ju nasunie na
+                       plosku hriadela (0.5 mm hlboka, 3 mm siroka). Ziaden kolik,
+                       ziadny zavit, ziadne vrtanie cez tyc.
 puzdra v nosici        otvory Ø7, zatlacit iglidur JSM-0507-05 (Ø5x7x5)
 lozisko v pod         diera Ø13 H7 x 5 v suchom boss-e, 695ZZ 2Z (nie 2RS)
 O-kruzok              drážka r 50.8-53.0, 2.2 x 1.8; NBR70 Ø100 x 2.5

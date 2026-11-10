@@ -112,10 +112,18 @@ def make_hub():
     return hub
 
 def make_shaft():
-    # 78 mm, from the hub's front face (0) to the cup's pin boss (78). The old
+    # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
     # 115 mm version reached 37 mm into what is now the nose cone and shared
     # 275 mm3 with it.
-    return cq.Workplane("XY").circle(2.5).extrude(78)
+    #
+    # ONE flat, 0.5 mm deep and 3 mm wide, running z 16..76. It does three jobs
+    # and therefore needs no cross-drilled hole: the hub's M4x30 tips land on
+    # it (r 2.0), the bought Ø5 collar grips it, and the cup's D-bore is driven
+    # by it. A Ø2 cross pin would have meant drilling Ø2 through a Ø5 stainless
+    # bar - a drill-press job with a drill that walks on a round surface, and a
+    # hand drill is how a 1.5 mm bit snaps in 316L.
+    sh = cq.Workplane("XY").circle(2.5).extrude(78)
+    return sh.cut(cq.Workplane("XY").box(10, 12, 60).translate((7.0, 0, 46)))
 
 def make_cup(flavour="wet"):
     """Solid disc with 8 blind magnet pockets on the +Z face and a bore for the
@@ -130,9 +138,10 @@ def make_cup(flavour="wet"):
     cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
     cup = cup.union(cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, -6)))
     # Ø5 through bore
-    cup = cup.cut(cq.Workplane("XY").circle(2.5).extrude(40).translate((0, 0, -20)))
-    # Ø2.1 cross pin hole through the clamp boss, 4 mm from its upstream end
-    cup = cup.cut(cq.Workplane("YZ").circle(1.05).extrude(24).translate((-12, 0, -3)))
+    # D-bore: Ø5.2 slip fit plus the same 0.5 mm flat the shaft carries, 0.05 mm
+    # clearance on the flat. The flat is the drive (no pin, no printed thread).
+    cup = cup.cut(cq.Workplane("XY").circle(2.6).extrude(40).translate((0, 0, -20)))
+    cup = cup.cut(cq.Workplane("XY").box(10, 12, 40).translate((7.05, 0, 0)))
     if flavour == "dry":
         # the dry cup rides on the dry shaft and turns around the bulkhead's
         # Ø20 dry bearing boss, so its centre is a Ø22 clearance bore - the load

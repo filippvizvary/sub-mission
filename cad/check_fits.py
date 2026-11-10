@@ -150,7 +150,21 @@ ok(abs(rec_w - 0.2) <= 0.01 and abs(rec_d - 0.2) <= 0.01, "magnet recess (epoxy 
 
 # ---------------------------------------------------------------- cups
 cupw = local("magcup_wet")
-ok(has_r(radii_at(cupw, 68.0), 2.5, 0.06), "cup clamp boss bore", "Ø5 slip fit on the shaft, Ø2 cross pin at z 68")
+sec = cupw.section(plane_origin=[0, 0, 68.0], plane_normal=[0, 0, 1])
+P = sec.vertices[:, :2]
+bore = P[np.hypot(P[:, 0], P[:, 1]) < 3.0]     # the bore region, not the Ø14 boss
+ok(abs(bore[:, 0].max() - 2.05) <= 0.08, "cup D-bore flat",
+   f"flat at x {bore[:, 0].max():.2f} mm: it is the drive, the Ø5.2 bore is the slip fit")
+ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
+   f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
+# the shaft carries the matching flat
+sh_local = local("shaft")
+sec = sh_local.section(plane_origin=[0, 0, 40.0], plane_normal=[0, 0, 1])
+P = sec.vertices[:, :2]
+flat_x = P[:, 0].max()          # the flat is cut on +X
+ok(abs(flat_x - 2.0) <= 0.06, "shaft flat depth",
+   f"flat at x {flat_x:.2f} mm = 0.50 mm deep, 3.0 mm wide; hub screws, collar and cup all grip it")
+ok(abs(P[:, 0].min() + 2.5) <= 0.06, "shaft still Ø5 opposite the flat", f"x {P[:, 0].min():.2f}")
 ok(abs(np.ptp(cupw.vertices[:, 2]) - 16.0) <= 0.05, "cup stack height", f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 6)")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
