@@ -140,11 +140,13 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
                holes Ø3.4 with a hex pocket 6.4 AF x 2.5 on the outer face, which
                takes the screw head on one half and the M3 nut on the other
     """
-    body = cq.Workplane("XY").circle(R_F).extrude(5)
+    # flange 7, not 5: the 2 mm cover is gone, and its thickness has to come from
+    # somewhere or the cup sits 2 mm short of the clamp and the magnet gap grows
+    body = cq.Workplane("XY").circle(R_F).extrude(7)
     # sleeve starts at 4.5, not 5: a plane exactly on the flange's face is a
     # coincident surface, and OCC leaves slivers there that put vertices inside
     # the bore and make the mesh non-watertight
-    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 4.5).translate((0, 0, 4.5)))
+    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 6.5).translate((0, 0, 6.5)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
@@ -153,7 +155,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
         body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             1.7, 20, cq.Vector(x, y, -8), cq.Vector(0, 0, 1))))
         body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            3.1, 2.1, cq.Vector(x, y, 5.1), cq.Vector(0, 0, -1))))
+            3.1, 2.1, cq.Vector(x, y, 7.1), cq.Vector(0, 0, -1))))
     # ears + split bolts
     # Even slots along the ear, one bolt per slot, sized so the 7.0 AF hex pockets can
     # never touch each other. Spacing them by "span/(n+1)" put them 4.7 mm apart with
@@ -169,7 +171,7 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # longer needs a notch: the ear's outer face is in the open air from z 5 to the
     # top, so a nut drops straight in from the side.
     hex_h = (6.4 if kind == "head" else hex_af * math.cos(math.pi / 6))
-    ear_z0 = 5.0
+    ear_z0 = 7.0
     gap = max(0.6, (L - ear_z0 - n_bolts * hex_h) / (n_bolts + 1))
     zs = [ear_z0 + gap + hex_h / 2 + i * (hex_h + gap) for i in range(n_bolts)]
     for sx in (-1, 1):
@@ -243,40 +245,18 @@ def make_rotor_clamp():
 
 
 def make_cup_clamp():
-    """ONE HALF of a cup's shaft clamp. Print twice per cup, mate 180 deg apart.
+    """ONE HALF of a cup's shaft clamp - the rotor clamp's geometry, nut pockets.
 
-    Rewritten. The first version cut its head pockets Ø6.2 on a 5 mm flange, so each
-    pocket ran straight through both faces of the flange and out through the sleeve's
-    OD - the render showed channels where there should have been seats. Nothing could
-    be tightened.
+    This used to be a hand-written leftover (Ø50 flange, M2 bolts, 12.35 mm) that was
+    never replaced when the shared _clamp_body() was introduced, so the cup clamps were
+    not the same part at all. Now they are: 19 mm, flange Ø48 x 7, sleeve Ø22, bore
+    Ø4.90, two M3 x 8 per side. The only difference from the rotor clamp is that the
+    pockets are hexagons (nut side) instead of round counterbores (head side).
 
-      0..5     Ø44 flange, the face at 0 presses the cover onto the cup
-      5..12.35 Ø20 sleeve, bore Ø4.90 the whole way (0.1 under the Ø5 shaft)
-      4 x M3 at r 18.5 (45 and 135 in this half) through the flange and the cover
-             into the cup, head pockets Ø6.2 x 2.2 opening on the z=5 face
-      2 x M2 x 12 across the split at x +-10, z 2.5, head one side, hex nut the
-             other, so one STL prints twice. M2 because an M3 head needs 6.2 mm of
-             flange and the flange is 5.
+    The 7 mm flange replaces the deleted 2 mm magnet cover: without that 2 mm the clamp
+    would stop 2 mm short of the cup, and M3 x 12 would not reach.
     """
-    R_F = 25.0        # flange Ø50: at Ø44 the Ø6.2 head pockets left a 0.4 mm rim
-    solid = cq.Workplane("XY").circle(R_F).extrude(7)
-    solid = solid.union(cq.Workplane("XY").circle(11).extrude(5.35).translate((0, 0, 7)))
-    solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
-    # four M3 into the cup
-    for ang in (45.0, 135.0):
-        a = math.radians(ang)
-        x, y = 18.5 * math.cos(a), 18.5 * math.sin(a)
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 20, cq.Vector(x, y, -8), cq.Vector(0, 0, 1))))
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
-    # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
-    # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
-    # 54.35..73.35 - the same 19 mm part as the rotor clamp, so there is ONE clamp STL
-    # printed four times
-    solid = _clamp_body(19.0, 24.0, 2, "M3", "nut").translate((0, 0, 54.35))
-    solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
-    return solid
+    return _clamp_body(19.0, 24.0, 2, "M3", "nut")
 
 
 def make_shaft_collar(thickness, z0=0.0):
@@ -736,10 +716,10 @@ def make_wet_carrier():
     # pair still spreads the propeller's bending moment. Moving the boss 7 mm upstream
     # is what buys the cup's clamp the same 19 mm the rotor's has - the shaft simply
     # gets 7 mm longer at the propeller end, and Filip cuts it himself.
-    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 40))
+    boss = (cq.Workplane("XY").circle(9).extrude(16.35).translate((0, 0, 40))
             .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 34))))
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 40))
-    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47))
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 40.2))
+    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47.6))
     boss = boss.cut(b1).cut(b2)
     # Three spokes 59..67. They must overlap the boss axially: the boss is Ø18
     # (r 9) and the spokes need a Ø15 hole for the cup's Ø14 clamp boss, so their
@@ -978,15 +958,15 @@ parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 parts["rotor_clamp"] = make_rotor_clamp()
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
-parts["cup_clamp_wet"] = make_cup_clamp()
-parts["cup_cover_wet"] = make_cup_cover().translate((0, 0, Z_WETCUP - 2.0))
+parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, 75.35))
+
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
 # flips Y and is a no-op on a body of revolution - it silently leaves the cup
 # facing the wrong way, with its magnet pockets pointing into the cage.
 parts["magcup_dry"]  = make_cup("dry").mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
-parts["cup_clamp_dry"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
-parts["cup_cover_dry"] = make_cup_cover().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
+parts["cup_clamp_dry"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY))
+
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
 parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
@@ -1022,7 +1002,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","cup_cover_wet","cup_cover_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -1036,7 +1016,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "cup_cover_wet": (0.70,0.55,0.40), "cup_cover_dry": (0.70,0.55,0.40), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
+    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
     "oldham_hub_a": (0.80,0.45,0.80), "oldham_disc": (0.70,0.35,0.75), "oldham_hub_b": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

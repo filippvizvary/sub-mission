@@ -186,9 +186,9 @@ ok(float(rs76.min()) >= 2.95, "cup bore clears the shaft",
 # the clamp is the grip now, and this is where it has to reach
 cw_ = local("cup_clamp_wet")
 cwz = zrange(cw_)
-ok(abs(cwz[0] - 54.35) <= 0.3, "wet cup clamp reaches the bushing",
-   f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: butts the second bushing at 61 and the "
-   "cover at 73.35 - 12.35 mm, that is the whole gap")
+ok(abs(cwz[0] - 56.35) <= 0.3, "wet cup clamp reaches the bushing",
+   f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: 19 mm between the carrier boss at 56.35 "
+   "and the cup's back face at 75.35, no gap at either end")
 ok(has_r(radii_at(cw_, 67.0), 11.0, 0.15), "cup clamp sleeve OD",
    f"r 11 present at z 60, i.e. Ø22 sleeve; the ear reaches r 21 outside it. The cage's "
    "stop at z 59, so the clamp at 61 turns clear of them")
