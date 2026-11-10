@@ -92,8 +92,8 @@ aft_rs = radii_at(rotor, 26.5)           # inside the Ø30 x 3 centring recess
 ok(aft_rs.max() >= 14.9, "aft face recess", f"r {aft_rs.max():.2f} clears the clamp spigot Ø29.8")
 hub = local("rotor_clamp")
 c0, c1 = zrange(hub)
-ok(abs((c1 - c0) - 18.0) <= 0.4, "rotor clamp length",
-   f"{c1 - c0:.1f} mm: Ø20 sleeve 15 mm on the shaft + 3 mm spigot")
+ok(abs((c1 - c0) - 22.0) <= 0.4, "rotor clamp length",
+   f"{c1 - c0:.1f} mm: Ø20 sleeve 19 mm on the shaft + 3 mm spigot")
 sec = hub.section(plane_origin=[0, 0, 37.0], plane_normal=[0, 0, 1])
 _H = sec.vertices[:, :2]
 _b = _H[np.hypot(_H[:, 0], _H[:, 1]) < 3.0]
@@ -189,8 +189,8 @@ for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss its
     r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
     stray = ((r > 3.5) & (r < 21.0)).sum()
     ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
-ok(abs(np.ptp(cupw.vertices[:, 2]) - 16.0) <= 0.05, "cup stack height",
-   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 6; collar sits at 61..65)")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 20.0) <= 0.05, "cup stack height",
+   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 10, butts the bushing)")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
 
@@ -276,9 +276,20 @@ ok(not _h.isInside(cq.Vector(13.08, 13.08, 25.5)), "hub aft clamp hole",
 ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",
    "material at r 12, z 20 - the four screws get 6 mm of thread")
 
-cu, cd_ = local("collar_up"), local("collar_dn")
-ok(abs(abs(cu.volume) - abs(cd_.volume)) < 1.0, "collar halves identical",
-   f"{abs(cu.volume)/1000:.3f} vs {abs(cd_.volume)/1000:.3f} cm3 - one STL, print four")
+# The stop collars are gone. They were Ø15 on a Ø5.1 bore, so an M3 head pocket
+# Ø6.2 left 0.1 mm of plastic at the OD - Filip spotted that. Their job is now done
+# by parts that are thick anyway: the rotor clamp butts the first igus bushing at
+# 47 and the wet cup's boss (10 mm now) butts the second at 61.
+_cupw = local("magcup_wet")
+_cz = zrange(_cupw)
+ok(abs(_cz[0] - 61.0) <= 0.3, "cup boss reaches the bushing",
+   f"boss starts at z {_cz[0]:.1f}: it is the upstream stop, no collar needed")
+
+# the clamp has to reach that same bushing from the other side
+_cl = local("rotor_clamp")
+_clz = zrange(_cl)
+ok(abs(_clz[1] - 47.0) <= 0.3, "clamp reaches the bushing",
+   f"sleeve ends at z {_clz[1]:.1f}, {47.0 - _clz[1]:+.1f} mm from the bushing face")
 
 print(f"\n{checks} checks, {len(fails)} failed")
 sys.exit(1 if fails else 0)

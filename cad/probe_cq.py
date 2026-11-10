@@ -133,9 +133,9 @@ def make_rotor_clamp():
     against the 0.164 N*m the rotor actually sees, and the two split bolts sit at
     z 37, i.e. 9 mm clear of the rotor's face instead of 3 mm.
     """
-    z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 15.0      # 25..43
+    z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 19.0      # 25..47, right up to the bushing
     solid = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, HUB_LEN))     # flange
-    solid = solid.union(cq.Workplane("XY").circle(10).extrude(10).translate((0, 0, HUB_LEN + 5)))
+    solid = solid.union(cq.Workplane("XY").circle(10).extrude(14).translate((0, 0, HUB_LEN + 5)))
     solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
     solid = solid.cut(cq.Workplane("XY").circle(2.525).extrude(40).translate((0, 0, z_bot - 5)))
     # four M3 x 12 into the rotor, two of them land in this half
@@ -208,7 +208,7 @@ def make_dry_bearing():
     It is what takes the 56 N of magnet pull off the motor: the dry collar at 106
     pushes the inner ring, the boss holds the outer ring."""
     return (cq.Workplane("XY").circle(6.5).circle(2.5).extrude(4)
-            .translate((0, 0, 101)))
+            .translate((0, 0, 105)))
 
 
 def make_oldham():
@@ -292,7 +292,7 @@ def make_cup(flavour="wet"):
     # boss 10 mm long: its upstream face butts the static spider boss at 61,
     # which is what keeps the cup from sliding upstream during handling. No
     # bought Ø5 collar is needed - that was A09, now cut.
-    cup = cup.union(cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, -6)))
+    cup = cup.union(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, -10)))
     # Ø5 through bore
     # ROUND bore, Ø5.2. No flat, no key: the shaft is round bar and Filip is not
     # willing to file one (and one flat on one side is a one-sided drive anyway).
@@ -744,8 +744,6 @@ parts["wet_carrier"] = make_wet_carrier()
 parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 parts["rotor_clamp"] = make_rotor_clamp()
-parts["collar_up"]   = make_shaft_collar(4.0).translate((0, 0, 43.0))
-parts["collar_dn"]   = make_shaft_collar(4.0).translate((0, 0, 61.0))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
@@ -758,7 +756,7 @@ parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
 parts["magnets_dry"] = make_magnets(dry=True).mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
 parts["dry_shaft"]   = make_dry_shaft()
 parts["dry_bearing"] = make_dry_bearing()
-parts["dry_collar"]  = make_shaft_collar(4.0).translate((0, 0, 106))
+parts["dry_collar"]  = make_shaft_collar(4.0).translate((0, 0, 109))
 parts["oldham"]      = make_oldham()
 parts["generator"]   = make_generator().translate((0,0,133))
 parts["engine_block"]= make_engine_block()
@@ -784,7 +782,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","collar_up","collar_dn","dry_shaft","dry_bearing","dry_collar","oldham","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","dry_collar","oldham","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -797,7 +795,7 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "collar_up": (0.85, 0.70, 0.30), "collar_dn": (0.85, 0.70, 0.30), "dry_shaft": (0.55,0.55,0.58),
+    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
     "dry_bearing": (0.75,0.75,0.78), "dry_collar": (0.85,0.70,0.30), "rotor_clamp": (0.95,0.62,0.20),
     "oldham": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
