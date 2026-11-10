@@ -141,7 +141,10 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, flip_ears=False):
                takes the screw head on one half and the M3 nut on the other
     """
     body = cq.Workplane("XY").circle(R_F).extrude(5)
-    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 5).translate((0, 0, 5)))
+    # sleeve starts at 4.5, not 5: a plane exactly on the flange's face is a
+    # coincident surface, and OCC leaves slivers there that put vertices inside
+    # the bore and make the mesh non-watertight
+    body = body.union(cq.Workplane("XY").circle(11).extrude(L - 4.5).translate((0, 0, 4.5)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
