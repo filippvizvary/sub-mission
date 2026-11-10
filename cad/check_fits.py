@@ -281,8 +281,8 @@ ok(_cup.isInside(cq.Vector(5.0, 0.0, 3.0)), "cup no hole where none belongs",
 _h = _solid(_mod.make_hub())
 ok(not _h.isInside(cq.Vector(2.8, 0.0, 14.0)), "hub clearance bore",
    "air at r 2.8: Ø6, the Ø5 shaft passes without binding on print tolerance")
-ok(not _h.isInside(cq.Vector(5.0, 0.0, 26.6)), "hub aft recess",
-   "air at r 5, z 26.6 in the hub's own frame: Ø30 x 3 centring recess for the clamp spigot")
+ok(not _h.isInside(cq.Vector(5.0, 0.0, 27.2)), "hub aft recess",
+   "air at r 5, z 27.2: Ø30 x 1.05 recess, matched to the clamp spigot 1.0")
 ok(not _h.isInside(cq.Vector(13.08, 13.08, 25.5)), "hub aft clamp hole",
    "air at r 18.5 on the aft face: one of the four M3 x 12 for the clamp")
 ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",

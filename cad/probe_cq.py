@@ -115,7 +115,7 @@ def make_hub():
     """
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
-           .cut(cq.Workplane("XY").circle(15.0).extrude(3.0).translate((0, 0, HUB_LEN - 3))))
+           .cut(cq.Workplane("XY").circle(15.0).extrude(1.05).translate((0, 0, HUB_LEN - 1.05))))
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
@@ -509,7 +509,7 @@ def make_cup(flavour="wet"):
     """
     cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
     cup = cup.cut(cq.Workplane("XY").circle(3.0).extrude(CUP_BODY + 20).translate((0, 0, -10)))
-    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(1.0))   # Ø30 spigot recess
+    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(1.05))   # Ø30 x 1.05, spigot 1.0
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         cup = cup.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
