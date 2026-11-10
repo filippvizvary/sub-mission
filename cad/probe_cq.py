@@ -714,7 +714,7 @@ def make_wet_carrier():
     # pair still spreads the propeller's bending moment. Moving the boss 7 mm upstream
     # is what buys the cup's clamp the same 19 mm the rotor's has - the shaft simply
     # gets 7 mm longer at the propeller end, and Filip cuts it himself.
-    boss = (cq.Workplane("XY").circle(9).extrude(16.35).translate((0, 0, 40))
+    boss = (cq.Workplane("XY").circle(9).extrude(14.85).translate((0, 0, 40))
             .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 34))))
     b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 40.2))
     b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47.6))

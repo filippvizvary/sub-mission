@@ -70,7 +70,25 @@ prietok  vykon   krut     otacky
 1,5 m/s 32,5 W   0,497    622
 
 
-5. JEDINA NEZNAMA
+5. OTVORENA VEC - SUCHA STRANA
+------------------------------
+Mokra strana je cista: upinac vs pavuk 0,00, vs kryt 0,00, vs pohar 0,00,
+rotorovy upinac vs rotor 0,00.
+
+Sucha strana ale NEMA miesto na tych istych 19 mm:
+  zadna stena sucheho poharu   90,95
+  kryt                         90,95 .. 92,45
+  opora v ramene              105,30
+  miesto na upinac             12,85 mm
+  upinac                       19,00 mm  -> prebytok 6,15 mm
+
+Cize suchy pohar potrebuje kratky variant upinaca (~12,8 mm), inak sa oprie
+o rameno. Na tlac to dnes nevadi - tlacis ten isty diel - ale pri skladani
+to bude treba vyriesit. Poviem ti to zajtra, alebo to vyriesime tym, ze
+rameno posunieme.
+
+
+6. JEDINA NEZNAMA
 -----------------
 Cogging motora. Rozbeh: 2 mN.m -> 0,11 m/s | 10 mN.m -> 0,25 m/s | 20 mN.m ->
 0,32 m/s. Meranie: zavit na objimku Ø22 (r 11 mm), digitalna vaha, 12 poloh
