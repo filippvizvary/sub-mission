@@ -224,32 +224,38 @@ def make_dry_bearing():
 
 
 def make_motor_plate():
-    """Ø44 x 4 plate carrying the motor, bolted to the frame's cradle by four
-    M3 x 12 on r 17 - a SEPARATE part on purpose: if the bolt pattern is wrong,
-    he reprints 20 minutes' worth, not the 12 hour frame.
+    """Ø44 x 5.5 plate carrying the motor, bolted to the frame's cradle by four
+    M3 x 12 on r 17 - a SEPARATE part on purpose: if the pattern is wrong he
+    reprints 7 cm3 in half an hour, not the 12 hour frame.
 
-    Pattern from Filip's caliper, measured inner wall to inner wall: two holes
-    13.60 mm apart, the other pair 16.60 mm. Centre to centre is that plus one hole
-    diameter; at Ø3.0 that is 16.6 x 19.6, i.e. (+-8.3, +-9.9), r 12.9. A rectangle,
-    not a square - normal on a 2208. Motor thread is only 3 mm deep, so the plate is
-    4 mm: M3 x 8 = 4 (plate) + 3 (motor) + 1 spare.
+    Eight holes is correct, not a mistake: four at r 17 go into the frame's cradle,
+    four at r 12.9 go into the motor, and the Ø12.4 centre clears the motor's Ø11.6
+    rotating boss. They cannot be the same four - the motor's screws have to end
+    inside the motor.
+
+    Hole diameters: an M3 thread has one tapping size, Ø2.5, which is why the pattern
+    is 13.60 + 2.5 = 16.1 and 16.60 + 2.5 = 19.1. So the motor's holes sit at
+    (±8.05, ±9.55). The plate's holes are Ø3.4 clearance so the screw slides through
+    and threads into the motor.
+
+    Thickness: the motor's threads are 2.5 deep and the shortest M3 he has is x8, so
+    5.5 mm - and NO counterbore, which would only push the tip further in.
     """
-    # 5.5 mm, NOT 4: the motor's thread is only 2.5 mm deep and the shortest M3 he
-    # has is x8, so the plate has to eat 8 - 2.5 = 5.5. No counterbore - sinking the
-    # head would only drive the tip further into the coils.
     plate = cq.Workplane("XY").circle(22).extrude(5.5)
-    # Ø12.4 clearance for the Ø11.6 rotating part in the motor's centre; through, so
-    # the required 2.5 mm of free depth is trivially satisfied
     plate = plate.cut(cq.Workplane("XY").circle(6.2).extrude(16).translate((0, 0, -5)))
     for sx in (-1, 1):
         for sy in (-1, 1):
             plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.7, 12, cq.Vector(sx * 8.3, sy * 9.9, -4), cq.Vector(0, 0, 1))))
+                1.7, 12, cq.Vector(sx * 8.05, sy * 9.55, -4), cq.Vector(0, 0, 1))))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
         plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             1.7, 12, cq.Vector(17 * math.cos(a), 17 * math.sin(a), -4),
             cq.Vector(0, 0, 1))))
+    # cable relief: the motor's lead leaves radially at its rim (r 13.75) and would
+    # be crushed between this plate and the motor's face. A radial slot 4 wide x 1.5
+    # deep on the motor side lets it out at any angle.
+    plate = plate.cut(cq.Workplane("XY").box(4.0, 40, 1.5).translate((0, 15, 3.25)))
     return plate
 
 
@@ -283,15 +289,16 @@ def make_oldham_disc():
 
 
 def make_oldham_hub_b():
-    """127.5..133, bolted to the motor's rotating bell with four M2 on a 9 mm
-    square. 5.5 mm thick because the bell's M2 threads are 2.5 mm deep and the
+    """127.5..133, bolted to the motor's rotating bell with four M2 on an 8.85 mm
+    square: 7.25 inner to inner + Ø1.6, the tapping size of an M2, same rule as the
+    M3 pattern. 5.5 mm thick because the bell's M2 threads are 2.5 mm deep and the
     shortest M2 he has is x8."""
     h = cq.Workplane("XY").circle(13).circle(4).extrude(5.5).translate((0, 0, 127.5))
     h = h.cut(cq.Workplane("XY").box(3.4, 10.4, 1.5).translate((0, 0, 128.25)))
     for sx in (-1, 1):
         for sy in (-1, 1):
             h = h.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.2, 12, cq.Vector(sx * 4.5, sy * 4.5, 126), cq.Vector(0, 0, 1))))
+                1.2, 12, cq.Vector(sx * 4.425, sy * 4.425, 126), cq.Vector(0, 0, 1))))
     return h
 
 
