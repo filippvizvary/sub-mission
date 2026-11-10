@@ -539,13 +539,18 @@ def make_cup(flavour="wet"):
 
 
 def make_cup_cover():
-    """Ø70 x 2 lid that closes all twelve pockets from behind, so the magnets cannot
-    leave backwards and no glue is trusted for retention. A Ø29.8 x 1 spigot centres
-    it in the cup's recess, Ø12 clears the shaft, and the cup clamp's four M3 x 12 go
-    straight through it - the cover has no screws of its own."""
-    cov = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(2.0)
-    cov = cov.union(cq.Workplane("XY").circle(14.9).extrude(1.0).translate((0, 0, 2.0)))
-    cov = cov.cut(cq.Workplane("XY").circle(6.0).extrude(10).translate((0, 0, -2)))
+    """Thin ring that closes the magnet pockets from behind.
+
+    It is not a disc any more: Filip wants it to go AROUND the shaft clamp instead of
+    under it. The clamp's Ø48 flange and Ø29.6 spigot are the obstacle, so the cover is
+    a ring from Ø29.8 to Ø68 - the inner edge rides on the spigot, the outer edge covers
+    the pockets (they reach r 33.1) - and it is 1.5 mm thin.
+
+    No screws of its own and no inserts: it sits between the clamp's flange and the cup
+    and the four M3 x 8 mount screws pass straight through it.
+    """
+    T = 1.5
+    cov = cq.Workplane("XY").circle(34.0).circle(14.9).extrude(T)
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         cov = cov.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
@@ -981,14 +986,16 @@ parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 parts["rotor_clamp"] = make_rotor_clamp()
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
-parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, 75.35))
+parts["cup_cover_wet"] = make_cup_cover().mirror("XY").translate((0, 0, 75.35))
+parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, 75.35 - 1.5))
 
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
 # flips Y and is a no-op on a body of revolution - it silently leaves the cup
 # facing the wrong way, with its magnet pockets pointing into the cage.
 parts["magcup_dry"]  = make_cup("dry").mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
-parts["cup_clamp_dry"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY))
+parts["cup_cover_dry"] = make_cup_cover().translate((0, 0, Z_DRYCUP + CUP_BODY - 1.5))
+parts["cup_clamp_dry"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY - 1.5))
 
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
@@ -1025,7 +1032,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","cup_cover_wet","cup_cover_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -1039,7 +1046,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
+    "dry_bearing": (0.75,0.75,0.78), "cup_cover_wet": (0.70,0.55,0.40), "cup_cover_dry": (0.70,0.55,0.40), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
     "oldham_hub_a": (0.80,0.45,0.80), "oldham_disc": (0.70,0.35,0.75), "oldham_hub_b": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

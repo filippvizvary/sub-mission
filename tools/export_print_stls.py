@@ -56,6 +56,7 @@ PARTS = [
     # 2.6 pockets for the nuts. Three clamps in the pod, so print 3 of each.
     ("rotor_clamp", "07a_upinac_hlava.stl", True),
     ("cup_clamp_wet", "07b_upinac_matica.stl", True),
+    ("cup_cover_wet", "14_kryt_pohara.stl", True),   # print 2: one per cup
     ("motor_plate", "09_motorova_doska.stl", True),           # print 1: test the pattern
     ("oldham_hub_a", "10_oldham_hub_hriadel.stl", False),
     ("oldham_disc", "11_oldham_kotuc.stl", False),
