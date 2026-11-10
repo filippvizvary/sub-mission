@@ -358,9 +358,12 @@ def make_engine_block():
         leg = (cq.Workplane("XY").box(20, 8, 95).translate((35, 0, 157.5))
                .rotate((0, 0, 0), (0, 0, 1), 45 + 90 * i))
         arms = leg if arms is None else arms.union(leg)
-    boss = (cq.Workplane("XY").circle(10).extrude(10).translate((0, 0, 105))
+    # shoulder at 105.3, not 105.0: the dry cup's face is located by this shoulder
+    # through the clamp, so the shoulder has to hold it 0.3 mm CLEAR of the bulkhead.
+    # Otherwise print tolerance alone can press the spinning cup into the wall.
+    boss = (cq.Workplane("XY").circle(10).extrude(10.3).translate((0, 0, 105.3))
             .cut(cq.Workplane("XY").circle(2.7).extrude(30).translate((0, 0, 95)))
-            .cut(cq.Workplane("XY").circle(6.5).extrude(10).translate((0, 0, 105))))
+            .cut(cq.Workplane("XY").circle(6.5).extrude(10.3).translate((0, 0, 105.3))))
     sp = None
     for i in range(4):
         # pulled in to 18: at 20 the spoke only TOUCHED the Ø20 boss at r 10, a
@@ -873,7 +876,8 @@ Z_SHAFT   = 0     # shaft spans -37..78 (115 mm), hub grips at -31, cup at 67
 Z_CARRIER = 15    # wet bearing carrier 47..71
 Z_WETCUP  = 81 - CUP_BODY   # 75.35: magnet face stays on the bulkhead at 81
 Z_POD     = 85    # pod: wall 80..85, barrel 85..205
-Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
+Z_DRYCUP  = 85.3  # dry cup face 0.3 mm clear of the wall: its position is set by
+                  # the clamp butting the frame's shoulder, not by the wall
 Z_ADAPTER = 205   # transition cone 205..225
 Z_CAGE    = 225   # cage 225..425
 Z_GUARD   = -50   # weed guard ring, upstream of the blade plane

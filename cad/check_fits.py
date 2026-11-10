@@ -172,8 +172,8 @@ gap = md.bounds[0][1] - mw.bounds[1][1]
 # 12 magnets per cup AND a 0.45 mm printed membrane on each face instead of a 0.2
 # epoxy plug: the air gap goes 4.4 -> 4.9, so the two gains roughly cancel and the
 # coupling still lands near 1.05 N*m against a 0.164 N*m load.
-ok(abs(gap - 4.9) <= 0.06, "magnet face gap",
-   f"{gap:.2f} mm -> slip ~1.05 N*m vs 0.164 N*m load = 6.4x")
+ok(abs(gap - 5.2) <= 0.08, "magnet face gap",
+   f"{gap:.2f} mm = 0.45 + 4.00 wall + 0.45 + 0.30 clearance -> slip ~0.93 N*m = 5.7x")
 mem_w = cw.bounds[1][1] - mw.bounds[1][1]
 mem_d = md.bounds[0][1] - cd.bounds[0][1]
 ok(abs(mem_w - 0.45) <= 0.02 and abs(mem_d - 0.45) <= 0.02, "printed membrane over the magnet",
