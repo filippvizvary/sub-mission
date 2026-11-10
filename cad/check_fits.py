@@ -40,15 +40,25 @@ def ok(cond, name, detail):
         print(f"  ok {name}: {detail}")
 
 
+def _drop_slivers(m):
+    comps = m.split(only_watertight=False)
+    if len(comps) <= 1:
+        return m
+    keep = max(comps, key=lambda c: abs(c.volume))
+    if any(abs(c.volume) > 0.01 for c in comps if c is not keep):
+        return m          # a real second body: leave it, the checks will see it
+    return keep
+
+
 def local(name):
     """STL in its own build frame: axis = Z."""
-    m = trimesh.load(os.path.join(CQ, name + ".stl"))
+    m = _drop_slivers(trimesh.load(os.path.join(CQ, name + ".stl")))
     m.vertices = (m.vertices - T) @ BACK.T
     return m
 
 
 def world(name):
-    return trimesh.load(os.path.join(CQ, name + ".stl"))
+    return _drop_slivers(trimesh.load(os.path.join(CQ, name + ".stl")))
 
 
 def radii_at(m, z):
@@ -69,20 +79,16 @@ def zrange(m):
 # ---------------------------------------------------------------- rotor
 rotor = local("rotor")
 z0, z1 = zrange(rotor)
-ok(abs((z1 - z0) - 86.0) <= 1.5, "rotor height",
-   f"{z1 - z0:.1f} mm, expected 86 (cone 40 + hub 46); both=True would give 132")
-hub_rs = radii_at(rotor, 20.0)
+ok(abs((z1 - z0) - 82.0) <= 1.5, "rotor height",
+   f"{z1 - z0:.1f} mm, expected 82 (cone 40 + hub 28 + clamp boss 14)")
 sec = rotor.section(plane_origin=[0, 0, 20.0], plane_normal=[0, 0, 1])
 _P = sec.vertices[:, :2]
 _bore = _P[np.hypot(_P[:, 0], _P[:, 1]) < 3.0]
 ok(abs(_bore[:, 0].max() - 2.05) <= 0.08, "hub D-bore key",
    f"flat at x {_bore[:, 0].max():.2f} mm: the flat is the torque key, epoxy holds it axially")
-hub_od = radii_at(rotor, 44.0).max()   # 44 mm aft: above the blade roots, pure hub
-ok(abs(hub_od - 32.0) <= 0.2, "hub OD", f"r {hub_od:.2f} (Ø64) - the set screws enter here")
-tip = hub_od - 30.0            # GIVEN: M4x30 from the OD, insert 7 mm at the mouth
-flat_r = 2.5 - 0.5             # GIVEN: 0.5 mm flat on the Ø5 h9 shaft
-ok(abs(tip - flat_r) <= 0.35, "set screw reaches the shaft",
-   f"tip lands at r {tip:.1f}, shaft flat sits at r {flat_r:.1f} (a M4x8 would stop 21 mm short)")
+boss_rs = radii_at(rotor, 35.0)          # inside the Ø16 clamp boss (28..42)
+ok(abs(boss_rs.max() - 8.0) <= 0.15, "clamp boss OD",
+   f"r {boss_rs.max():.2f} (Ø16): an M3 from here reaches the shaft in 5.5 mm, not 29.5")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
 ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
@@ -190,11 +196,6 @@ rs = radii_at(pod, POD_Z + 50.0)
 ok(has_r(rs, 48.0, 0.1) and has_r(rs, 55.0, 0.1), "barrel wall", f"r {rs.min():.1f}..{rs.max():.1f} (Ø96/Ø110)")
 grs = radii_at(pod, POD_Z + 119.1)
 ok(has_r(grs, 49.9, 0.1) and has_r(grs, 52.9, 0.1), "O-ring groove", f"r 49.9..52.9 = 3.0 wide (2.2 could not hold a 2.5 cord)")
-brs = radii_at(pod, POD_Z + 2.5)
-ok(has_r(brs, 6.5, 0.1), "695ZZ seat", f"Ø{2*6.5:.0f} H7 x 5 deep, bearing is 5x13x4 (2Z)")
-drs = radii_at(pod, POD_Z + 0.5)
-ok(has_r(drs, 10.0, 0.2), "dry bearing boss", f"Ø{2*10:.0f}, clear of the cup")
-
 
 # ---------------------------------------------------------------- booleans
 import cadquery as cq

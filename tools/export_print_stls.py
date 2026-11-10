@@ -52,11 +52,29 @@ PARTS = [
 ]
 
 
+def drop_junk(m, src):
+    """OCC occasionally leaves a ZERO-VOLUME sliver component behind a union (the
+    rotor: 2 non-manifold edges at r 56, 0.00 cm3). Drop components that carry no
+    volume and refuse anything that carries some - a real second body means the
+    part is two parts."""
+    comps = m.split(only_watertight=False)
+    if len(comps) == 1:
+        return m
+    keep = max(comps, key=lambda c: abs(c.volume))
+    dropped = [c for c in comps if c is not keep]
+    junk = [c for c in dropped if abs(c.volume) > 0.01]
+    if junk:
+        raise SystemExit(f"{src}: {len(junk)} extra body/bodies with real volume - not one part")
+    print(f"  {src}: dropped {len(dropped)} zero-volume sliver(s) from the union")
+    return keep
+
+
 def export():
     os.makedirs(OUT, exist_ok=True)
     bad = []
     for src, dst, flip in PARTS:
         m = trimesh.load(os.path.join(CQ, src + ".stl"))
+        m = drop_junk(m, src)
         m.vertices = (m.vertices - T) @ BACK.T
         if flip:
             m.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))

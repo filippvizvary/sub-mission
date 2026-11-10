@@ -19,7 +19,8 @@ os.makedirs(OUT, exist_ok=True)
 
 # ---------------- parameters ----------------
 ROTOR_R = 110.0
-HUB_D, HUB_LEN = 64.0, 46.0
+HUB_D, HUB_LEN = 64.0, 28.0
+CLAMP_R, CLAMP_LEN = 8.0, 14.0   # Ø16 x 14 clamp boss on the hub's aft face
 BLADES = 3
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
@@ -93,21 +94,39 @@ def make_blade():
 
 # ---------------- hub + shaft + cups ---------------------------------------
 def make_hub():
-    """Ø64 x 46 hub, keyed to the shaft by a D-bore on the same 0.5 mm flat the
-    cup uses, and retained axially with epoxy.
+    """Ø64 x 24 hub with a Ø16 x 14 CLAMP BOSS on its aft face.
 
-    It used to carry two M4 heat-set inserts and two set screws. The wall between
-    the Ø64 OD and the Ø5 shaft is 29.5 mm, so a short screw never reached the
-    shaft and a long one had to be M4x30 - a part Filip does not have (his
-    longest is M4x20). The flat is the key: it carries the 0.164 N*m as a form
-    fit (4.2 MPa in ABS), and epoxy over a 46 mm long bore only has to carry the
-    axial load, which is 24 N of rotor thrust.
+    That boss is the whole point: the hub's OD is 32 mm from the shaft, where a
+    set screw cannot reach (29.5 mm of wall). A Ø16 boss puts the screw 8 mm from
+    the shaft - the same proportions as a Prusa GT2 pulley, which is exactly the
+    pattern Filip pointed at. Two M3 x 8 grub screws at 90 deg, printed Ø2.6 and
+    tapped in, clamp the shaft; the D-bore flat is the torque key, so the screws
+    only hold it axially. Nothing is glued, everything comes apart.
+
+    The 46 mm body was only ever there to have somewhere to glue to. 28 mm is the
+    shortest that still swallows the blade roots - the root section is 25.5 mm
+    tall axially, so at 24 mm the roots poked through both end faces and pinched
+    the union (2 non-manifold edges at r 56, z 11). It also frees the shaft band
+    28..47 for this clamp boss.
     """
-    hub = cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
-    hub = hub.cut(cq.Workplane("XY").circle(2.6).extrude(HUB_LEN + 20).translate((0, 0, -10)))
-    lens = (cq.Workplane("XY").circle(2.6).extrude(HUB_LEN)
-            .intersect(cq.Workplane("XY").box(10, 12, HUB_LEN + 20).translate((7.05, 0, 0))))
-    return hub.union(lens)
+    body = cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
+    boss = cq.Workplane("XY").circle(CLAMP_R).extrude(CLAMP_LEN).translate((0, 0, HUB_LEN))
+    hub = body.union(boss)
+    total = HUB_LEN + CLAMP_LEN
+    # D-bore through body and boss
+    hub = hub.cut(cq.Workplane("XY").circle(2.6).extrude(total + 20).translate((0, 0, -10)))
+    lens = (cq.Workplane("XY").circle(2.6).extrude(total)
+            .intersect(cq.Workplane("XY").box(10, 12, total + 20).translate((7.05, 0, 0))))
+    hub = hub.union(lens)
+    # Two M3 clamps at 90 and 270 deg, i.e. PERPENDICULAR to the flat. They press
+    # the shaft sideways onto the flat, so the flat stays the key and the screws
+    # only have to stop it sliding. (At 0 deg the hole would cut straight through
+    # the 0.55 mm flat lip and leave a sliver - it did, hub not closed.)
+    for ang, z in ((90.0, 27.0), (270.0, 35.0)):
+        hole = (cq.Workplane("YZ").circle(1.3).extrude(CLAMP_R + 3)
+                .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
+        hub = hub.cut(hole)
+    return hub
 
 def make_shaft():
     # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
@@ -161,11 +180,6 @@ def make_cup(flavour="wet"):
     # entirely inside the Ø5.2 bore), so the first two attempts left a perfect
     # circle and the "flat" existed only in a comment.
     cup = cup.union(lens)
-    if flavour == "dry":
-        # the dry cup rides on the dry shaft and turns around the bulkhead's
-        # Ø20 dry bearing boss, so its centre is a Ø22 clearance bore - the load
-        # path is the boss, not the cup's plastic.
-        cup = cup.cut(cq.Workplane("XY").circle(11).extrude(CUP_BODY))
     # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
@@ -219,26 +233,34 @@ def make_pod():
     tube = cq.Workplane("XY").circle(POD_OD / 2).extrude(POD_LEN)
     tube = tube.cut(cq.Workplane("XY").circle(POD_ID / 2).extrude(POD_LEN + 20)
                     .translate((0, 0, -10)))
-    wall = cq.Workplane("XY").circle(POD_OD / 2).extrude(WALL_T).translate((0, 0, -WALL_T))
-    rib = cq.Workplane("XY").circle(POD_ID / 2).circle(40).extrude(10)
+    # every union here overlaps its neighbour by 1 mm. Faces that land exactly on
+    # each other (wall face at z 0, boss base at z 0) are the class of bug that
+    # made the 695ZZ seat come out as a separate -0.8 cm3 inverted body.
+    # The wall MUST stay exactly -4..0: its wet face seats the cup's thrust washer
+    # at 81 and its dry face is the magnet-gap datum at 85. So the union overlap
+    # goes on the OUTSIDE of the tube instead - a 1 mm collar at r 48..55 that
+    # fuses the wall to the barrel without touching the dry cup (r <= 35).
+    wall = (cq.Workplane("XY").circle(POD_OD / 2).extrude(WALL_T).translate((0, 0, -WALL_T))
+            .union(cq.Workplane("XY").circle(POD_OD / 2).circle(POD_ID / 2).extrude(1)))
+    rib = cq.Workplane("XY").circle(POD_ID / 2).circle(40).extrude(11).translate((0, 0, -1))
     pod = tube.union(wall).union(rib)
-    # dry bearing boss: Ø20 x 10 standing on the bulkhead's dry face. The 695ZZ
-    # (5x13x4) presses into a Ø13 H7 x 5 seat cut into this boss from the dry
-    # side, so 5 mm of plastic plus the 4 mm wall sit behind it. The dry cup's
-    # own bearing is this boss, not a seat in the thin bulkhead.
-    pod = pod.union(cq.Workplane("XY").circle(10).extrude(10))
-    pod = pod.cut(cq.Workplane("XY").circle(6.5).extrude(5))
+    # NO bearing boss on the dry face. A Ø20 boss there reaches into the dry
+    # cup's body (85..95) and, worse, any boss long enough to seat a 695ZZ
+    # (13x5x4) pushes the cup back and the magnet gap goes from 4.4 to 9.4 mm,
+    # where the coupling slips. The dry shaft is carried by a bearing in a
+    # SPIDER downstream instead - three legs off the barrel wall into a central
+    # boss, which is the arrangement Filip described.
     # 1 mm recess in the WET face for the cup's PTFE thrust washer. The magnets
     # pull the wet cup downstream with ~56 N; without a washer that is ABS
     # sliding on ABS at 0.73 m/s, which grooves in hours and the groove changes
     # the magnet gap. The washer takes 1 mm out of the wall and puts 1 mm of
     # PTFE in the same 4.4 mm window, so the magnetic gap does not move.
-    pod = pod.cut(cq.Workplane("XY").circle(35).circle(3).extrude(1)
-                  .translate((0, 0, -WALL_T)))
+    pod = pod.cut(cq.Workplane("XY").circle(35).circle(3).extrude(1.5)
+                  .translate((0, 0, -WALL_T - 0.5)))
     # four spider bosses on the wet face
     for i in range(4):
         a = math.radians(45 + 90 * i)
-        pod = pod.union(cq.Workplane("XY").circle(5.5).extrude(10)
+        pod = pod.union(cq.Workplane("XY").circle(5.5).extrude(11)
                         .translate((45 * math.cos(a), 45 * math.sin(a), -14)))
     # O-ring groove on the downstream face
     # Groove for an NBR70 Ø100 x 2.5 ring: 3.0 wide x 1.8 deep. It was 2.2 wide,
@@ -246,7 +268,7 @@ def make_pod():
     # ring would have had to extrude out of the joint. 3.0 x 1.8 = 5.4 mm2 holds
     # the displaced volume, mean Ø102.8 against a 102.5 cord mean is ~0 stretch,
     # squeeze (2.5-1.8)/2.5 = 28%, and both lands stay over 1.8 mm.
-    pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(1.8)
+    pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(2.8)
                   .translate((0, 0, POD_LEN - 1.8)))
     # six lugs: flat plate + rounded upstream edge, then drill
     for i in range(6):
