@@ -169,16 +169,16 @@ ok(np.hypot(bore[:, 0], bore[:, 1]).min() >= 2.55, "cup bore is round",
    f"min bore radius {np.hypot(bore[:,0],bore[:,1]).min():.2f} mm - no flat, no key")
 ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
    f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
-ok(has_r(radii_at(cupw, 62.0), 7.0, 0.1), "cup boss OD in the spoke cage",
-   f"r {radii_at(cupw, 62.0).max():.1f} at z 62, the spokes start at r 8")
+ok(has_r(radii_at(cupw, 66.0), 7.0, 0.1), "cup boss OD in the spoke cage",
+   f"r {radii_at(cupw, 66.0).max():.1f} at z 66, the spokes hold a Ø15 hole")
 # the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
 for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss itself
     sec = cupw.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
     r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
     stray = ((r > 3.5) & (r < 21.0)).sum()
     ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
-ok(abs(np.ptp(cupw.vertices[:, 2]) - 20.0) <= 0.05, "cup stack height",
-   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 10; the boss butts the spider at 61)")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 17.0) <= 0.05, "cup stack height",
+   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 7; collar B sits at 61..64)")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
 
@@ -245,7 +245,7 @@ def _solid(wp):
 
 _pat = [(5.0, 0.0), (-2.5, 4.33), (-2.5, -4.33)]
 for _sol, _name, _zs, _solidz in ((_solid(_mod.make_hub()), "hub", (30.0, 34.0, 38.0), 26.0),
-                                  (_solid(_mod.make_cup()), "cup", (-5.5, -3.5, -1.5), -9.0)):
+                                  (_solid(_mod.make_cup()), "cup", (-5.5, -4.0, -2.5), -0.5)):
     for (_x, _y), _z in zip(_pat, _zs):
         ok(not _sol.isInside(cq.Vector(_x, _y, _z)), f"{_name} clamp hole at z {_z}",
            "air at r 5, so the M3 reaches the shaft")

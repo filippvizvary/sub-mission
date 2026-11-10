@@ -124,6 +124,34 @@ def make_hub():
         hub = hub.cut(hole)
     return hub
 
+
+def make_shaft_collar(z0, thickness, relieve):
+    """Printed stop collar: Ø15 ring, Ø5.1 bore, ONE M3 grub screw from the OD.
+
+    A slit-and-pinch version was tried first and OCC split it into two bodies -
+    the clearance hole, the tapped hole and the slit between them cut the ring
+    into pieces. A single grub screw is the same mechanism the hub and both cups
+    already use, and it only needs to hold 24 N: at 1.5 N*m the screw gives
+    ~750 N of friction along the shaft, 31x the load.
+
+    Two of these go on, one each side of the static spider boss, so the shaft
+    cannot travel: the rotor's 24 N of thrust goes collar -> bushing face, not
+    friction.
+
+    The contact face is relieved 0.5 mm outside r 3.6 so the ONLY thing it rides
+    on is the iglidur bushing's end ring (mean r 3.0, mu ~0.15): 0.011 N*m of
+    drag. On printed ABS at r 5.5 the same load would cost 0.04 N*m, a quarter of
+    the rotor's 0.164.
+    """
+    ring = (cq.Workplane("XY").circle(7.5).circle(2.55).extrude(thickness)
+            .translate((0, 0, z0)))
+    zf = z0 + thickness - 0.5 if relieve == "up" else z0
+    ring = ring.cut(cq.Workplane("XY").circle(7.5).circle(3.6).extrude(0.5)
+                    .translate((0, 0, zf)))
+    ring = ring.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        1.3, 9, cq.Vector(0, 0, z0 + thickness / 2), cq.Vector(1, 0, 0))))
+    return ring
+
 def make_shaft():
     # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
     # 115 mm version reached 37 mm into what is now the nose cone and shared
@@ -148,7 +176,7 @@ def make_cup(flavour="wet"):
     # boss 10 mm long: its upstream face butts the static spider boss at 61,
     # which is what keeps the cup from sliding upstream during handling. No
     # bought Ø5 collar is needed - that was A09, now cut.
-    cup = cup.union(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, -10)))
+    cup = cup.union(cq.Workplane("XY").circle(7).extrude(7).translate((0, 0, -7)))
     # Ø5 through bore
     # ROUND bore, Ø5.2. No flat, no key: the shaft is round bar and Filip is not
     # willing to file one (and one flat on one side is a one-sided drive anyway).
@@ -168,7 +196,7 @@ def make_cup(flavour="wet"):
 
     # THREE M3 clamps at 120 deg, staggered so two can sit on the same shaft
     # section without fighting: z 65.5, 67.5, 69.5 (the boss is 61..71).
-    for ang, z in ((0.0, -5.5), (120.0, -3.5), (240.0, -1.5)):
+    for ang, z in ((0.0, -5.5), (120.0, -4.0), (240.0, -2.5)):
         # YZ, not XZ: the YZ workplane's normal is +X, so the extrude runs RADIALLY
         # out of the bore. On XZ it ran along Y straight through the axis, which
         # cut a tunnel across the boss instead of three screw holes.
@@ -594,6 +622,8 @@ parts["wet_carrier"] = make_wet_carrier()
 # grooved.
 parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
+parts["collar_up"]   = make_shaft_collar(43.0, 4.0, "up")
+parts["collar_dn"]   = make_shaft_collar(61.0, 3.0, "down")
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
@@ -627,7 +657,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","collar_up","collar_dn","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -640,7 +670,7 @@ for name in pod_chain:
 COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
-    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60),
+    "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "collar_up": (0.85, 0.70, 0.30), "collar_dn": (0.85, 0.70, 0.30),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
