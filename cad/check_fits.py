@@ -156,9 +156,9 @@ ok(sz0 >= -0.1 and sz1 >= 75.0, "shaft spans hub->cup boss", f"z {sz0:.1f}..{sz1
 
 # ---------------------------------------------------------------- static spider
 car = local("wet_carrier")
-for z in (50.5, 58.5):
+for z in (48.0, 53.0):
     rs = radii_at(car, z)
-    ok(has_r(rs, 3.5, 0.05), f"bushing seat at z={z}", f"bore Ø{2*rs.min():.2f}, iglidur JSM-0507-05 needs Ø7")
+    ok(has_r(rs, 3.5, 0.05), f"bushing seat at z={z}", f"bore Ø{2*rs.min():.2f}, one iglidur JSM-0507-05 needs Ø7")
     ok(has_r(rs, 9.0, 0.2), f"boss OD at z={z}", f"Ø{2*rs.max():.2f} in the cup's Ø20 bore")
 ok(np.ptp(car.vertices[:, 0]) <= 111, "spider clears the barrel bore", f"Ø{np.ptp(car.vertices[:, 0]):.1f}")
 
@@ -186,10 +186,11 @@ ok(float(rs76.min()) >= 2.95, "cup bore clears the shaft",
 # the clamp is the grip now, and this is where it has to reach
 cw_ = local("cup_clamp_wet")
 cwz = zrange(cw_)
-ok(abs(cwz[0] - 61.0) <= 0.3, "wet cup clamp reaches the bushing",
-   f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: sleeve end butts the second igus bushing at 61")
-ok(has_r(radii_at(cw_, cwz[0] + 1.5), 11.0, 0.15), "cup clamp sleeve OD",
-   f"r {radii_at(cw_, cwz[0]+1.5).max():.1f} at the sleeve end, Ø22; the cage's spokes "
+ok(abs(cwz[0] - 54.35) <= 0.3, "wet cup clamp reaches the bushing",
+   f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: 19 mm, the same part as the rotor clamp, "
+   "butting the carrier boss at 54.35")
+ok(has_r(radii_at(cw_, 60.0), 11.0, 0.15), "cup clamp sleeve OD",
+   f"r 11 present at z 60, i.e. Ø22 sleeve; the ear reaches r 21 outside it. The cage's "
    "stop at z 59, so the clamp at 61 turns clear of them")
 # the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
 # the body must be solid between the bore and the magnet pockets at every height, so

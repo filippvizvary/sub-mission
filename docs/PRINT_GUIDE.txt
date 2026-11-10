@@ -10,7 +10,7 @@ Files
 01_rotor_vrtula.stl                1x   147.1 cm3   170.3 x  194.6 x   68.0
 02_barel_pod.stl                   1x   412.1 cm3   136.0 x  140.0 x  134.0
 03_pohar.stl                       2x    15.7 cm3    70.0 x   70.0 x    5.7
-05_nosic_hriadela_klietka.stl      1x    29.4 cm3    95.0 x   94.0 x   24.0
+05_nosic_hriadela_klietka.stl (1x iglidur)      1x    29.4 cm3    95.0 x   94.0 x   24.0
 06_podlozka_pohara.stl             1x     0.4 cm3    24.0 x   24.0 x    1.0
 07_upinac_vrtule_polovica.stl      2x     6.5 cm3    44.0 x   22.0 x   22.0
 08_upinac_pohara_polovica.stl      4x     4.5 cm3    44.0 x   22.0 x   12.3

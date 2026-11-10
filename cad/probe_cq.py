@@ -124,7 +124,7 @@ def make_hub():
     return hub
 
 
-def _clamp_body(L, R_F=24.0, n_bolts=2, flip_ears=False):
+def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3"):
     """One half of a two-piece shaft clamp, built properly.
 
     The split bolts live in EARS that stick out radially from the sleeve, not in the
@@ -155,10 +155,12 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, flip_ears=False):
         body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.1, cq.Vector(x, y, 5.1), cq.Vector(0, 0, -1))))
     # ears + split bolts
-    # bolts only where the sleeve is, i.e. z > 5: over the flange (z < 5, r 24) the
-    # ear is buried inside the flange's body and its hex pocket ends up unreachable
-    span = (L - 5.0)
-    zs = [5.0 + span * (i + 1) / (n_bolts + 1) for i in range(n_bolts)]
+    # Even slots along the ear, one bolt per slot, sized so the 7.0 AF hex pockets can
+    # never touch each other. Spacing them by "span/(n+1)" put them 4.7 mm apart with
+    # 7.0 mm pockets - they merged into a scalloped slot, which is what Filip saw.
+    slot = (L - 2.0) / n_bolts
+    zs = [1.0 + slot * (i + 0.5) for i in range(n_bolts)]
+    hole_r, hex_af = (1.7, 7.0) if screw == "M3" else (1.2, 4.4)
     for sx in (-1, 1):
         # inner face at x 9.5, i.e. 1.5 mm INSIDE the Ø22 sleeve, so the union is
         # solid; at x 11 it only touched the sleeve's OD and the mesh came out
@@ -168,10 +170,10 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, flip_ears=False):
     for sx in (-1, 1):
         for z in zs:
             body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.7, 40, cq.Vector(sx * 16.0, 0, z), cq.Vector(0, 1, 0))))
-            # hex 7.4 AF x 2.6 deep from the ear's outer face: takes an M3 head OR
-            # an M3 nut, so one STL still serves both halves
-            body = body.cut(cq.Workplane("XZ").polygon(6, 7.4).extrude(2.6)
+                hole_r, 40, cq.Vector(sx * 16.0, 0, z), cq.Vector(0, 1, 0))))
+            # hex pocket from the ear's outer face: takes the screw head on one half
+            # and the nut on the other, so one STL still serves both halves
+            body = body.cut(cq.Workplane("XZ").polygon(6, hex_af).extrude(2.6)
                             .translate((sx * 16.0, 7.0, z)))
     # the split: keep y >= 0
     body = body.cut(cq.Workplane("XY").box(160, 60, 60).translate((0, -30, 30)))
@@ -216,7 +218,7 @@ def make_rotor_clamp():
         solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
     # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
-    solid = _clamp_body(19.0, 24.0, 4).translate((0, 0, HUB_LEN))   # 28..47, against the bushing
+    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, HUB_LEN))   # 4 x M3 x 12
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -252,7 +254,9 @@ def make_cup_clamp():
             3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
     # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
     # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
-    solid = _clamp_body(12.35, 24.0, 2)
+    # same 19 mm part as the rotor clamp: anything shorter slips on the shaft under
+    # the 84 N of magnet pull, and the sleeve's friction scales with its length
+    solid = _clamp_body(19.0, 24.0, 2, "M3").translate((0, 0, 54.35))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
@@ -707,12 +711,14 @@ def make_wet_carrier():
     it occupies. A flat spider put the three arms through the cup body - measured
     3963 mm3 of interference at 0.25 mm resolution, i.e. the cup could not turn.
     """
-    # boss: 47..61, Ø18, carries the two iglidur bushings; Ø5 shaft bore clear through
-    boss = (cq.Workplane("XY").circle(9).extrude(14).translate((0, 0, 47))
+    # boss 47..54.35, Ø18, ONE iglidur JSM-0507-05 (7 mm) instead of two. That is the
+    # price of giving the cup the same 19 mm clamp as the rotor: the clamp runs
+    # 54.35..73.35 and has to reach the cup's cover. Two bushings would need 14 mm of
+    # boss and there is no room left.
+    boss = (cq.Workplane("XY").circle(9).extrude(7.35).translate((0, 0, 47))
             .cut(cq.Workplane("XY").circle(2.5).extrude(30).translate((0, 0, 40))))
-    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 48))
-    b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 56))
-    boss = boss.cut(b1).cut(b2)
+    b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(7).translate((0, 0, 47))
+    boss = boss.cut(b1)
     # Three spokes 59..67. They must overlap the boss axially: the boss is Ø18
     # (r 9) and the spokes need a Ø15 hole for the cup's Ø14 clamp boss, so their
     # inner edge can never reach the boss radially - at 61..69 the two only met
@@ -720,13 +726,13 @@ def make_wet_carrier():
     # a notch in it. At 59..67 there are 2 mm of real 3D overlap.
     arms = None
     for i in range(3):
-        a = (cq.Workplane("XY").box(48, 9, 6)
-             .translate((24, 0, 56))
+        a = (cq.Workplane("XY").box(48, 9, 6.5)
+             .translate((24, 0, 50.75))
              .rotate((0, 0, 0), (0, 0, 1), i * 120))
         arms = a if arms is None else arms.union(a)
-    arms = arms.cut(cq.Workplane("XY").circle(7.5).extrude(30).translate((0, 0, 52)))
+    arms = arms.cut(cq.Workplane("XY").circle(7.5).extrude(40).translate((0, 0, 40)))
     # ring 65..71 at r 42..48 sits on the four bulkhead bosses (71..81)
-    ring = cq.Workplane("XY").circle(47).circle(42).extrude(14).translate((0, 0, 57))
+    ring = cq.Workplane("XY").circle(47).circle(42).extrude(21).translate((0, 0, 50))
     body = boss.union(arms).union(ring)
     # 4 bolt ears at 45/135/225/315 deg (bisecting the arms), M4 clearance
     for i in range(4):
@@ -945,14 +951,14 @@ parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 parts["rotor_clamp"] = make_rotor_clamp()
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
-parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_WETCUP - 2.0))
+parts["cup_clamp_wet"] = make_cup_clamp()
 parts["cup_cover_wet"] = make_cup_cover().translate((0, 0, Z_WETCUP - 2.0))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
 # flips Y and is a no-op on a body of revolution - it silently leaves the cup
 # facing the wrong way, with its magnet pockets pointing into the cage.
 parts["magcup_dry"]  = make_cup("dry").mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
-parts["cup_clamp_dry"] = make_cup_clamp().translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
+parts["cup_clamp_dry"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
 parts["cup_cover_dry"] = make_cup_cover().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
