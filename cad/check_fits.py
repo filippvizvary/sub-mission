@@ -97,8 +97,9 @@ ok(abs((c1 - c0) - 22.0) <= 0.4, "rotor clamp length",
 sec = hub.section(plane_origin=[0, 0, 37.0], plane_normal=[0, 0, 1])
 _H = sec.vertices[:, :2]
 _b = _H[np.hypot(_H[:, 0], _H[:, 1]) < 3.0]
-ok(np.hypot(_b[:, 0], _b[:, 1]).min() >= 2.45, "clamp bore",
-   f"Ø{2*np.hypot(_b[:,0],_b[:,1]).min():.2f}: slip fit on Ø5 h9")
+ok(abs(2 * np.hypot(_b[:, 0], _b[:, 1]).min() - 4.90) <= 0.05, "clamp bore",
+   f"Ø{2*np.hypot(_b[:,0],_b[:,1]).min():.2f}: 0.1 mm UNDERSIZE on the Ø5 shaft, so the "
+   "bolt preload squeezes the ring instead of closing the mating faces")
 _rim = np.hypot(_H[:, 0], _H[:, 1]).max()
 ok(abs(_rim - 10.0) <= 0.2, "clamp sleeve OD", f"r {_rim:.2f} (Ø20), split bolts at x ±7.6")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)

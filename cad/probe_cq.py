@@ -137,7 +137,17 @@ def make_rotor_clamp():
     solid = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, HUB_LEN))     # flange
     solid = solid.union(cq.Workplane("XY").circle(10).extrude(14).translate((0, 0, HUB_LEN + 5)))
     solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
-    solid = solid.cut(cq.Workplane("XY").circle(2.525).extrude(40).translate((0, 0, z_bot - 5)))
+    # Ø4.90, NOT Ø5.05. A split clamp with a clearance bore does nothing: once the
+    # halves touch at the split, the bolt's tension goes into the mating faces and
+    # never into the shaft. Undersize it and the shaft props the halves apart, so
+    # the preload becomes radial squeeze - a collet, not a spacer.
+    #
+    # 0.10 and no more. These halves are rigid bodies, so closing the split is a
+    # rigid-body motion: the only thing that deforms is the bore where it meets the
+    # shaft. 0.10 mm makes the plastic yield into a full wrap and grips. 0.20 would
+    # just print a polygon into the shaft and put the split line under a load it
+    # does not need.
+    solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(40).translate((0, 0, z_bot - 5)))
     # four M3 x 12 into the rotor, two of them land in this half
     for ang in (45.0, 135.0):
         a = math.radians(ang)
