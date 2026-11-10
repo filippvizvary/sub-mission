@@ -118,10 +118,19 @@ def make_hub():
     # THREE M3 clamps at 120 deg, staggered in z inside the boss (28..42), for
     # the same reason as on the cup: two opposite each other fight, and a single
     # screw lets the shaft rock off-centre against a 60 N pull.
-    for ang, z in ((0.0, 30.0), (120.0, 34.0), (240.0, 38.0)):
+    for ang, z in ((0.0, 31.0), (120.0, 34.5), (240.0, 38.0)):
         hole = (cq.Workplane("YZ").circle(1.3).extrude(CLAMP_R + 3)
                 .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
         hub = hub.cut(hole)
+        # FLAT PAD, 1.0 mm deep, Ø5.8. On a Ø16 cylinder a screw head only
+        # touches along a line and walks off centre when you tighten it. The pad
+        # gives it a real seat and leaves 3.4 mm of wall to the Ø5.2 bore.
+        # translate ALONG X first, then rotate: rotating after the offset put the
+        # pad 7 mm off the radial line, so it was mangling the boss face instead
+        # of flatting it under the head.
+        pad = (cq.Workplane("YZ").circle(2.9).extrude(2.5).translate((7.0, 0, 0))
+               .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
+        hub = hub.cut(pad)
     return hub
 
 
@@ -279,6 +288,10 @@ def make_cup(flavour="wet"):
         hole = (cq.Workplane("YZ").circle(1.3).extrude(9)
                 .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
         cup = cup.cut(hole)
+        # No flat pads here: the boss is 6 mm long and a Ø5.8 pad needs 5.8 of
+        # that, so three of them at 120 deg would run off both ends. On Ø14 the
+        # seat curvature is mild enough that the head still bites.
+        
     # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
