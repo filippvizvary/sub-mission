@@ -18,13 +18,13 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------- parameters ----------------
-ROTOR_R = 110.0
+ROTOR_R = 100.0           # Ø200, not Ø220: a 4-blade Ø220 is 220x220 and the MK3S bed is 250x210
 HUB_D, HUB_LEN = 64.0, 28.0
 CLAMP_R, CLAMP_LEN = 8.0, 14.0   # Ø16 x 14 clamp boss on the hub's aft face
 HEAD_D, HEAD_H = 6.2, 1.9          # flat pad under the M3 head, MEASURED:
                                    # head is Ø5.90 x 1.90 with a flat underside,
                                    # so 1.9 deep puts it exactly flush with the boss OD
-BLADES = 3
+BLADES = 4
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
 # is 1.0 mm of ABS. Bending the blade out of the rotor plane as a tapered
@@ -34,8 +34,7 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # from 6.2 to 2.2 MPa, and at Re 30-40k a thick section is the better foil
 # anyway: the thin one separates.
 THICKNESS = 0.20
-STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
-            (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
+STATIONS = [(0.20, 31.6, 38.7), (0.35, 20.3, 25.9), (0.50, 14.7, 19.9), (0.65, 11.5, 16.6), (0.80, 9.4, 14.5), (1.00, 7.5, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
@@ -937,7 +936,7 @@ parts = {}
 # rotor: 3 blades at 120deg intervals + hub, instances by rebuilding each blade
 parts["rotor"] = cq.Workplane("XY").add(make_hub().val())
 for i in range(BLADES):
-    b = make_blade().rotate((0,0,0),(0,0,1), i*120)
+    b = make_blade().rotate((0,0,0),(0,0,1), i * 360.0 / BLADES)
     parts["rotor"] = parts["rotor"].union(b.val(), clean=True)
 # nose cone is PART OF THE ROTOR, not a separate bolt-on: a Ø64 -> Ø12 cone over
 # 40 mm on the hub's upstream face. As a separate part placed at Z -23 it shared

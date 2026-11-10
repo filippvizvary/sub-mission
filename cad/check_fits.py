@@ -103,7 +103,7 @@ ok(has_r(_rr, 11.0, 0.2), "clamp sleeve OD",
    f"r 11 present at the split-bolt level: Ø22 sleeve, the ears reach r 21 outside it")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
-ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
+ok(abs(r_all.max() - 100.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 100)")
 # blade stiffness: measure chord and thickness off the model, then bend the
 # blade as a tapered cantilever out of the rotor plane (thrust is axial).
 ST = [(0.35, 25.9), (0.50, 19.9), (0.65, 16.6), (0.80, 14.5), (0.98, 12.7)]
@@ -120,7 +120,7 @@ for rf, pitch in ST:
         xs.append(110.0); cs.append(chord_ext); ts.append(thick_ext)
 ok(np.ptp(rotor.vertices[:, 0] ** 0 + np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])) > 0, "x", "x")
 ok(abs(np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max() - 110.0) <= 0.5,
-   "rotor reaches R", f"r {np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max():.2f} mm (nominal 110)")
+   "rotor reaches R", f"r {np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1]).max():.2f} mm (nominal 100)")
 
 x = np.array(xs); c = np.array(cs); t = np.array(ts)
 ok(c[0] > c[-1] + 5, "blade tapers root->tip", f"chord {c[0]:.1f} -> {c[-1]:.1f} mm")
