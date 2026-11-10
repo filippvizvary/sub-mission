@@ -45,12 +45,19 @@ BACK = _ry(-np.pi / 2) @ _rz(-np.pi / 2)
 PARTS = [
     ("rotor", "01_rotor_vrtula.stl", True),          # aft face down, cone up
     ("pod", "02_barel_pod.stl", False),              # bulkhead down, O-ring up
-    ("magcup_wet", "03_magnetovy_pohar_mokry.stl", False),   # pockets up
-    ("magcup_dry", "04_magnetovy_pohar_suchy.stl", True),    # pockets up
+    ("magcup_wet", "03_magnetovy_pohar_mokry.stl", True),    # magnet face DOWN
+    ("magcup_dry", "04_magnetovy_pohar_suchy.stl", True),    # magnet face DOWN
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
     ("collar_up", "07_kruzok_hriadele_polovica.stl", False),  # print 4: 2 per collar
 ]
+
+
+# Orientation note for the cups: they are printed MAGNET FACE DOWN. That puts the
+# face that has to be flat and hold the 0.2 mm magnet recess on the build plate,
+# and it turns the boss/body junction from a 64 mm overhang into a simple step up
+# from the plate. Printed face up, the body's whole underside starts on a Ø14
+# column, which is the "drží to na jednej vrstve" Filip saw.
 
 
 def drop_junk(m, src):
