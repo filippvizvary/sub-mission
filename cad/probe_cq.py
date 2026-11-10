@@ -125,32 +125,40 @@ def make_hub():
     return hub
 
 
-def make_shaft_collar(z0, thickness, relieve):
-    """Printed stop collar: Ø15 ring, Ø5.1 bore, ONE M3 grub screw from the OD.
+def make_shaft_collar(thickness, z0=0.0):
+    """ONE HALF of a two-piece bolted stop collar. Print it twice, mate the pair
+    180 deg apart, and two M3 x 12 with nuts clamp the Ø5 shaft hard.
 
-    A slit-and-pinch version was tried first and OCC split it into two bodies -
-    the clearance hole, the tapped hole and the slit between them cut the ring
-    into pieces. A single grub screw is the same mechanism the hub and both cups
-    already use, and it only needs to hold 24 N: at 1.5 N*m the screw gives
-    ~750 N of friction along the shaft, 31x the load.
+    This is Filip's design and it is the right one for a shaft clamp: the force
+    comes from a bolt preload across the split, not from a grub-screw tip biting
+    plastic. It grips evenly, it does not mark the rod, and it comes off again.
 
-    Two of these go on, one each side of the static spider boss, so the shaft
-    cannot travel: the rotor's 24 N of thrust goes collar -> bushing face, not
-    friction.
-
-    The contact face is relieved 0.5 mm outside r 3.6 so the ONLY thing it rides
-    on is the iglidur bushing's end ring (mean r 3.0, mu ~0.15): 0.011 N*m of
-    drag. On printed ABS at r 5.5 the same load would cost 0.04 N*m, a quarter of
-    the rotor's 0.164.
+    Each half carries BOTH features, one at x +4.5 and one at x -4.5: a Ø6.2 x
+    3.2 counterbore for the screw head and a hex pocket 5.7 across flats x 3.2
+    for an M3 nut. Rotate the second half 180 deg about Z and the head of one
+    lands over the nut pocket of the other, so a two-part set needs no mirrored
+    model - one STL printed twice.
     """
-    ring = (cq.Workplane("XY").circle(7.5).circle(2.55).extrude(thickness)
-            .translate((0, 0, z0)))
-    zf = z0 + thickness - 0.5 if relieve == "up" else z0
-    ring = ring.cut(cq.Workplane("XY").circle(7.5).circle(3.6).extrude(0.5)
-                    .translate((0, 0, zf)))
-    ring = ring.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-        1.3, 9, cq.Vector(0, 0, z0 + thickness / 2), cq.Vector(1, 0, 0))))
-    return ring
+    half = (cq.Workplane("XY").circle(7.5).circle(2.55).extrude(thickness)
+            .cut(cq.Workplane("XY").box(20, 20, thickness + 2)
+                 .translate((0, -10, thickness / 2))))
+    # pocket depth follows the part: at 3 mm a 3.2 mm pocket breaks through to
+    # the split plane and the half falls into pieces (it did).
+    pocket = min(3.4, thickness - 0.6)
+    for x, kind in ((4.5, "head"), (-4.5, "nut")):
+        # bolt runs along Y, from the split plane out to the OD
+        half = half.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 10, cq.Vector(x, 0, thickness / 2), cq.Vector(0, 1, 0))))
+        if kind == "head":
+            half = half.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                3.1, pocket, cq.Vector(x, 7.6, thickness / 2), cq.Vector(0, -1, 0))))
+        else:
+            # hex on the XZ plane so it extrudes along -Y, i.e. INTO the half from
+            # the OD. Built on XY it extruded along Z and cut a vertical hex right
+            # through the part instead of a nut pocket.
+            half = half.cut(cq.Workplane("XZ").polygon(6, 6.6).extrude(pocket)
+                            .translate((x, 7.6, thickness / 2)))
+    return half
 
 def make_shaft():
     # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
@@ -176,7 +184,7 @@ def make_cup(flavour="wet"):
     # boss 10 mm long: its upstream face butts the static spider boss at 61,
     # which is what keeps the cup from sliding upstream during handling. No
     # bought Ø5 collar is needed - that was A09, now cut.
-    cup = cup.union(cq.Workplane("XY").circle(7).extrude(7).translate((0, 0, -7)))
+    cup = cup.union(cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, -6)))
     # Ø5 through bore
     # ROUND bore, Ø5.2. No flat, no key: the shaft is round bar and Filip is not
     # willing to file one (and one flat on one side is a one-sided drive anyway).
@@ -196,7 +204,7 @@ def make_cup(flavour="wet"):
 
     # THREE M3 clamps at 120 deg, staggered so two can sit on the same shaft
     # section without fighting: z 65.5, 67.5, 69.5 (the boss is 61..71).
-    for ang, z in ((0.0, -5.5), (120.0, -4.0), (240.0, -2.5)):
+    for ang, z in ((0.0, -5.0), (120.0, -3.5), (240.0, -2.0)):
         # YZ, not XZ: the YZ workplane's normal is +X, so the extrude runs RADIALLY
         # out of the bore. On XZ it ran along Y straight through the axis, which
         # cut a tunnel across the boss instead of three screw holes.
@@ -622,8 +630,8 @@ parts["wet_carrier"] = make_wet_carrier()
 # grooved.
 parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
-parts["collar_up"]   = make_shaft_collar(43.0, 4.0, "up")
-parts["collar_dn"]   = make_shaft_collar(61.0, 3.0, "down")
+parts["collar_up"]   = make_shaft_collar(4.0).translate((0, 0, 43.0))
+parts["collar_dn"]   = make_shaft_collar(4.0).translate((0, 0, 61.0))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")

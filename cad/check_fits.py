@@ -177,8 +177,8 @@ for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss its
     r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
     stray = ((r > 3.5) & (r < 21.0)).sum()
     ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
-ok(abs(np.ptp(cupw.vertices[:, 2]) - 17.0) <= 0.05, "cup stack height",
-   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 7; collar B sits at 61..64)")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 16.0) <= 0.05, "cup stack height",
+   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 6; collar sits at 61..65)")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
 
@@ -251,6 +251,10 @@ for _sol, _name, _zs, _solidz in ((_solid(_mod.make_hub()), "hub", (30.0, 34.0, 
            "air at r 5, so the M3 reaches the shaft")
     ok(_sol.isInside(cq.Vector(5.0, 0.0, _solidz)), f"{_name} no hole where none belongs",
        f"material at (5,0,{_solidz})")
+
+cu, cd_ = local("collar_up"), local("collar_dn")
+ok(abs(abs(cu.volume) - abs(cd_.volume)) < 1.0, "collar halves identical",
+   f"{abs(cu.volume)/1000:.3f} vs {abs(cd_.volume)/1000:.3f} cm3 - one STL, print four")
 
 print(f"\n{checks} checks, {len(fails)} failed")
 sys.exit(1 if fails else 0)

@@ -68,11 +68,12 @@ spoj barel<->adaptér  6x M4 na rozstupovej kruznici r 61.5 (Ø123), hlava na st
                        barelu (zahlbenie Ø7.5), matica do adaptéra. Priehradka
                        priruba r 55..68 - O-kruzok je cely VNUTRI nej, takze
                        tesniaca plocha je suvisla a rovna.
-kruzky hriadela        07 (4 mm, pred pavukom, z 43-47) a 08 (3 mm, za pavukom,
-                       z 61-64). Ø15, diera Ø5.1, jedna M3 z boku. Drzia tyc
-                       axialne - bez nich ju drzalo len trenie. Kontaktna plocha
-                       je odlahcena 0.5 mm od r 3.6, takze sa opieraju LEN o
-                       celo igus puzdra (stredny r 3.0), nie o tlaceny pavuk.
+kruzky hriadela        07_kruzok_hriadele_polovica.stl - vytlac 4x (2 na kazdy
+                       kruzok). Z 43-47 (pred pavukom) a 61-65 (za pavukom).
+                       Kazda polovica: diera Ø3.4 + zahlbenie Ø6.2 pre hlavu na
+                       strane +4.5, sesthran 5.7 AF x 3.4 pre maticu M3 na -4.5.
+                       Zloz dve polovice otocene o 180 st., M3x12 + matica,2x.
+                       POZOR: 07 a 08 su ten isty diel.
 thrust washer          06_podlozka_pohara.stl - ABS Ø24/Ø8 x 1 (r 4..12), do recessu
                        v mokrom cele barelu. Na nom sedi celo pohara a ide cez neho
                        56 N od magnetov. Nic sa nekupuje - je to spotrebak,

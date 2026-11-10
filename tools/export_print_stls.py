@@ -49,8 +49,7 @@ PARTS = [
     ("magcup_dry", "04_magnetovy_pohar_suchy.stl", True),    # pockets up
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
-    ("collar_up", "07_kruzok_hriadele_4mm.stl", False),      # in front of the spider
-    ("collar_dn", "08_kruzok_hriadele_3mm.stl", False),      # behind the spider
+    ("collar_up", "07_kruzok_hriadele_polovica.stl", False),  # print 4: 2 per collar
 ]
 
 
