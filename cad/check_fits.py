@@ -72,7 +72,11 @@ z0, z1 = zrange(rotor)
 ok(abs((z1 - z0) - 86.0) <= 1.5, "rotor height",
    f"{z1 - z0:.1f} mm, expected 86 (cone 40 + hub 46); both=True would give 132")
 hub_rs = radii_at(rotor, 20.0)
-ok(has_r(hub_rs, 2.5, 0.06), "hub shaft bore", f"min section radius {hub_rs.min():.2f} mm = Ø{2*hub_rs.min():.2f}")
+sec = rotor.section(plane_origin=[0, 0, 20.0], plane_normal=[0, 0, 1])
+_P = sec.vertices[:, :2]
+_bore = _P[np.hypot(_P[:, 0], _P[:, 1]) < 3.0]
+ok(abs(_bore[:, 0].max() - 2.05) <= 0.08, "hub D-bore key",
+   f"flat at x {_bore[:, 0].max():.2f} mm: the flat is the torque key, epoxy holds it axially")
 hub_od = radii_at(rotor, 44.0).max()   # 44 mm aft: above the blade roots, pure hub
 ok(abs(hub_od - 32.0) <= 0.2, "hub OD", f"r {hub_od:.2f} (Ø64) - the set screws enter here")
 tip = hub_od - 30.0            # GIVEN: M4x30 from the OD, insert 7 mm at the mouth
@@ -158,7 +162,8 @@ ok(abs(bore[:, 0].max() - 2.05) <= 0.08, "cup D-bore flat",
    f"flat at x {bore[:, 0].max():.2f} mm: it is the drive, the Ø5.2 bore is the slip fit")
 ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
    f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
-# a cut box that overruns the bore gouges the magnet face instead of chamfering
+ok(has_r(radii_at(cupw, 62.0), 7.0, 0.1), "cup boss OD in the spoke cage",
+   f"r {radii_at(cupw, 62.0).max():.1f} at z 62, the spokes start at r 8")
 # the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
 for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss itself
     sec = cupw.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
@@ -173,7 +178,8 @@ flat_x = P[:, 0].max()          # the flat is cut on +X
 ok(abs(flat_x - 2.0) <= 0.06, "shaft flat depth",
    f"flat at x {flat_x:.2f} mm = 0.50 mm deep, 3.0 mm wide; hub screws, collar and cup all grip it")
 ok(abs(P[:, 0].min() + 2.5) <= 0.06, "shaft still Ø5 opposite the flat", f"x {P[:, 0].min():.2f}")
-ok(abs(np.ptp(cupw.vertices[:, 2]) - 16.0) <= 0.05, "cup stack height", f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 6)")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 20.0) <= 0.05, "cup stack height",
+   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 10; the boss butts the spider at 61)")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
 
@@ -195,7 +201,7 @@ import cadquery as cq
 PAIRS = [
     ("rotor", "shaft"), ("shaft", "wet_carrier"), ("magcup_wet", "wet_carrier"),
     ("magcup_dry", "pod"), ("magnets_wet", "magcup_wet"), ("magnets_dry", "magcup_dry"),
-    ("shaft_collar", "magcup_wet"), ("shaft_collar", "wet_carrier"),
+
     ("cup_washer", "magcup_wet"), ("cup_washer", "pod"),
 ]
 import itertools

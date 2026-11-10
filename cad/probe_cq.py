@@ -93,23 +93,21 @@ def make_blade():
 
 # ---------------- hub + shaft + cups ---------------------------------------
 def make_hub():
-    # extrude() is one-directional on purpose: "both=True" made this Ø64 hub
-    # 92 mm long instead of the 46 the BOM (A02) specifies - half the rotor's
-    # volume and 46 mm of axial envelope that nothing needed.
-    hub = cq.Workplane("XY").circle(HUB_D/2).circle(5/2).extrude(HUB_LEN)
-    # Radial set screws, at 60 and 180 deg so they land between the blades.
-    # The wall is 29.5 mm thick (Ø64 hub, Ø5 shaft), so an M4x8 grub screw in a
-    # plain hole never reaches the shaft - it just rattles in a 30 mm bore. The
-    # screw has to be long enough to bridge it: M4x30 from the OD, threaded
-    # through a heat-set insert seated at the mouth, tip on a filed flat.
-    for ang in (60, 180):
-        bore = (cq.Workplane("YZ").circle(4.5/2).extrude(HUB_D/2+2)
-                .rotate((0,0,0),(0,0,1), ang).translate((0,0,HUB_LEN-15)))
-        hub = hub.cut(bore)
-        seat = (cq.Workplane("YZ").circle(6.4/2).extrude(10)
-                .rotate((0,0,0),(0,0,1), ang).translate((-1,0,HUB_LEN-15)))
-        hub = hub.cut(seat)
-    return hub
+    """Ø64 x 46 hub, keyed to the shaft by a D-bore on the same 0.5 mm flat the
+    cup uses, and retained axially with epoxy.
+
+    It used to carry two M4 heat-set inserts and two set screws. The wall between
+    the Ø64 OD and the Ø5 shaft is 29.5 mm, so a short screw never reached the
+    shaft and a long one had to be M4x30 - a part Filip does not have (his
+    longest is M4x20). The flat is the key: it carries the 0.164 N*m as a form
+    fit (4.2 MPa in ABS), and epoxy over a 46 mm long bore only has to carry the
+    axial load, which is 24 N of rotor thrust.
+    """
+    hub = cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
+    hub = hub.cut(cq.Workplane("XY").circle(2.6).extrude(HUB_LEN + 20).translate((0, 0, -10)))
+    lens = (cq.Workplane("XY").circle(2.6).extrude(HUB_LEN)
+            .intersect(cq.Workplane("XY").box(10, 12, HUB_LEN + 20).translate((7.05, 0, 0))))
+    return hub.union(lens)
 
 def make_shaft():
     # 78 mm, from the hub's front face (0) to the cup's clamp boss (78). The old
@@ -139,7 +137,10 @@ def make_cup(flavour="wet"):
     no printed thread sits anywhere in the torque path.
     """
     cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
-    cup = cup.union(cq.Workplane("XY").circle(7).extrude(6).translate((0, 0, -6)))
+    # boss 10 mm long: its upstream face butts the static spider boss at 61,
+    # which is what keeps the cup from sliding upstream during handling. No
+    # bought Ø5 collar is needed - that was A09, now cut.
+    cup = cup.union(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, -10)))
     # Ø5 through bore
     # D-bore: Ø5.2 slip fit plus the same 0.5 mm flat the shaft carries, 0.05 mm
     # clearance on the flat. The flat is the drive (no pin, no printed thread).
@@ -153,8 +154,8 @@ def make_cup(flavour="wet"):
     # and to the flat's corners at y = +-1.60 produces zero-thickness contacts
     # and OCC silently returns the uncut solid - which is why the first attempt
     # at the small box left the bore a perfect circle.
-    lens = (cq.Workplane("XY").circle(2.6).extrude(16).translate((0, 0, -6))
-            .intersect(cq.Workplane("XY").box(10, 12, 20).translate((7.05, 0, 0))))
+    lens = (cq.Workplane("XY").circle(2.6).extrude(20).translate((0, 0, -10))
+            .intersect(cq.Workplane("XY").box(10, 12, 24).translate((7.05, 0, 0))))
     # ...and UNION it back. A D-bore is a round hole with material added on one
     # side where the flat is - subtracting the lens removes air (the lens lies
     # entirely inside the Ø5.2 bore), so the first two attempts left a perfect
@@ -558,10 +559,6 @@ parts["wet_carrier"] = make_wet_carrier()
 # grooved.
 parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
-# bought Ø5 shaft collar (A09, M3 grub): the rotating stack is trapped between
-# this collar and the hub's aft face - the magnet pull loads the collar, never
-# the plastic of the static spider.
-parts["shaft_collar"] = cq.Workplane("XY").circle(7).circle(2.5).extrude(4).translate((0,0,61))
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
@@ -595,7 +592,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","shaft_collar","cup_washer","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
