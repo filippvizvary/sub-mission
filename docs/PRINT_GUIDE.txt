@@ -92,6 +92,20 @@ Co tu NIE je (a preco)
 ----------------------
 cage_adapter    zatial plny kuzel v modeli = zátka, nie prechodka. Caka na
                 roztec M3 dier na motore + prevedenie kabelaze.
+
+MONTÁŽ SUCHÉ STRANY (poradie je dané geometriou, nedá sa obísť):
+ 1. ložisko 695ZZ zatlačiť do pavúka v bareli (z 101..106) - z vnútra, kým je
+    barel prázdny.
+ 2. suchý pohár + suchý hriadeľ vsunúť zozadu (od príruby) a spustiť až k stene.
+    Cez ložisko prejde, pohár Ø70 prejde cez dieru pavúka Ø80.
+ 3. zarážka na hriadeľ (z 111..115) - opiera sa o vnútorný krúžok ložiska.
+ 4. hub A Oldhamu na koniec hriadeľa (z 116..124).
+ 5. STREDOVÝ KOTÚČ Oldhamu položiť do drážky hubu A s trochou vazelíny TERAZ.
+    Po nasadení bloku sa k nemu už nedostaneš.
+ 6. motorový blok: motor je priskrutkovaný na doske (159..164), hub B je už
+    nasadený na zvonci. Blok sa nasunie zvonku na koniec barelu, Ø96 spica
+    vojde dovnútra, doska sadne na prírubu.
+ 7. 6x M4 zozadu cez dosku a prírubu do matíc v kapsách príruby.
 Oldham (3 diely) a suchy hriadel - dalsi blok prace, caka na rovnake meranie.
 cage (E01)      klietka je watertight, ale jej priruba sa bude menit podla
                 adaptera - netlacit, kym nie je adapter hotovy.

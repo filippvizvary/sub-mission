@@ -234,11 +234,15 @@ def make_engine_block():
             2.25, 24, cq.Vector(x, y, 200), cq.Vector(0, 0, 1))))
         plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.75, 3.4, cq.Vector(x, y, 211.5), cq.Vector(0, 0, -1))))
-    cradle = cq.Workplane("XY").circle(20).extrude(25).translate((0, 0, 136))
-    cradle = cradle.cut(cq.Workplane("XY").circle(13.85).extrude(30).translate((0, 0, 134)))
+    # MOUNTING PLATE, not a clamp bore. On an outrunner the Ø27.5 shell IS the
+    # rotating bell - gripping it would clamp the rotor and cook the motor. The
+    # static part is the base, so the plate butts the base and the bell hangs
+    # upstream from it toward the Oldham.
+    cradle = cq.Workplane("XY").circle(20).extrude(5).translate((0, 0, 159))
+    cradle = cradle.cut(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, 156)))
     legs = None
     for i in range(3):
-        leg = (cq.Workplane("XY").box(21, 12, 43).translate((37, 0, 182.5))
+        leg = (cq.Workplane("XY").box(21, 12, 40).translate((37, 0, 184))
                .rotate((0, 0, 0), (0, 0, 1), 60 + 120 * i))
         legs = leg if legs is None else legs.union(leg)
     return plate.union(cradle).union(legs)
