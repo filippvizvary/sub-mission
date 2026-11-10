@@ -97,7 +97,7 @@ def make_blade():
             y_l = u * math.cos(th) - v * math.sin(th)
             z_l = u * math.sin(th) + v * math.cos(th)
             # span along +X at this station
-            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.0))
+            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.6))
         wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
         sections.append(wire)
     blade = cq.Solid.makeLoft(sections, ruled=True)
