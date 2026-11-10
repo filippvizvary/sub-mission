@@ -21,8 +21,9 @@ os.makedirs(OUT, exist_ok=True)
 ROTOR_R = 110.0
 HUB_D, HUB_LEN = 64.0, 28.0
 CLAMP_R, CLAMP_LEN = 8.0, 14.0   # Ø16 x 14 clamp boss on the hub's aft face
-HEAD_D, HEAD_H = 6.2, 1.7          # flat pad under the M3 head; HEAD_H = the
-                                   # measured head height, so it sits flush
+HEAD_D, HEAD_H = 6.2, 1.9          # flat pad under the M3 head, MEASURED:
+                                   # head is Ø5.90 x 1.90 with a flat underside,
+                                   # so 1.9 deep puts it exactly flush with the boss OD
 BLADES = 3
 TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # Thickness/chord. The NACA 4412 (12 %) is a metal-blade number: at the tip that
