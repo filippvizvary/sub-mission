@@ -45,8 +45,10 @@ BACK = _ry(-np.pi / 2) @ _rz(-np.pi / 2)
 PARTS = [
     ("rotor", "01_rotor_vrtula.stl", True),          # aft face down, cone up
     ("pod", "02_barel_pod.stl", False),              # bulkhead down, O-ring up
-    ("magcup_wet", "03_magnetovy_pohar_mokry.stl", True),    # magnet face DOWN
-    ("magcup_dry", "04_magnetovy_pohar_suchy.stl", True),    # magnet face DOWN
+    # ONE cup part. The wet and the dry cup are the same solid - same volume, same
+    # bounds - so there is no second file to keep in sync. Print it twice, both times
+    # magnet face DOWN so the 0.45 membrane lands on the build plate.
+    ("magcup_wet", "03_pohar.stl", True),
     ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
     ("rotor_clamp", "07_upinac_vrtule_polovica.stl", True),   # print 2: one clamp

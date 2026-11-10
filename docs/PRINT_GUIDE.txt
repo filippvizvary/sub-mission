@@ -1,128 +1,103 @@
 sub-mission v1 - parts ready to print
 =====================================
-Generovane z cad/probe_cq.py, export: python3 tools/export_print_stls.py
-Vsetky STL su watertight, orientovane na podlozku (z=0), os dielu = Z,
-vycentrovane na os hriadela (nie na stred bboxu). Jednotky mm.
+Generated from cad/probe_cq.py by tools/export_print_stls.py.
+Every STL is watertight, oriented on the build plate (z=0), part axis = Z,
+centred on the SHAFT axis (not the bbox centre). Units mm.
+This file is copied into print/README.txt on every export.
 
-Subory
--------
-01_rotor_vrtula.stl            205.8 cm3   vrtula + hub + nosovy kuzel, jeden diel
-                                           170.3 x 194.6 x 86.0
-02_barel_pod.stl               341.9 cm3   barrel + 4 mm bulkhead + loziskovy boss
-                       Na vonkajsej stene je MOUNT PAD: 4x M5 (vrtat Ø4.2,
-                       zavit 12 mm) BLIND - diery koncia 5.5 mm pred
-                       Ø96 dierou, stena sa NIKDY neprepichne. Kable
-                       idu Ø10 kanalom skrz telo padu na r 64.
-                                           4 pätky na klietku + O-kruzok + 6 lugov
-                                           117.0 x 110.0 x 134.5
-03_magnetovy_pohar_mokry.stl    35.6 cm3   8 slepych kapes na magnety, Ø14 upinacie telo
-04_magnetovy_pohar_suchy.stl    32.0 cm3   to iste, s Ø22 priechodnou dierou na boss
-05_nosic_hriadela_klietka.stl   21.8 cm3   staticka klietka, 2 puzdra + 4 bolt usi
+Files
+-----
+01_rotor_vrtula.stl                1x   147.1 cm3   170.3 x  194.6 x   68.0
+02_barel_pod.stl                   1x   412.1 cm3   136.0 x  140.0 x  134.0
+03_pohar.stl                       2x    15.7 cm3    70.0 x   70.0 x    5.7
+05_nosic_hriadela_klietka.stl      1x    29.4 cm3    95.0 x   94.0 x   24.0
+06_podlozka_pohara.stl             1x     0.4 cm3    24.0 x   24.0 x    1.0
+07_upinac_vrtule_polovica.stl      2x     6.5 cm3    44.0 x   22.0 x   22.0
+08_upinac_pohara_polovica.stl      4x     4.5 cm3    44.0 x   22.0 x   12.3
+09_motorova_doska.stl              1x     7.2 cm3    44.0 x   44.0 x    5.5
+10_oldham_hub_hriadel.stl          1x     4.6 cm3    28.0 x   28.0 x    8.0
+11_oldham_kotuc.stl                1x     2.1 cm3    26.0 x   26.0 x    7.0
+12_oldham_hub_zvonec.stl           1x     2.5 cm3    26.0 x   26.0 x    5.5
+13_ram_vnutri.stl                  1x   149.0 cm3   136.0 x  136.0 x  105.7
+14_kryt_pohara.stl                 2x     8.0 cm3    70.0 x   70.0 x    3.0
 
-Orientacia (uz nastavena, netreba otacat)
-------------------------------------------
-01 rotor      na podlozke zadna strana hubu (Ø64), kuzel hore
-              tree support LEN pod cele listy, nie do kuzela
-02 pod        na podlozke bulkhead (dno), O-kruzok hore na hladkej vrstve
-              4 pätky su na podlozke, do vnutra netreba support
-03/04 pohar   MAGNETOVYM CELOM NADOL (membrana 3 vrstvy = 0,45 mm sa tlaci Rovna plocha s 0.2 mm recessom tak vznikne
-              priamo na podlozku - zadne preklenutie, plna plocha). Kapsy su
-              zospodu, magnety sa vkladaju ZOZADU a kryt 14 ich zavrie. Pod Ø70
-              telom netreba support. Membranu nedavaj hrubsiu: kazda vrstva
-              navyse = +0,15 mm medzery = -3 % momentu spojky.
-05 nosic      na podlozke celo Ø18 telesa, krize a prstenec hore
-              support pod krize a prstenec
+832 cm3 total at those quantities.
 
-Tlac
-----
-material   ABS (ASA je lepsia len na UV, pod vodou to je jedno)
-tryska     255-265 C, podlozka 100-110 C, uzavreta komora, chladenie 0-20 %
-vrstva     0.2 mm (01 rotor 0.15 mm), 4 perimetry
-vypln      25 % gyroid; ROTOR HUB 40 %; 02 pod v 4 mm dne 100 % a 5 perimetrov
-listy      20 % hrubky (t/c 0.20), nie 12 %. Pri 12 % sa hrot prehne 44 mm pri
-           plnom prietoku; 20 % dáva 9,3 mm a korenove napätie 7,1 MPa
-           01 rotor neries ako plny - hub je 46 mm dlhy, nie 92; pri 4
-           perimetroch a 20 % je z 203 cm3 realne ~75-90 g
-po tlaci   ABS sa da vyhladit acetonovymi parami - vonkajok 02 pod, 20 min,
-           maskuj drážku O-kruzku. Vnutro potom este epoxid (J03).
+Orientation (already applied, do not rotate)
+---------------------------------------------
+01 rotor      flat aft face of the hub on the plate, nose cone UP.
+              Tree support ONLY under the blades, never inside the cone.
+02 barrel     bulkhead on the plate, O-ring groove up on a smooth layer,
+              mount pad to one side. Nothing inside needs support.
+03 cup        MAGNET FACE DOWN, twice. The 0.45 mm membrane (3 layers at 0.15)
+              is then printed straight onto the plate - solid and flat, no
+              bridging. Do not thicken it: every extra layer per side adds
+              0.15 mm of magnet gap and costs ~3 % of coupling torque.
+14 cover      flat, spigot up.
+07/08 clamps  lay flat on the flange, split face vertical.
+05 spider     Ø18 boss face on the plate, spokes and ring up; support under
+              the spokes.
+13 frame      plate face down (the 6x M4 side), bearing boss up at 105 mm.
+              Tree support under the long arms.
 
-Kriticke rozmery po tlaci
--------------------------
-hub                    okruhla diera Ø5.2, ziadna ploska. Na zadnej strane Ø16 x 14
-                       ZADNE upinacie telo - je oddelene (diel 08). Na zadnom
-                       celom su 4 diery Ø2.6 x 6 mm na r 18.5 (45/135/225/315),
-                       Ø6 priechod a Ø30 x 3 vybranie na vystredenie.
-                       Pod kazdou je plocha Ø6.2 x 1.9 hlboka - hlava Ø5.90 x 1.90
-                       je v nej LIC so stenou tela, takze sa nema o co opriet
-                       a nesklzne po valci. Prejst zavitnikom M3, vlozka sa
-                       nezmesti (stena 5.4 mm). Zavit 3.5 mm = ~330 N na skrutku.
-                       M3x8: hrot sa zastavi o hriadel (r 2.5), neskracovat.
-hriadel                ploska po CELEJ dlzke, 0.5 mm hlboka, 3 mm siroka.
-                       Pilnik + supler: cez plosku musi citat 4.50 mm (okruhla cast 5.00).
-                       Stojí na tom hub (M4x30), collar aj D-diera pohara.
-pohar -> hriadel       D-diera: Ø5.2 klzná + ploska na x 2.05. Telo pohara je 10 mm
-                       a upinacie tело dalsich 10 mm, takze sa oprie o celo statickej
-                       klietky (z 61) a nemoze sa posunut dopredu. Dozadu ho drzi
-                       celo barelu cez podlozku. Ziaden collar, ziaden kolik.
-puzdra v nosici        otvory Ø7, zatlacit iglidur JSM-0507-05 (Ø5x7x5)
-lozisko v pod         diera Ø13 H7 x 5 v suchom boss-e, 695ZZ 2Z (nie 2RS)
-O-kruzok              drážka r 50.8-53.0, 2.2 x 1.8; NBR70 Ø100 x 2.5
-magnety               kapse Ø10.2 x 5.2, magnet 0.2 mm pod epoxidom.
-                       Zaliat KAZDU kapsu: naplnit ~60 %, vlozit magnet, vytlacit,
-                       stiahnut na 0.2 mm. NIE vrstva cez cele celo - kazda 0.1 mm
-                       na celo ide priamo do 4.4 mm medzery a znizuje slip.
-pavuk na barel         4x M4 x12 (NIE x16/x20!) do slepych vloziek Ø6.3 x 7
-                       vo vybežkoch na mokrom cele. Vlozka konci 7 mm pred
-                       suchym celom, stena za nou je plna - rez stenou v kazdej
-                       hlbke je suvisly disk. M4x20 by presiel 14 mm a skoncil
-                       PRESNE na suchom cele.
-spoj barel<->adaptér  6x M4 na rozstupovej kruznici r 61.5 (Ø123), hlava na strane
-                       barelu (zahlbenie Ø7.5), matica do adaptéra. Priehradka
-                       priruba r 55..68 - O-kruzok je cely VNUTRI nej, takze
-                       tesniaca plocha je suvisla a rovna.
-kruzky hriadela        07_kruzok_hriadele_polovica.stl - vytlac 4x (2 na kazdy
-                       kruzok). Z 43-47 (pred pavukom) a 61-65 (za pavukom).
-                       Kazda polovica: diera Ø3.4 + zahlbenie Ø6.2 pre hlavu na
-                       strane +4.5, sesthran 5.7 AF x 3.4 pre maticu M3 na -4.5.
-                       Zloz dve polovice otocene o 180 st., M3x12 + matica,2x.
-                       POZOR: 07 a 08 su ten isty diel.
-thrust washer          06_podlozka_pohara.stl - ABS Ø24/Ø8 x 1 (r 4..12), do recessu
-                       v mokrom cele barelu. Na nom sedi celo pohara a ide cez neho
-                       56 N od magnetov. Nic sa nekupuje - je to spotrebak,
-                       pretlac ho znovu za 4 minuty. Kontakt je zamerne maly:
-                       0.14 MPa pri 0.36 m/s = PV 0.05 MPa*m/s, co ABS vo vode da.
+Slicer
+------
+material   ABS (ASA only helps with UV, irrelevant underwater)
+nozzle     255-265 C, bed 100-110 C, enclosure closed, fan 0-20 %
+layer      0.2 mm (rotor 0.15; cup membrane must land on 0.15)
+perimeters 4 (rotor 5, barrel bulkhead 5)
+infill     25 % gyroid; rotor hub 40 %; the barrel's 4 mm bulkhead 100 %
+blades     20 % of chord thickness. At 12 % the tip bent 44 mm at full flow;
+           20 % gives 9.3 mm and 7.1 MPa root stress.
+after      acetone vapour smooths ABS - outside of 02 only, 20 min, mask the
+           O-ring groove. Inside gets epoxy (J03) as a barrier.
 
-Hriadel (A03): 78 mm, nie 115. Od cela hubu (0) po telo upinacej diery pohára
-(78). Dlhsi kus zasahoval do nosoveho kuzela.
+What actually has to fit (the numbers check_fits.py asserts)
+-------------------------------------------------------------
+rotor        Ø5.2 clearance bore in the hub, FOUR M3 holes at r 18.5
+             (45/135/225/315), 6 mm deep, tapped. No boss, no heat insert -
+             the boss is gone, the clamp is a separate part (07).
+shaft        PLAIN ROUND Ø5 h9 x 78. Nothing to file. The flat is gone.
+cup          Ø70 x 5.65, pockets 5.2 from the BACK, 0.45 membrane,
+             Ø6 bore, Ø30 x 1 recess, four M3 x 5.5 at r 18.5.
+clamps       bore Ø4.90 = 0.10 mm UNDER the shaft, so closing the split
+             squeezes the shaft instead of just closing the faces.
+             Cup clamp 12.35 mm, rotor clamp 22 mm.
+magnet gap   5.20 mm = 0.45 membrane + 4.00 bulkhead + 0.45 membrane
+             + 0.30 running clearance on the dry side.
+motor        GB2208: 4x M3 on 16 x 19, 4x M2 on a 9 mm square, threads only
+             2.5 mm deep. That is why plate 09 is 5.5 mm and cover 14 is 5.5.
 
-Co tu NIE je (a preco)
-----------------------
-cage_adapter    zatial plny kuzel v modeli = zátka, nie prechodka. Caka na
-                roztec M3 dier na motore + prevedenie kabelaze.
+Magnets (24 total, 12 per cup)
+------------------------------
+Epoxy West 105 + 206 (J03) at 22 C: pot life 20-25 min, gel 2-3 h, handling
+10-15 h, full 5-7 days. Below 15 C it barely cures.
+ - mix in batches of 3-4, not all 12; thicker layers cure faster
+ - thicken with colloidal silica or it runs out of a vertical pocket
+ - magnet sits 0.2 mm off the back face; wipe the excess before it gels
+ - polarity: hold both cups face to face and drop the magnets into the second
+   one - the wrong orientation pushes itself out. Then glue.
+ - cover 14 closes the pockets and the clamp's four M3 x 12 pass through it,
+   so retention does not depend on the glue at all
 
-ZALIEVANIE MAGNETOV (24 kaps, 12 na pohar)
-  Epoxid West 105 + 206 (J03) pri 22 st. C: pracovna doba 20-25 min, gél 2-3 h,
-  rucna pevnost 10-15 h, plna pevnost 5-7 dni. Pod 15 st. C takmer netuhne.
-  - miesaj po 3-4 kusoch, nie vsetkych 12 naraz; v hrubsej vrstve tuhne rychlejsie
-  - zhustni kremicinou (colloidal silica), aby nestekal z kapsy
-  - magnet 0.2 mm pod celom, prebytok zotri skor nez zgelovatí
-  - polarita: postav oba pohare celami k sebe a pustaj magnety do druheho -
-    v zlej orientacii sa odtlaknu samy. Potom zaliat.
-  - 24 h pred montazou, 3 dni pred tym, nez to uvidi 84 N tahu
+Assembly, wet side (front to back)
+----------------------------------
+ 1. press the two iglidur bushings into the spider's Ø7 seats
+ 2. bolt the spider to the barrel's wet face, 4x M4 x 12
+ 3. rotor clamp halves around the shaft at 25..47, rotor on top, 4x M3 x 12
+ 4. slide shaft + rotor in from the front until the clamp butts the first
+    bushing at 47
+ 5. wet cup (magnets in), cover 14, cup clamp halves, 4x M3 x 12 through
+    the clamp and the cover into the cup; the sleeve end reaches 61
+ 6. thrust washer 06 into the bulkhead's recess, greased with Molykote 111
 
-MONTÁŽ SUCHÉ STRANY (poradie je dané geometriou, nedá sa obísť):
- 1. ložisko 695ZZ zatlačiť do pavúka v bareli (z 101..106) - z vnútra, kým je
-    barel prázdny.
- 2. suchý pohár + suchý hriadeľ vsunúť zozadu (od príruby) a spustiť až k stene.
-    Cez ložisko prejde, pohár Ø70 prejde cez dieru pavúka Ø80.
- 3. zarážka na hriadeľ (z 111..115) - opiera sa o vnútorný krúžok ložiska.
- 4. hub A Oldhamu na koniec hriadeľa (z 116..124).
- 5. STREDOVÝ KOTÚČ Oldhamu položiť do drážky hubu A s trochou vazelíny TERAZ.
-    Po nasadení bloku sa k nemu už nedostaneš.
- 6. motorový blok: motor je priskrutkovaný na doske (159..164), hub B je už
-    nasadený na zvonci. Blok sa nasunie zvonku na koniec barelu, Ø96 spica
-    vojde dovnútra, doska sadne na prírubu.
- 7. 6x M4 zozadu cez dosku a prírubu do matíc v kapsách príruby.
-Oldham (3 diely) a suchy hriadel - dalsi blok prace, caka na rovnake meranie.
-cage (E01)      klietka je watertight, ale jej priruba sa bude menit podla
-                adaptera - netlacit, kym nie je adapter hotovy.
+Assembly, dry side (back to front)
+----------------------------------
+ 7. dry cup + cover + clamp on the dry shaft, clamp end at 93
+ 8. dry shaft through the frame's bearing boss, 695ZZ already pressed in
+ 9. hub A on the shaft end, disc, hub B on the motor's bell (4x M2)
+10. motor bolted to plate 09 (4x M3 x 8), plate onto the frame (4x M3 x 12)
+11. frame slides into the barrel, 6x M4 through its plate into the barrel's
+    flange nut pockets; the O-ring sits in the groove
+12. stuff the electronics box through the Ø94 opening, cables out through
+    the two Ø8 glands at r 30
