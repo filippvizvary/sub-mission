@@ -119,9 +119,34 @@ def make_hub():
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.3, 6.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 6.0),
+            1.3, 7.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 7.0),
             cq.Vector(0, 0, 1))))
     return hub
+
+
+def _split_bolts(solid, R_F, xs, z_list):
+    """M2 x 8 across the split, head one side and hex nut the other, so one STL
+    prints twice and the pair needs no mirrored model.
+
+    The bolts live in the SLEEVE, not the flange: at x 7.6 a Ø4.4 head pocket sits
+    between r 5.4 and 9.8, inside a Ø22 sleeve with room to spare. In the flange the
+    same pocket would have to cross 20 mm of material - an M2 x 25 that does not
+    exist - and an M3 head (Ø6.2) is taller than the flange is thick, which is what
+    cut the old version in half. The pocket is anchored on the real OD, sqrt(R^2-x^2),
+    so it can never end up out in the air again.
+    """
+    for z in z_list:
+        for x, kind in ((xs, "head"), (-xs, "nut")):
+            y_surf = math.sqrt(R_F * R_F - x * x)
+            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                1.1, 60, cq.Vector(x, 0, z), cq.Vector(0, 1, 0))))
+            if kind == "head":
+                solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                    2.2, 2.6, cq.Vector(x, y_surf, z), cq.Vector(0, -1, 0))))
+            else:
+                solid = solid.cut(cq.Workplane("XZ").polygon(6, 4.0).extrude(2.6)
+                                  .translate((x, y_surf, z)))
+    return solid
 
 
 def make_rotor_clamp():
@@ -138,8 +163,9 @@ def make_rotor_clamp():
     z 37, i.e. 9 mm clear of the rotor's face instead of 3 mm.
     """
     z_bot, z_top = HUB_LEN - 3.0, HUB_LEN + 19.0      # 25..47, right up to the bushing
-    solid = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, HUB_LEN))     # flange
-    solid = solid.union(cq.Workplane("XY").circle(10).extrude(14).translate((0, 0, HUB_LEN + 5)))
+    R_F = 24.0
+    solid = cq.Workplane("XY").circle(R_F).extrude(5).translate((0, 0, HUB_LEN))   # flange
+    solid = solid.union(cq.Workplane("XY").circle(11).extrude(14).translate((0, 0, HUB_LEN + 5)))
     solid = solid.union(cq.Workplane("XY").circle(14.9).extrude(3).translate((0, 0, HUB_LEN - 3)))
     # Ø4.90, NOT Ø5.05. A split clamp with a clearance bore does nothing: once the
     # halves touch at the split, the bolt's tension goes into the mating faces and
@@ -160,16 +186,8 @@ def make_rotor_clamp():
             1.7, 12.0, cq.Vector(x, y, HUB_LEN - 2), cq.Vector(0, 0, 1))))
         solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.0, cq.Vector(x, y, HUB_LEN + 5.2), cq.Vector(0, 0, -1))))
-    # split bolts across y=0: head one side, nut the other, so one STL prints twice
-    for x, kind in ((7.6, "head"), (-7.6, "nut")):
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 12.0, cq.Vector(x, 0, 37.0), cq.Vector(0, 1, 0))))
-        if kind == "head":
-            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                3.1, 3.2, cq.Vector(x, 10.2, 37.0), cq.Vector(0, -1, 0))))
-        else:
-            solid = solid.cut(cq.Workplane("XZ").polygon(6, 6.6).extrude(3.2)
-                              .translate((x, 10.2, 37.0)))
+    # four M2 x 8 across the split: two pairs, 5 mm apart, in the sleeve's 10 mm
+    solid = _split_bolts(solid, 11.0, 8.5, (35.5, 40.5))
     # the split: keep y >= 0
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
@@ -193,7 +211,7 @@ def make_cup_clamp():
     """
     R_F = 25.0        # flange Ø50: at Ø44 the Ø6.2 head pockets left a 0.4 mm rim
     solid = cq.Workplane("XY").circle(R_F).extrude(5)
-    solid = solid.union(cq.Workplane("XY").circle(10).extrude(7.35).translate((0, 0, 5)))
+    solid = solid.union(cq.Workplane("XY").circle(11).extrude(7.35).translate((0, 0, 5)))
     solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
     # four M3 into the cup
     for ang in (45.0, 135.0):
@@ -203,19 +221,9 @@ def make_cup_clamp():
             1.7, 20, cq.Vector(x, y, -8), cq.Vector(0, 0, 1))))
         solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
             3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
-    # two M2 across the split, both inside the 5 mm flange
-    for x, kind in ((10.0, "head"), (-10.0, "nut")):
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.1, 50, cq.Vector(x, 0, 2.5), cq.Vector(0, 1, 0))))
-        # the pocket has to start AT the outer surface, not out in the air: 22.5 cut
-        # nothing but air and left the head with no seat at all
-        y_surf = math.sqrt(R_F ** 2 - x ** 2)     # the real OD at this x, not a guess
-        if kind == "head":
-            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                2.2, 3.0, cq.Vector(x, y_surf, 2.5), cq.Vector(0, -1, 0))))
-        else:
-            solid = solid.cut(cq.Workplane("XZ").polygon(6, 4.0).extrude(3.0)
-                              .translate((x, y_surf, 2.5)))
+    # one pair of M2 x 8 across the split, in the sleeve - exactly the rotor clamp's
+    # arrangement, only shorter because this sleeve is 7.35 mm instead of 10
+    solid = _split_bolts(solid, 11.0, 8.5, (8.6,))
     solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
     return solid
 
@@ -459,11 +467,11 @@ def make_cup(flavour="wet"):
     """
     cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
     cup = cup.cut(cq.Workplane("XY").circle(3.0).extrude(CUP_BODY + 20).translate((0, 0, -10)))
-    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(1.0))
+    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(1.0))   # Ø30 spigot recess
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         cup = cup.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.3, 4.2, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), 0.0),
+            1.3, 5.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), 0.0),
             cq.Vector(0, 0, 1))))
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N

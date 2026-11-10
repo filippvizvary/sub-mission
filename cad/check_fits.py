@@ -101,7 +101,9 @@ ok(abs(2 * np.hypot(_b[:, 0], _b[:, 1]).min() - 4.90) <= 0.05, "clamp bore",
    f"Ø{2*np.hypot(_b[:,0],_b[:,1]).min():.2f}: 0.1 mm UNDERSIZE on the Ø5 shaft, so the "
    "bolt preload squeezes the ring instead of closing the mating faces")
 _rim = np.hypot(_H[:, 0], _H[:, 1]).max()
-ok(abs(_rim - 10.0) <= 0.2, "clamp sleeve OD", f"r {_rim:.2f} (Ø20), split bolts at x ±7.6")
+ok(abs(_rim - 11.0) <= 0.2, "clamp sleeve OD",
+   f"r {_rim:.2f} (Ø22): an M2 head pocket at x 7.6 spans r 5.4..9.8, so the sleeve "
+   "needs r 11 or the pocket cuts its wall open")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
 ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
