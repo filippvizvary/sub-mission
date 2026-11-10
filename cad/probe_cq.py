@@ -175,6 +175,51 @@ def make_rotor_clamp():
     return solid
 
 
+def make_cup_clamp():
+    """ONE HALF of a cup's shaft clamp. Print twice per cup, mate 180 deg apart.
+
+    Rewritten. The first version cut its head pockets Ø6.2 on a 5 mm flange, so each
+    pocket ran straight through both faces of the flange and out through the sleeve's
+    OD - the render showed channels where there should have been seats. Nothing could
+    be tightened.
+
+      0..5     Ø44 flange, the face at 0 presses the cover onto the cup
+      5..12.35 Ø20 sleeve, bore Ø4.90 the whole way (0.1 under the Ø5 shaft)
+      4 x M3 at r 18.5 (45 and 135 in this half) through the flange and the cover
+             into the cup, head pockets Ø6.2 x 2.2 opening on the z=5 face
+      2 x M2 x 12 across the split at x +-10, z 2.5, head one side, hex nut the
+             other, so one STL prints twice. M2 because an M3 head needs 6.2 mm of
+             flange and the flange is 5.
+    """
+    R_F = 25.0        # flange Ø50: at Ø44 the Ø6.2 head pockets left a 0.4 mm rim
+    solid = cq.Workplane("XY").circle(R_F).extrude(5)
+    solid = solid.union(cq.Workplane("XY").circle(10).extrude(7.35).translate((0, 0, 5)))
+    solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
+    # four M3 into the cup
+    for ang in (45.0, 135.0):
+        a = math.radians(ang)
+        x, y = 18.5 * math.cos(a), 18.5 * math.sin(a)
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 20, cq.Vector(x, y, -8), cq.Vector(0, 0, 1))))
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            3.1, 2.2, cq.Vector(x, y, 5.2), cq.Vector(0, 0, -1))))
+    # two M2 across the split, both inside the 5 mm flange
+    for x, kind in ((10.0, "head"), (-10.0, "nut")):
+        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.1, 50, cq.Vector(x, 0, 2.5), cq.Vector(0, 1, 0))))
+        # the pocket has to start AT the outer surface, not out in the air: 22.5 cut
+        # nothing but air and left the head with no seat at all
+        y_surf = math.sqrt(R_F ** 2 - x ** 2)     # the real OD at this x, not a guess
+        if kind == "head":
+            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                2.2, 3.0, cq.Vector(x, y_surf, 2.5), cq.Vector(0, -1, 0))))
+        else:
+            solid = solid.cut(cq.Workplane("XZ").polygon(6, 4.0).extrude(3.0)
+                              .translate((x, y_surf, 2.5)))
+    solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
+    return solid
+
+
 def make_shaft_collar(thickness, z0=0.0):
     """ONE HALF of a two-piece bolted stop collar. Print it twice, mate the pair
     180 deg apart, and two M3 x 12 with nuts clamp the Ø5 shaft hard.
@@ -445,42 +490,6 @@ def make_cup_cover():
             1.7, 10, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), -2),
             cq.Vector(0, 0, 1))))
     return cov
-
-
-def make_cup_clamp():
-    """ONE HALF of a cup's shaft clamp. Print twice per cup, mate 180 deg apart.
-
-    12 mm long, built with the spigot at 0..2 (into the cup's Ø30 x 2 recess), a
-    Ø44 flange at 2..7 that the four M3 x 12 go through into the cup, and a Ø20
-    sleeve at 7..12. Bore Ø4.90 the whole way - 0.1 mm under the Ø5 shaft, so the
-    two split bolts turn preload into squeeze instead of just closing the faces.
-
-    Use it unmirrored for the dry cup and mirror("XY") for the wet one; the spigot
-    then points the right way on both.
-    """
-    solid = cq.Workplane("XY").circle(22).extrude(5)
-    solid = solid.union(cq.Workplane("XY").circle(10).extrude(7.35).translate((0, 0, 5)))
-    solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
-    for ang in (45.0, 135.0):
-        a = math.radians(ang)
-        x, y = 18.5 * math.cos(a), 18.5 * math.sin(a)
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 12.0, cq.Vector(x, y, -1), cq.Vector(0, 0, 1))))
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            3.1, 2.0, cq.Vector(x, y, 7.2), cq.Vector(0, 0, -1))))
-    for z0, x, kind in ((3.0, 7.6, "head"), (6.0, -7.6, "nut")):
-        solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 16.0, cq.Vector(x, 0, z0), cq.Vector(0, 1, 0))))
-        if kind == "head":
-            solid = solid.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                3.1, 3.2, cq.Vector(x, 11.2, z0), cq.Vector(0, -1, 0))))
-        else:
-            solid = solid.cut(cq.Workplane("XZ").polygon(6, 6.6).extrude(3.2)
-                              .translate((x, 11.2, z0)))
-    solid = solid.cut(cq.Workplane("XY").box(120, 60, 60).translate((0, -30, 30)))
-    return solid
-
-# ---------------- generator pod with nose bearing blocks --------------------
 
 
 def make_magnets(dry=False):

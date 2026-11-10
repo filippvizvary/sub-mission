@@ -62,7 +62,11 @@ cup          Ø70 x 5.65, pockets 5.2 from the BACK, 0.45 membrane,
              Ø6 bore, Ø30 x 1 recess, four M3 x 5.5 at r 18.5.
 clamps       bore Ø4.90 = 0.10 mm UNDER the shaft, so closing the split
              squeezes the shaft instead of just closing the faces.
-             Cup clamp 12.35 mm, rotor clamp 22 mm.
+             Cup clamp: Ø50 flange, 12.35 mm long, 4x M3 x 12 into the cup
+             (heads counterbored on the flange face) + 2x M2 x 12 across the
+             split (head one side, M2 nut the other, pockets open on the OD).
+             Print 4: two halves per cup. Rotor clamp: 22 mm, 4x M3 x 12
+             into the hub + 2x M3 x 12 across the split.
 magnet gap   5.20 mm = 0.45 membrane + 4.00 bulkhead + 0.45 membrane
              + 0.30 running clearance on the dry side.
 motor        GB2208: 4x M3 on 16 x 19, 4x M2 on a 9 mm square, threads only
