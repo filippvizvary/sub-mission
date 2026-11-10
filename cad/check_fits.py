@@ -175,23 +175,27 @@ ok(abs(rec_w - 0.2) <= 0.01 and abs(rec_d - 0.2) <= 0.01, "magnet recess (epoxy 
 
 # ---------------------------------------------------------------- cups
 cupw = local("magcup_wet")
-sec = cupw.section(plane_origin=[0, 0, 68.0], plane_normal=[0, 0, 1])
+sec = cupw.section(plane_origin=[0, 0, 73.0], plane_normal=[0, 0, 1])
 P = sec.vertices[:, :2]
-bore = P[np.hypot(P[:, 0], P[:, 1]) < 3.0]     # the bore region, not the Ø14 boss
-ok(np.hypot(bore[:, 0], bore[:, 1]).min() >= 2.55, "cup bore is round",
-   f"min bore radius {np.hypot(bore[:,0],bore[:,1]).min():.2f} mm - no flat, no key")
-ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
-   f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
-ok(has_r(radii_at(cupw, 66.0), 7.0, 0.1), "cup boss OD in the spoke cage",
-   f"r {radii_at(cupw, 66.0).max():.1f} at z 66, the spokes hold a Ø15 hole")
+bore = P[np.hypot(P[:, 0], P[:, 1]) < 3.5]
+ok(np.hypot(bore[:, 0], bore[:, 1]).min() >= 2.95, "cup bore clears the shaft",
+   f"bore Ø{2*np.hypot(bore[:,0],bore[:,1]).min():.2f}: the clamp grips, the cup just passes")
+# the clamp is the grip now, and this is where it has to reach
+cw_ = local("cup_clamp_wet")
+cwz = zrange(cw_)
+ok(abs(cwz[0] - 61.0) <= 0.3, "wet cup clamp reaches the bushing",
+   f"clamp spans {cwz[0]:.1f}..{cwz[1]:.1f}: sleeve end butts the second igus bushing at 61")
+ok(has_r(radii_at(cw_, cwz[0] + 1.0), 10.0, 0.15), "cup clamp sleeve OD",
+   f"r {radii_at(cw_, cwz[0]+1.0).max():.1f} at the sleeve: it turns inside a Ø15 hole in the cage")
 # the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
-for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss itself
+for z in (73.0, 78.0):     # above the recess, below the magnet pockets
     sec = cupw.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
     r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
-    stray = ((r > 3.5) & (r < 21.0)).sum()
+    # stop at r 16: the four clamp screws sit at r 18.5 and are supposed to be there
+    stray = ((r > 3.5) & (r < 16.0)).sum()
     ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
-ok(abs(np.ptp(cupw.vertices[:, 2]) - 20.0) <= 0.05, "cup stack height",
-   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm (body 10 + boss 10, butts the bushing)")
+ok(abs(np.ptp(cupw.vertices[:, 2]) - 10.0) <= 0.05, "cup body height",
+   f"{np.ptp(cupw.vertices[:, 2]):.1f} mm - flat disc, no boss, clamp bolts on")
 behind = 10.0 - 5.2
 ok(behind >= 4.5, "plastic behind the magnet pocket", f"{behind:.1f} mm")
 
@@ -261,8 +265,8 @@ _cup = _solid(_mod.make_cup())
 for (_x, _y), _z in zip(_pat, (-5.5, -4.0, -2.5)):
     ok(not _cup.isInside(cq.Vector(_x, _y, _z)), f"cup clamp hole at z {_z}",
        "air at r 5, so the M3 reaches the shaft")
-ok(_cup.isInside(cq.Vector(5.0, 0.0, -0.5)), "cup no hole where none belongs",
-   "material at (5,0,-0.5)")
+ok(_cup.isInside(cq.Vector(5.0, 0.0, 8.0)), "cup no hole where none belongs",
+   "material at (5,0,8): the body is solid between the bore and the magnet pockets")
 
 # The hub has NO clamp holes any more - the grip moved into the separate two-piece
 # clamp (Filip's design), so what has to be right here is the bore, the centring
@@ -281,10 +285,6 @@ ok(_h.isInside(cq.Vector(12.0, 0.0, 20.0)), "hub wall between recess and OD",
 # Ø6.2 left 0.1 mm of plastic at the OD - Filip spotted that. Their job is now done
 # by parts that are thick anyway: the rotor clamp butts the first igus bushing at
 # 47 and the wet cup's boss (10 mm now) butts the second at 61.
-_cupw = local("magcup_wet")
-_cz = zrange(_cupw)
-ok(abs(_cz[0] - 61.0) <= 0.3, "cup boss reaches the bushing",
-   f"boss starts at z {_cz[0]:.1f}: it is the upstream stop, no collar needed")
 
 # the clamp has to reach that same bushing from the other side
 _cl = local("rotor_clamp")
