@@ -80,7 +80,11 @@ def naca4_pts(n=64, te_half=0.0, t=THICKNESS):
 def make_blade():
     sections = []
     for rf, chord, twist in STATIONS:
-        n_pts = naca4_pts(64, te_half=(TE_MM / 2.0) / chord, t=THICKNESS)
+        # the trailing edge is a knife at the 0.4 mm tip thickness, and where that knife
+        # meets the hub it leaves a sharp spike - bad to print, worse as a stress riser.
+        # Blunt it toward the root: 2.4 mm there, 0.4 at the tip.
+        te_mm = TE_MM + (2.4 - TE_MM) * max(0.0, (0.65 - rf)) / 0.45
+        n_pts = naca4_pts(64, te_half=(te_mm / 2.0) / chord, t=THICKNESS)
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
