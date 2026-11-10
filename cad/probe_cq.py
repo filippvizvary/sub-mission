@@ -370,15 +370,18 @@ def make_wet_carrier():
     b1 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 48))
     b2 = cq.Workplane("XY").circle(3.5).circle(2.5).extrude(5).translate((0, 0, 56))
     boss = boss.cut(b1).cut(b2)
-    # three spokes 61..69, r 8..48, cut clear of the shaft collar (r 7, 61..65)
-    # and of the cup's Ø14 clamp boss (r 7, 65..71)
+    # Three spokes 59..67. They must overlap the boss axially: the boss is Ø18
+    # (r 9) and the spokes need a Ø15 hole for the cup's Ø14 clamp boss, so their
+    # inner edge can never reach the boss radially - at 61..69 the two only met
+    # on a 1.5 mm wide coplanar ring at z 61, which reads as a floating boss with
+    # a notch in it. At 59..67 there are 2 mm of real 3D overlap.
     arms = None
     for i in range(3):
         a = (cq.Workplane("XY").box(48, 9, 8)
-             .translate((24, 0, 65))
+             .translate((24, 0, 63))
              .rotate((0, 0, 0), (0, 0, 1), i * 120))
         arms = a if arms is None else arms.union(a)
-    arms = arms.cut(cq.Workplane("XY").circle(8.0).extrude(24).translate((0, 0, 57)))
+    arms = arms.cut(cq.Workplane("XY").circle(7.5).extrude(30).translate((0, 0, 52)))
     # ring 65..71 at r 42..48 sits on the four bulkhead bosses (71..81)
     ring = cq.Workplane("XY").circle(48).circle(42).extrude(6).translate((0, 0, 65))
     body = boss.union(arms).union(ring)
