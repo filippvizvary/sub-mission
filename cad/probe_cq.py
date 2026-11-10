@@ -33,7 +33,8 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # 20 % gives 9.6 mm at the design flow and 2.4 mm at 0.5 m/s, root stress falls
 # from 6.2 to 2.2 MPa, and at Re 30-40k a thick section is the better foil
 # anyway: the thin one separates.
-THICKNESS = 0.20
+THICKNESS = 0.24            # 24 %, not 20: the D200 chords are 9 % shorter, so the blade
+                            # was 19 mm of tip deflection at 1 m/s. t^3 buys 1.7x stiffness.
 STATIONS = [(0.20, 31.6, 38.7), (0.35, 20.3, 25.9), (0.50, 14.7, 19.9), (0.65, 11.5, 16.6), (0.80, 9.4, 14.5), (1.00, 7.5, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
