@@ -1,0 +1,77 @@
+PREFLIGHT - sub-mission, stav 2026-11-10
+=========================================
+
+1. TLAČ
+-------
+subor                          ks    cm3   rozmer [mm]            poznamka
+01_rotor_vrtula.stl             1   153.9   179.0 x 204.2 x  68.0   PODPERY
+02_barel_pod.stl                1   412.1   136.0 x 140.0 x 134.0   otvorom hore
+03_pohar.stl                    2    15.7    70.0 x  70.0 x   5.7   magnetom NADOL
+05_nosic_hriadela_klietka.stl   1    39.6    95.0 x  94.0 x  31.0   klietkou hore
+06_podlozka_pohara.stl          1     0.4    24.0 x  24.0 x   1.0
+07a_upinac_hlava.stl            3     9.2    48.0 x  24.0 x  21.5   vyskou hore
+07b_upinac_matica.stl           3     9.2    48.0 x  24.0 x  21.5   vyskou hore
+09_motorova_doska.stl           1     7.2    44.0 x  44.0 x   5.5
+10_oldham_hub_hriadel.stl       1     4.6    28.0 x  28.0 x   8.0
+11_oldham_kotuc.stl             1     2.1    26.0 x  26.0 x   7.0
+12_oldham_hub_zvonec.stl        1     2.5    26.0 x  26.0 x   5.5
+13_ram_vnutri.stl               1   149.0   136.0 x 136.0 x 105.7   na plochu
+14_kryt_pohara.stl              2     4.3    68.0 x  68.0 x   1.5
+
+spolu 867 cm3, 19 vytlackov. Vsetky watertight, 0 zlych hran, vsetky sa vmestia
+na 250 x 210.
+
+PODPERY: len rotor. 3982 mm2 previsov nad 45 deg, hlavne spodky listov v z 10-20.
+PrusaSlicer: "Support material -> Generate support material", "Only from build
+plate", prah 45 deg. Ostatne diely bez podpier.
+
+
+2. SPOJOVACI MATERIAL
+---------------------
+M3 x 8        8 na upinac   (4 mount + 4 cez skaru)   ->  24 ks na 3 upinace
+              - NIE M3 x 12: kapsa pre hlavu je 2,1 hlboka, takze pod sedlom
+                zostava 3,0 mm priruby a v pohari 3,5 mm zavitu. X12 by sa
+                oprela o dno.
+M3 heat insert  M3 x 6 x 5 (Ø5 x 6)  12 ks
+M3 matica      4 ks na upinac (striedavo s hlavou) -> 12 ks
+magnet N52 Ø10 x 5                    24 ks, 12 na pohar, striedava polarita
+puzdro iglidur JSM-0507-05            2 ks v pavukovi
+O-kruzok Ø100 x 2,5 NBR70             1 ks
+M5 x 12                               4 ks (uchytenie na vonkajsiu stenu)
+
+
+3. CO SI NESMIES POKAZIT
+------------------------
+- Magnety: vlozit a HNEĎ zalepit. Susedne magnety sa bocne priťahuju ~6,8 N,
+  kapsa je zozadu otvorena, trenie je len ~2 N. Ak sa pohnu, striedava
+  polarita sa rozpadne a spojka strati polovicu momentu.
+- Heat inserty: diera Ø5,2 x 6,4, insert drz ROVNO a nahrievaj kratko.
+  Stena k stredovemu recesu je 0,9 mm.
+- Diery v pohari: Ø2,6, samorezny zavit. Utahuj na 0,5 N.m. Pod dierou je
+  len 0,65 mm plastu.
+- Pohare: magnetovym celom NADOL na podlozku, bez podpier.
+
+
+4. FYZIKA
+---------
+rotor          D230, 3 listy, t/c 24 %, plnost korena 0,74
+Cp             0,463
+vykon          9,62 W na hriadeli pri 1,0 m/s   (7,46 W stara D220 -> +29 %)
+otacky         415 rpm pri 1,0 m/s
+krut           0,221 N.m      tah 31,3 N
+priehyb spicky 3,4 mm na 92 mm (3,7 %)
+spojka         12 magnetov, medzera 5,20 mm -> sklz 1,13 N.m -> 5,1x rezerva
+zovretie hriadeľa  2 x M3 x 8 -> 320-400 N trenia proti 90 N zataze -> 3,6-4,5x
+
+prietok  vykon   krut     otacky
+0,2 m/s  0,08 W  0,009     83
+0,5 m/s  1,20 W  0,055    208
+1,0 m/s  9,62 W  0,221    415
+1,5 m/s 32,5 W   0,497    622
+
+
+5. JEDINA NEZNAMA
+-----------------
+Cogging motora. Rozbeh: 2 mN.m -> 0,11 m/s | 10 mN.m -> 0,25 m/s | 20 mN.m ->
+0,32 m/s. Meranie: zavit na objimku Ø22 (r 11 mm), digitalna vaha, 12 poloh
+po 30 stupnoch, T = F x 0,011. Ak potok ide nad 0,35 m/s, aj 20 mN.m je v pohode.
