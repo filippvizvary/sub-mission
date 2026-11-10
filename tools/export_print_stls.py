@@ -56,7 +56,6 @@ PARTS = [
     ("oldham_disc", "11_oldham_kotuc.stl", False),
     ("oldham_hub_b", "12_oldham_hub_zvonec.stl", True),
     ("engine_block", "13_ram_vnutri.stl", False),   # print plate down, 105 is the top
-    ("pod_mount", "14_uchytenie_barelu.stl", False),
 ]
 
 

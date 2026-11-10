@@ -310,43 +310,6 @@ def make_oldham():
     return (make_oldham_hub_a().union(make_oldham_disc()).union(make_oldham_hub_b()))
 
 
-def make_pod_mount():
-    """Robust external mount: a C-collar clamped around the Ø110 tube, an arm, and a
-    bolted pad with four Ø6.5 holes for the real construction plus two Ø9 holes the
-    cables run through on their way from the frame's glands.
-
-    Separate part, not printed onto the barrel: it slides along the tube to wherever
-    the structure needs it, and it needs no hole through the wall - the only
-    penetrations in this design stay in the closing plate.
-    """
-    zc0, zc1 = 150.0, 164.0
-    body = cq.Workplane("XY").circle(62).circle(55.4).extrude(zc1 - zc0).translate((0, 0, zc0))
-    # slit at +X so it can spring over the tube, then be clamped
-    body = body.cut(cq.Workplane("XY").box(20, 3.2, zc1 - zc0 + 4).translate((57, 0, zc0 + (zc1 - zc0) / 2)))
-    for z in (153.0, 161.0):
-        body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            2.6, 40, cq.Vector(58.5, 0, z), cq.Vector(0, 1, 0))))
-        body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            4.8, 2.4, cq.Vector(58.5, 13.0, z), cq.Vector(0, -1, 0))))
-        body = body.cut(cq.Workplane("XZ").polygon(6, 8.2).extrude(2.4)
-                        .translate((58.5, 13.0, z)))
-    # arm out to the bolting pad
-    body = body.union(cq.Workplane("XY").box(34, 20, 14).translate((75, 0, 157)))
-    # pad: 64 x 44, four Ø6.5 for the structure, two Ø9 for the cables
-    pad = cq.Workplane("XY").box(12, 64, 44).translate((97, 0, 167))
-    for sy in (-1, 1):
-        for z in (153.0, 181.0):
-            pad = pad.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                3.25, 16, cq.Vector(92, sy * 22, z), cq.Vector(1, 0, 0))))
-    for sy in (-1, 1):
-        pad = pad.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            4.5, 16, cq.Vector(92, sy * 8, 167), cq.Vector(1, 0, 0))))
-    body = body.union(pad)
-    # a groove along the arm's outer face for the cable run
-    body = body.cut(cq.Workplane("XY").box(30, 9, 4).translate((77, 0, 165)))
-    return body
-
-
 def make_engine_block():
     """The whole dry train on ONE removable part: bearing boss, motor mount, closing
     plate and cable glands. It slides in from behind, bolts to the barrel's flange,
@@ -589,15 +552,20 @@ def make_pod():
     flange = (cq.Workplane("XY").circle(68).circle(55).extrude(6)
               .translate((0, 0, POD_LEN - 6)))
     pod = pod.union(flange)
-    for i in range(6):
-        a = math.radians(60 * i)
-        x, y = 61.5 * math.cos(a), 61.5 * math.sin(a)
-        pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            2.25, 20, cq.Vector(x, y, POD_LEN - 10), cq.Vector(0, 0, 1))))
-        # nut pocket instead: the screw comes from behind the engine block,
-        # so its head seats on the adapter and the nut sits here on the inner face.
-        pod = pod.cut(cq.Workplane("XY").polygon(6, 6.8).extrude(3.6)
-                      .translate((x, y, POD_LEN - 6)))
+    # ---- mount pad on the OUTER wall, +Y side. A boss, not a collar: four blind M5
+    # holes (Ø4.2 tap drill) go 12 mm in from the flat outer face and stop short of
+    # the Ø96 bore, so the wall is never pierced and the dry side stays dry. The Ø10
+    # duct runs axially THROUGH the pad's own body at r 64 - also clear of the wall -
+    # and is where the cables come out. Rotate the pod about its axis to put the pad
+    # wherever the structure needs it; the flange has 60 deg symmetry, so it is free.
+    pad = cq.Workplane("XY").box(52, 20, 60).translate((0, 62, 70))
+    pod = pod.union(pad)
+    for sx in (-1, 1):
+        for z in (48.0, 92.0):
+            pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                2.1, 12, cq.Vector(sx * 16, 72.5, z), cq.Vector(0, -1, 0))))
+    pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        5.0, 80, cq.Vector(0, 64, 30), cq.Vector(0, 0, 1))))
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------
@@ -924,7 +892,6 @@ parts["oldham_disc"]  = make_oldham_disc()
 parts["oldham_hub_b"] = make_oldham_hub_b()
 parts["generator"]   = make_generator().translate((0,0,133))
 parts["motor_plate"] = make_motor_plate().translate((0, 0, 156))
-parts["pod_mount"]   = make_pod_mount()
 parts["engine_block"]= make_engine_block()
 parts["cage_adapter"]= make_cage_adapter().translate((0,0,Z_ADAPTER))
 parts["cage"]        = make_cage().translate((0,0,Z_CAGE))
@@ -948,7 +915,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","pod_mount","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -962,7 +929,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45), "pod_mount": (0.30,0.42,0.55),
+    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
     "oldham_hub_a": (0.80,0.45,0.80), "oldham_disc": (0.70,0.35,0.75), "oldham_hub_b": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

@@ -9,6 +9,10 @@ Subory
 01_rotor_vrtula.stl            205.8 cm3   vrtula + hub + nosovy kuzel, jeden diel
                                            170.3 x 194.6 x 86.0
 02_barel_pod.stl               341.9 cm3   barrel + 4 mm bulkhead + loziskovy boss
+                       Na vonkajsej stene je MOUNT PAD: 4x M5 (vrtat Ø4.2,
+                       zavit 12 mm) BLIND - diery koncia 5.5 mm pred
+                       Ø96 dierou, stena sa NIKDY neprepichne. Kable
+                       idu Ø10 kanalom skrz telo padu na r 64.
                                            4 pätky na klietku + O-kruzok + 6 lugov
                                            117.0 x 110.0 x 134.5
 03_magnetovy_pohar_mokry.stl    35.6 cm3   8 slepych kapes na magnety, Ø14 upinacie telo
