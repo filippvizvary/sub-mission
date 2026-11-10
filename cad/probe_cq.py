@@ -122,12 +122,12 @@ def make_hub():
     # opening facing z 0, i.e. sealed behind 20 mm of printed hub. There is no layer at
     # which it can be dropped in. A heat-set insert goes in from the aft face itself,
     # which is open, and the hub is 28 mm deep, so it has room: Ø4.6 x 5.7 for a
-    # standard M3 insert. M3 x 8 then gives 5.1 mm of engagement, 3 mm in the clamp's
-    # flange under the head's seat and 5.1 in the insert.
+    # M3 x 6 x 5 insert (Ø5 OD, 6 long): hole Ø5.2 x 6.3, i.e. 0.2 over the OD because a
+    # printed hole comes out under size. M3 x 8 then gives 5.1 mm in a 6 mm insert.
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            2.3, 5.7, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 5.7),
+            2.6, 6.3, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 6.3),
             cq.Vector(0, 0, 1))))
     return hub
 
