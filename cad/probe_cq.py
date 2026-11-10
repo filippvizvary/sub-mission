@@ -36,8 +36,10 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 THICKNESS = 0.20
 STATIONS = [(0.20, 34.8, 38.7), (0.35, 22.3, 25.9), (0.50, 16.2, 19.9),
             (0.65, 12.6, 16.6), (0.80, 10.3, 14.5), (1.00, 8.3, 12.6)]
-MAGCUP_D = 70.0; MAGCUP_H = 18.0; CUP_BODY = 10.0; WALL_T = 4.0
+MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
+MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
+CUP_BODY = MAG_H + 0.2 + MEMBRANE   # pocket 5.2 + membrane = 5.65, not 10
                                      # over 12 lifts the coupling from 0.95 to
                                      # ~1.4 N*m without changing anything else
 POD_OD = 110.0; POD_ID = 96.0; POD_LEN = 120.0
@@ -409,18 +411,37 @@ def make_cup(flavour="wet"):
     """
     cup = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(CUP_BODY)
     cup = cup.cut(cq.Workplane("XY").circle(3.0).extrude(CUP_BODY + 20).translate((0, 0, -10)))
-    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(2.0))
+    cup = cup.cut(cq.Workplane("XY").circle(15.0).extrude(1.0))
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         cup = cup.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.3, 6.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), 0.0),
+            1.3, 4.2, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), 0.0),
             cq.Vector(0, 0, 1))))
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
         r = MAGCUP_D / 2 - MAG_D / 2 - 2
+        # cut from the BACK face (z 0) up to 5.2, leaving MEMBRANE at the magnet face.
+        # The cup prints magnet-face DOWN, so that membrane is the first three layers
+        # on the bed - solid and flat, no bridging, no sag.
         cup = cup.cut(cq.Workplane("XY").circle(MAG_D / 2 + 0.1).extrude(MAG_H + 0.2)
-                      .translate((r * math.cos(th), r * math.sin(th), CUP_BODY - MAG_H - 0.2)))
+                      .translate((r * math.cos(th), r * math.sin(th), 0.0)))
     return cup
+
+
+def make_cup_cover():
+    """Ø70 x 2 lid that closes all twelve pockets from behind, so the magnets cannot
+    leave backwards and no glue is trusted for retention. A Ø29.8 x 1 spigot centres
+    it in the cup's recess, Ø12 clears the shaft, and the cup clamp's four M3 x 12 go
+    straight through it - the cover has no screws of its own."""
+    cov = cq.Workplane("XY").circle(MAGCUP_D / 2).extrude(2.0)
+    cov = cov.union(cq.Workplane("XY").circle(14.9).extrude(1.0).translate((0, 0, 2.0)))
+    cov = cov.cut(cq.Workplane("XY").circle(6.0).extrude(10).translate((0, 0, -2)))
+    for ang in (45.0, 135.0, 225.0, 315.0):
+        a = math.radians(ang)
+        cov = cov.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            1.7, 10, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), -2),
+            cq.Vector(0, 0, 1))))
+    return cov
 
 
 def make_cup_clamp():
@@ -434,9 +455,8 @@ def make_cup_clamp():
     Use it unmirrored for the dry cup and mirror("XY") for the wet one; the spigot
     then points the right way on both.
     """
-    solid = cq.Workplane("XY").circle(14.9).extrude(2)
-    solid = solid.union(cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 2)))
-    solid = solid.union(cq.Workplane("XY").circle(10).extrude(5).translate((0, 0, 7)))
+    solid = cq.Workplane("XY").circle(22).extrude(5)
+    solid = solid.union(cq.Workplane("XY").circle(10).extrude(7.35).translate((0, 0, 5)))
     solid = solid.cut(cq.Workplane("XY").circle(2.45).extrude(30).translate((0, 0, -5)))
     for ang in (45.0, 135.0):
         a = math.radians(ang)
@@ -461,14 +481,14 @@ def make_cup_clamp():
 
 
 def make_magnets(dry=False):
-    """8 discrete N52 discs, each sitting in its own pocket."""
+    """12 discrete N52 discs, each dropped in from the BACK and sitting 0.2 mm off the
+    cup's back face, magnet face 0.45 mm behind the printed membrane."""
     out = None
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
         r = MAGCUP_D / 2 - MAG_D / 2 - 2
         m = (cq.Workplane("XY").circle(MAG_D / 2).extrude(MAG_H)
-             .translate((r * math.cos(th), r * math.sin(th),
-                         CUP_BODY - MAG_H - 0.2)))
+             .translate((r * math.cos(th), r * math.sin(th), 0.2)))
         out = m if out is None else out.union(m)
     return out
 
@@ -851,7 +871,7 @@ parts["rotor"] = parts["rotor"].union(
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
 Z_SHAFT   = 0     # shaft spans -37..78 (115 mm), hub grips at -31, cup at 67
 Z_CARRIER = 15    # wet bearing carrier 47..71
-Z_WETCUP  = 71    # wet cup body 71..81, magnet face on the bulkhead face
+Z_WETCUP  = 81 - CUP_BODY   # 75.35: magnet face stays on the bulkhead at 81
 Z_POD     = 85    # pod: wall 80..85, barrel 85..205
 Z_DRYCUP  = 85    # dry magnet cup inside the pod, right behind the wall
 Z_ADAPTER = 205   # transition cone 205..225
@@ -875,13 +895,15 @@ parts["cup_washer"] = (cq.Workplane("XY").circle(12).circle(4).extrude(1)
                        .translate((0, 0, Z_POD - WALL_T)))
 parts["rotor_clamp"] = make_rotor_clamp()
 parts["magcup_wet"]  = make_cup().translate((0,0,Z_WETCUP))
-parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, 73))
+parts["cup_clamp_wet"] = make_cup_clamp().mirror("XY").translate((0, 0, Z_WETCUP - 2.0))
+parts["cup_cover_wet"] = make_cup_cover().translate((0, 0, Z_WETCUP - 2.0))
 parts["pod"]         = make_pod().translate((0,0,Z_POD))
 # mirror("XY") flips Z, which is what a part BUILT along Z needs; mirror("XZ")
 # flips Y and is a no-op on a body of revolution - it silently leaves the cup
 # facing the wrong way, with its magnet pockets pointing into the cage.
 parts["magcup_dry"]  = make_cup("dry").mirror("XY").translate((0,0,Z_DRYCUP + CUP_BODY))
-parts["cup_clamp_dry"] = make_cup_clamp().translate((0, 0, 93))
+parts["cup_clamp_dry"] = make_cup_clamp().translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
+parts["cup_cover_dry"] = make_cup_cover().mirror("XY").translate((0, 0, Z_DRYCUP + CUP_BODY + 2.0))
 parts["joints"] = make_joints()
 # same frame as the cup: built along Z, mirrored like cup A, no extra rotation
 parts["magnets_wet"] = make_magnets().translate((0,0,Z_WETCUP))
@@ -917,7 +939,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","cup_cover_wet","cup_cover_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -931,7 +953,7 @@ COLORS = {
     "rotor": (1.00, 0.45, 0.10), "magcup_wet": (0.35, 0.35, 0.38),
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
-    "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
+    "dry_bearing": (0.75,0.75,0.78), "cup_cover_wet": (0.70,0.55,0.40), "cup_cover_dry": (0.70,0.55,0.40), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
     "oldham_hub_a": (0.80,0.45,0.80), "oldham_disc": (0.70,0.35,0.75), "oldham_hub_b": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),

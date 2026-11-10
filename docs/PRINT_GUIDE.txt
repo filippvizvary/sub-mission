@@ -25,10 +25,11 @@ Orientacia (uz nastavena, netreba otacat)
               tree support LEN pod cele listy, nie do kuzela
 02 pod        na podlozke bulkhead (dno), O-kruzok hore na hladkej vrstve
               4 pätky su na podlozke, do vnutra netreba support
-03/04 pohar   MAGNETOVYM CELOM NADOL. Rovna plocha s 0.2 mm recessom tak vznikne
-              na podlozke (najlepsia), a spoj telo/upinacie-telo je schod hore,
-              nie 64 mm previs. Kapsy su potom zospodu - slicer ich preklene
-              cez Ø10.2, co je v pohode. Pod Ø70 telom uz netreba support.
+03/04 pohar   MAGNETOVYM CELOM NADOL (membrana 3 vrstvy = 0,45 mm sa tlaci Rovna plocha s 0.2 mm recessom tak vznikne
+              priamo na podlozku - zadne preklenutie, plna plocha). Kapsy su
+              zospodu, magnety sa vkladaju ZOZADU a kryt 14 ich zavrie. Pod Ø70
+              telom netreba support. Membranu nedavaj hrubsiu: kazda vrstva
+              navyse = +0,15 mm medzery = -3 % momentu spojky.
 05 nosic      na podlozke celo Ø18 telesa, krize a prstenec hore
               support pod krize a prstenec
 
