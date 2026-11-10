@@ -141,7 +141,22 @@ def make_cup(flavour="wet"):
     # D-bore: Ø5.2 slip fit plus the same 0.5 mm flat the shaft carries, 0.05 mm
     # clearance on the flat. The flat is the drive (no pin, no printed thread).
     cup = cup.cut(cq.Workplane("XY").circle(2.6).extrude(40).translate((0, 0, -20)))
-    cup = cup.cut(cq.Workplane("XY").box(10, 12, 40).translate((7.05, 0, 0)))
+    # The chord must be cut ONLY between the flat and the bore wall: the lens
+    # x 2.05..2.60, y +-1.60. A 10 x 12 mm box here reaches past the bore into
+    # the cup's body and gouges a 10 x 12 mm slot through the magnet face -
+    # which is exactly what it did. 0.55 x 3.2 mm removes the lens and nothing.
+    # Build the lens as a SOLID (bore cylinder intersected with the half-space
+    # x > 2.05) and subtract that. A box tangent to the bore wall at x = 2.60
+    # and to the flat's corners at y = +-1.60 produces zero-thickness contacts
+    # and OCC silently returns the uncut solid - which is why the first attempt
+    # at the small box left the bore a perfect circle.
+    lens = (cq.Workplane("XY").circle(2.6).extrude(16).translate((0, 0, -6))
+            .intersect(cq.Workplane("XY").box(10, 12, 20).translate((7.05, 0, 0))))
+    # ...and UNION it back. A D-bore is a round hole with material added on one
+    # side where the flat is - subtracting the lens removes air (the lens lies
+    # entirely inside the Ø5.2 bore), so the first two attempts left a perfect
+    # circle and the "flat" existed only in a comment.
+    cup = cup.union(lens)
     if flavour == "dry":
         # the dry cup rides on the dry shaft and turns around the bulkhead's
         # Ø20 dry bearing boss, so its centre is a Ø22 clearance bore - the load

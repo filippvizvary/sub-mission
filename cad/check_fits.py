@@ -157,6 +157,13 @@ ok(abs(bore[:, 0].max() - 2.05) <= 0.08, "cup D-bore flat",
    f"flat at x {bore[:, 0].max():.2f} mm: it is the drive, the Ø5.2 bore is the slip fit")
 ok(np.hypot(bore[:, 0], bore[:, 1]).max() >= 2.55, "cup bore clears the shaft",
    f"bore r {np.hypot(bore[:, 0], bore[:, 1]).max():.2f} against a Ø5 h9 shaft")
+# a cut box that overruns the bore gouges the magnet face instead of chamfering
+# the bore - it did exactly that, a 10 x 12 mm slot, and the slicer found it.
+for z in (73.0, 79.0):     # body heights only: at the boss, r 7 is the boss itself
+    sec = cupw.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
+    r = np.hypot(sec.vertices[:, 0], sec.vertices[:, 1])
+    stray = ((r > 3.5) & (r < 21.0)).sum()
+    ok(stray == 0, f"cup body intact at z={z}", f"{stray} section vertices between r 3.5 and 21 (must be none)")
 # the shaft carries the matching flat
 sh_local = local("shaft")
 sec = sh_local.section(plane_origin=[0, 0, 40.0], plane_normal=[0, 0, 1])
