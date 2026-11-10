@@ -182,6 +182,13 @@ def make_cup(flavour="wet"):
     # entirely inside the Ø5.2 bore), so the first two attempts left a perfect
     # circle and the "flat" existed only in a comment.
     cup = cup.union(lens)
+    # one M3 clamp in the boss (Ø14, 5.4 mm wall - tapped, no insert), at z 66,
+    # 90 deg to the flat. Its tip presses the shaft, and a 1 mm dimple drilled in
+    # the shaft under it makes the axial location POSITIVE: without it the cup is
+    # free to slide, and nothing then holds the wet shaft against the magnet pull.
+    bossclamp = (cq.Workplane("XZ").circle(1.3).extrude(9)
+                 .rotate((0, 0, 0), (0, 0, 1), 90).translate((0, 0, -4)))
+    cup = cup.cut(bossclamp)
     # 8 blind pockets, cut from the +Z face
     for i in range(MAG_N):
         th = 2 * math.pi * i / MAG_N
@@ -272,15 +279,21 @@ def make_pod():
     # squeeze (2.5-1.8)/2.5 = 28%, and both lands stay over 1.8 mm.
     pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(2.8)
                   .translate((0, 0, POD_LEN - 1.8)))
-    # six lugs: flat plate + rounded upstream edge, then drill
+    # Flange, not six lugs. The lugs were at r 46..58 with their Ø4.5 holes at
+    # r 52.5 - straight through the O-ring band (49.9..52.9), so the seal ran
+    # round the lugs instead of a flat face, and there was nowhere for a nut.
+    # A continuous flange r 55..68 keeps the whole sealing face flat and puts the
+    # joint outboard of the groove: 1.9 mm of land inside, 2.1 mm outside.
+    flange = (cq.Workplane("XY").circle(68).circle(55).extrude(6)
+              .translate((0, 0, POD_LEN - 6)))
+    pod = pod.union(flange)
     for i in range(6):
-        plate = cq.Workplane("XY").box(12, 14, 6).translate((52, 0, POD_LEN - 3))
-        round_edge = cq.Workplane(obj=cq.Solid.makeCylinder(
-            6.5, 14, cq.Vector(52, -7, POD_LEN - 6), cq.Vector(0, 1, 0)))
-        lug = (plate.union(round_edge)
-               .cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                   2.25, 26, cq.Vector(52.5, -13, POD_LEN - 8), cq.Vector(0, 1, 0)))))
-        pod = pod.union(lug.rotate((0, 0, 0), (0, 0, 1), 60 * i))
+        a = math.radians(60 * i)
+        x, y = 61.5 * math.cos(a), 61.5 * math.sin(a)
+        pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+            2.25, 20, cq.Vector(x, y, POD_LEN - 10), cq.Vector(0, 0, 1))))
+        pod = pod.cut(cq.Workplane(obj=cq.Solid.makeCylinder(   # head counterbore
+            3.75, 5.0, cq.Vector(x, y, POD_LEN - 5.2), cq.Vector(0, 0, 1))))
     return pod
 
 # ---------------- sensor cage with 12 radial slots -------------------------

@@ -60,6 +60,10 @@ magnety               kapse Ø10.2 x 5.2, magnet 0.2 mm pod epoxidom.
                        Zaliat KAZDU kapsu: naplnit ~60 %, vlozit magnet, vytlacit,
                        stiahnut na 0.2 mm. NIE vrstva cez cele celo - kazda 0.1 mm
                        na celo ide priamo do 4.4 mm medzery a znizuje slip.
+spoj barel<->adaptér  6x M4 na rozstupovej kruznici r 61.5 (Ø123), hlava na strane
+                       barelu (zahlbenie Ø7.5), matica do adaptéra. Priehradka
+                       priruba r 55..68 - O-kruzok je cely VNUTRI nej, takze
+                       tesniaca plocha je suvisla a rovna.
 thrust washer          06_podlozka_pohara.stl - ABS Ø24/Ø8 x 1 (r 4..12), do recessu
                        v mokrom cele barelu. Na nom sedi celo pohara a ide cez neho
                        56 N od magnetov. Nic sa nekupuje - je to spotrebak,
