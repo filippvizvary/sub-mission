@@ -52,6 +52,9 @@ PARTS = [
     ("rotor_clamp", "07_upinac_vrtule_polovica.stl", True),   # print 2: one clamp
     ("cup_clamp_wet", "08_upinac_pohara_polovica.stl", True), # print 4: 2 per cup
     ("motor_plate", "09_motorova_doska.stl", True),           # print 1: test the pattern
+    ("oldham_hub_a", "10_oldham_hub_hriadel.stl", False),
+    ("oldham_disc", "11_oldham_kotuc.stl", False),
+    ("oldham_hub_b", "12_oldham_hub_zvonec.stl", True),
 ]
 
 

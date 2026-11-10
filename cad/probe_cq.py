@@ -210,7 +210,9 @@ def make_shaft_collar(thickness, z0=0.0):
 def make_dry_shaft():
     """Ø5 x 42, from inside the dry cup (85) out to the Oldham hub A (127).
     Grip points: the cup's 3 M3 at 95..101, a stop collar at 106, hub A at 113."""
-    return cq.Workplane("XY").circle(2.5).extrude(42).translate((0, 0, 85))
+    # 37 mm, 85..122: the end sits exactly at the Oldham hub A's slot floor, so the
+    # disc's tongue can cross that face without running into the shaft
+    return cq.Workplane("XY").circle(2.5).extrude(37).translate((0, 0, 85))
 
 
 def make_dry_bearing():
@@ -232,37 +234,72 @@ def make_motor_plate():
     not a square - normal on a 2208. Motor thread is only 3 mm deep, so the plate is
     4 mm: M3 x 8 = 4 (plate) + 3 (motor) + 1 spare.
     """
-    plate = cq.Workplane("XY").circle(22).extrude(4)
-    plate = plate.cut(cq.Workplane("XY").circle(7).extrude(12).translate((0, 0, -4)))
+    # 5.5 mm, NOT 4: the motor's thread is only 2.5 mm deep and the shortest M3 he
+    # has is x8, so the plate has to eat 8 - 2.5 = 5.5. No counterbore - sinking the
+    # head would only drive the tip further into the coils.
+    plate = cq.Workplane("XY").circle(22).extrude(5.5)
+    # Ø12.4 clearance for the Ø11.6 rotating part in the motor's centre; through, so
+    # the required 2.5 mm of free depth is trivially satisfied
+    plate = plate.cut(cq.Workplane("XY").circle(6.2).extrude(16).translate((0, 0, -5)))
     for sx in (-1, 1):
         for sy in (-1, 1):
             plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-                1.7, 10, cq.Vector(sx * 8.3, sy * 9.9, -4), cq.Vector(0, 0, 1))))
+                1.7, 12, cq.Vector(sx * 8.3, sy * 9.9, -4), cq.Vector(0, 0, 1))))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
         plate = plate.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.7, 10, cq.Vector(17 * math.cos(a), 17 * math.sin(a), -4),
+            1.7, 12, cq.Vector(17 * math.cos(a), 17 * math.sin(a), -4),
             cq.Vector(0, 0, 1))))
     return plate
 
 
+def make_oldham_hub_a():
+    """115.5..123.5, C-ring gripping the dry shaft's end with one M2 x 12 across a
+    single saw cut. The cut runs from the OD to the bore on the +X side only, so the
+    ring stays one piece; the bolt sits at x 10.5, through material on both sides of
+    the cut, and its slot on the downstream face takes the disc's upstream tongue.
+    The shaft stops at 122, exactly at the slot floor."""
+    h = cq.Workplane("XY").circle(14).circle(2.475).extrude(8).translate((0, 0, 115.5))
+    # saw cut: 1.4 mm wide, from just past the bore (x 1.5) out past the OD (x 15)
+    h = h.cut(cq.Workplane("XY").box(13.5, 1.4, 20).translate((8.25, 0, 119.5)))
+    # M2 x 12 across the cut
+    h = h.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        0.85, 40, cq.Vector(10.5, 0, 119.5), cq.Vector(0, 1, 0))))
+    h = h.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        1.9, 1.8, cq.Vector(10.5, 14.2, 119.5), cq.Vector(0, -1, 0))))
+    h = h.cut(cq.Workplane("XZ").polygon(6, 5.0).extrude(1.8)
+              .translate((10.5, 14.2, 119.5)))
+    # slot for the disc's tongue
+    h = h.cut(cq.Workplane("XY").box(10.4, 3.4, 1.5).translate((0, 0, 122.75)))
+    return h
+
+
+def make_oldham_disc():
+    """123.5..127.5, Ø26, a 10 x 3 x 1.5 tongue on each face at 90 deg."""
+    d = cq.Workplane("XY").circle(13).circle(3.5).extrude(4).translate((0, 0, 123.5))
+    d = d.union(cq.Workplane("XY").box(10, 3, 1.5).translate((0, 0, 122.75)))
+    d = d.union(cq.Workplane("XY").box(3, 10, 1.5).translate((0, 0, 128.25)))
+    return d
+
+
+def make_oldham_hub_b():
+    """127.5..133, bolted to the motor's rotating bell with four M2 on a 9 mm
+    square. 5.5 mm thick because the bell's M2 threads are 2.5 mm deep and the
+    shortest M2 he has is x8."""
+    h = cq.Workplane("XY").circle(13).circle(4).extrude(5.5).translate((0, 0, 127.5))
+    h = h.cut(cq.Workplane("XY").box(3.4, 10.4, 1.5).translate((0, 0, 128.25)))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            h = h.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+                1.2, 12, cq.Vector(sx * 4.5, sy * 4.5, 126), cq.Vector(0, 0, 1))))
+    return h
+
+
 def make_oldham():
-    """Three printed parts: two hubs with one slot each, and a centre disc with
-    tongues on both faces, rotated 90 deg. It transmits 0.164 N*m and ZERO axial
-    force, so the motor's bearings never see the 56 N pull. Tongue radius 8 mm,
-    loads ~20 N per tongue, 0.85 MPa in ABS."""
-    out = None
-    for z0, bore in ((113.0, True), (125.0, False)):
-        hub = (cq.Workplane("XY").circle(14).circle(2.6 if bore else 5.5)
-               .extrude(8).translate((0, 0, z0)))
-        # slot for the centre disc's tongue
-        hub = hub.cut(cq.Workplane("XY").box(20, 4.0, 4.0).translate((0, 0, z0 + 2)))
-        out = hub if out is None else out.union(hub)
-    disc = (cq.Workplane("XY").circle(13).circle(2.6).extrude(4)
-            .translate((0, 0, 121)))
-    for zc in (121.0, 123.0):
-        disc = disc.cut(cq.Workplane("XY").box(20, 3.6, 2.6).translate((0, 0, zc)))
-    return out.union(disc)
+    """Assembly view: the three parts in place. It transmits 0.164 N*m and ZERO
+    axial force, which is the whole reason the motor's bearings never see the
+    56 N of magnet pull."""
+    return (make_oldham_hub_a().union(make_oldham_disc()).union(make_oldham_hub_b()))
 
 
 def make_engine_block():
@@ -294,12 +331,12 @@ def make_engine_block():
     # static part is the base, so the plate butts the base and the bell hangs
     # upstream from it toward the Oldham.
     # the motor plate bolts on here: Ø44 ring, four tapped M3 at r 17
-    cradle = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 160))
-    cradle = cradle.cut(cq.Workplane("XY").circle(7).extrude(10).translate((0, 0, 157)))
+    cradle = cq.Workplane("XY").circle(22).extrude(5).translate((0, 0, 161.5))
+    cradle = cradle.cut(cq.Workplane("XY").circle(6.2).extrude(12).translate((0, 0, 158)))
     for ang in (0.0, 90.0, 180.0, 270.0):
         a = math.radians(ang)
         cradle = cradle.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.3, 6.0, cq.Vector(17 * math.cos(a), 17 * math.sin(a), 160),
+            1.3, 6.0, cq.Vector(17 * math.cos(a), 17 * math.sin(a), 161.5),
             cq.Vector(0, 0, 1))))
     legs = None
     for i in range(3):
@@ -809,7 +846,9 @@ parts["magnets_dry"] = make_magnets(dry=True).mirror("XY").translate((0,0,Z_DRYC
 parts["dry_shaft"]   = make_dry_shaft()
 parts["dry_bearing"] = make_dry_bearing()
 
-parts["oldham"]      = make_oldham()
+parts["oldham_hub_a"] = make_oldham_hub_a()
+parts["oldham_disc"]  = make_oldham_disc()
+parts["oldham_hub_b"] = make_oldham_hub_b()
 parts["generator"]   = make_generator().translate((0,0,133))
 parts["motor_plate"] = make_motor_plate().translate((0, 0, 156))
 parts["engine_block"]= make_engine_block()
@@ -835,7 +874,7 @@ for name, shape in zip(site_names, site):
 # parts must never sit where the clamp/tube lands: measured overlap was 102 cm3)
 POD_TIP = (ARM_LEN, -142, -420)
 pod_chain = ["rotor","shaft","magcup_wet","magcup_dry","pod","cage",
-             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
+             "wet_carrier","cup_washer","dry_shaft","dry_bearing","oldham_hub_a","oldham_disc","oldham_hub_b","cup_clamp_wet","cup_clamp_dry","motor_plate","engine_block","rotor_clamp","sensors","cage_adapter","generator","joints","magnets_wet","magnets_dry"]
 for name in pod_chain:
     # +Z -> +X (lay the pod horizontal), then +X -> +Y so the axis follows the
     # river flow, which runs parallel to the bank; the arm crosses it at 90 deg
@@ -850,7 +889,7 @@ COLORS = {
     "magcup_dry": (0.35, 0.35, 0.38), "shaft": (0.55, 0.55, 0.58),
     "wet_carrier": (0.45, 0.50, 0.58), "cup_washer": (0.90, 0.90, 0.60), "dry_shaft": (0.55,0.55,0.58),
     "dry_bearing": (0.75,0.75,0.78), "cup_clamp_wet": (0.62,0.45,0.30), "cup_clamp_dry": (0.62,0.45,0.30), "rotor_clamp": (0.95,0.62,0.20), "motor_plate": (0.40,0.62,0.45),
-    "oldham": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
+    "oldham_hub_a": (0.80,0.45,0.80), "oldham_disc": (0.70,0.35,0.75), "oldham_hub_b": (0.80,0.45,0.80), "engine_block": (0.35,0.55,0.75),
     "pod": (0.10, 0.42, 0.30),
     "cage_adapter": (0.14, 0.46, 0.34), "cage": (0.13, 0.33, 0.72),
     "sensors": (0.95, 0.95, 0.90), "anchor": (0.70, 0.70, 0.72),
