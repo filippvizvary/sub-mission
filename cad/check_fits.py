@@ -92,8 +92,8 @@ aft_rs = radii_at(rotor, 18.5)           # inside the Ø30 x 3 centring recess
 ok(aft_rs.max() >= 14.9, "aft face recess", f"r {aft_rs.max():.2f} clears the clamp spigot Ø29.8")
 hub = local("rotor_clamp")
 c0, c1 = zrange(hub)
-ok(abs((c1 - c0) - 19.0) <= 0.4, "rotor clamp length",
-   f"{c1 - c0:.1f} mm: 5 flange + 14 sleeve on the shaft")
+ok(abs((c1 - c0) - 20.0) <= 0.4, "rotor clamp length",
+   f"{c1 - c0:.1f} mm = 19 body + 1 centring spigot that sits inside the mating recess")
 _rr = radii_at(hub, c0 + 8.0)          # mid-sleeve, where the split bolts are
 ok(abs(2 * float(_rr.min()) - 4.90) <= 0.08, "clamp bore",
    f"Ø{2*float(_rr.min()):.2f}: 0.10 mm UNDERSIZE on the Ø5 shaft, so bolt preload "

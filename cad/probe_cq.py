@@ -147,6 +147,12 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # coincident surface, and OCC leaves slivers there that put vertices inside
     # the bore and make the mesh non-watertight
     body = body.union(cq.Workplane("XY").circle(11).extrude(L - 4.5).translate((0, 0, 4.5)))
+    # Ø29.6 x 1 centring spigot on the flange's OUTER face. Both things the clamp holds
+    # have a matching Ø30 recess - the rotor's hub 3 mm deep, the cup 1 mm - so the spigot
+    # is 1 mm and centres in either. It was in the original hand-written clamp and got
+    # lost when the body was rewritten; without it the clamp can be bolted on 0.5 mm off
+    # centre and the magnet gap goes with it.
+    body = body.union(cq.Workplane("XY").circle(14.8).extrude(1.0).translate((0, 0, -1.0)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
