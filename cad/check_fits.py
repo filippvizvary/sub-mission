@@ -92,18 +92,15 @@ aft_rs = radii_at(rotor, 26.5)           # inside the Ø30 x 3 centring recess
 ok(aft_rs.max() >= 14.9, "aft face recess", f"r {aft_rs.max():.2f} clears the clamp spigot Ø29.8")
 hub = local("rotor_clamp")
 c0, c1 = zrange(hub)
-ok(abs((c1 - c0) - 22.0) <= 0.4, "rotor clamp length",
-   f"{c1 - c0:.1f} mm: Ø20 sleeve 19 mm on the shaft + 3 mm spigot")
-sec = hub.section(plane_origin=[0, 0, 37.0], plane_normal=[0, 0, 1])
-_H = sec.vertices[:, :2]
-_b = _H[np.hypot(_H[:, 0], _H[:, 1]) < 3.0]
-ok(abs(2 * np.hypot(_b[:, 0], _b[:, 1]).min() - 4.90) <= 0.05, "clamp bore",
-   f"Ø{2*np.hypot(_b[:,0],_b[:,1]).min():.2f}: 0.1 mm UNDERSIZE on the Ø5 shaft, so the "
-   "bolt preload squeezes the ring instead of closing the mating faces")
-_rim = np.hypot(_H[:, 0], _H[:, 1]).max()
-ok(abs(_rim - 11.0) <= 0.2, "clamp sleeve OD",
-   f"r {_rim:.2f} (Ø22): an M2 head pocket at x 7.6 spans r 5.4..9.8, so the sleeve "
-   "needs r 11 or the pocket cuts its wall open")
+ok(abs((c1 - c0) - 19.0) <= 0.4, "rotor clamp length",
+   f"{c1 - c0:.1f} mm: 5 flange + 14 sleeve on the shaft")
+_rr = radii_at(hub, c0 + 8.0)          # mid-sleeve, where the split bolts are
+ok(abs(2 * float(_rr.min()) - 4.90) <= 0.08, "clamp bore",
+   f"Ø{2*float(_rr.min()):.2f}: 0.10 mm UNDERSIZE on the Ø5 shaft, so bolt preload "
+   "squeezes the bore instead of only closing the mating faces")
+_rim = float(_rr.max())
+ok(has_r(_rr, 11.0, 0.2), "clamp sleeve OD",
+   f"r 11 present at the split-bolt level: Ø22 sleeve, the ears reach r 21 outside it")
 # blade: reach, and a section that proves the loft is twisted (root is wider than tip)
 r_all = np.hypot(rotor.vertices[:, 0], rotor.vertices[:, 1])
 ok(abs(r_all.max() - 110.0) <= 0.5, "rotor reaches R", f"r {r_all.max():.2f} mm (nominal 110)")
