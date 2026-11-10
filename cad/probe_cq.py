@@ -116,10 +116,18 @@ def make_hub():
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
            .cut(cq.Workplane("XY").circle(15.0).extrude(1.05).translate((0, 0, HUB_LEN - 1.05))))
+    # Heat-set inserts, not captive nuts. A captive nut cannot work here and the
+    # arithmetic is short: the screw enters at the hub's AFT face (z 28) and travels
+    # toward z 0, so the nut would have to sit 3 mm deeper - 22.9..20.6 - with its
+    # opening facing z 0, i.e. sealed behind 20 mm of printed hub. There is no layer at
+    # which it can be dropped in. A heat-set insert goes in from the aft face itself,
+    # which is open, and the hub is 28 mm deep, so it has room: Ø4.6 x 5.7 for a
+    # standard M3 insert. M3 x 8 then gives 5.1 mm of engagement, 3 mm in the clamp's
+    # flange under the head's seat and 5.1 in the insert.
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
-            1.3, 7.0, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 7.0),
+            2.3, 5.7, cq.Vector(18.5 * math.cos(a), 18.5 * math.sin(a), HUB_LEN - 5.7),
             cq.Vector(0, 0, 1))))
     return hub
 
