@@ -118,11 +118,13 @@ def make_hub():
     lens = (cq.Workplane("XY").circle(2.6).extrude(total)
             .intersect(cq.Workplane("XY").box(10, 12, total + 20).translate((7.05, 0, 0))))
     hub = hub.union(lens)
-    # Two M3 clamps at 90 and 270 deg, i.e. PERPENDICULAR to the flat. They press
-    # the shaft sideways onto the flat, so the flat stays the key and the screws
-    # only have to stop it sliding. (At 0 deg the hole would cut straight through
-    # the 0.55 mm flat lip and leave a sliver - it did, hub not closed.)
-    for ang, z in ((90.0, 27.0), (270.0, 35.0)):
+    # Two M3 clamps, both inside the BOSS (28..42) - a hole at z 27 is still in
+    # the Ø64 body where the wall is back to 29.4 mm and the screw reaches
+    # nothing. Angles: 180 deg pushes the shaft ACROSS onto the flat (maximum
+    # form engagement), 90 deg locks rotation. 90 and 270 opposite each other
+    # fight: each pushes the shaft away from the other and neither holds it on
+    # the flat.
+    for ang, z in ((180.0, 32.0), (90.0, 38.0)):
         hole = (cq.Workplane("YZ").circle(1.3).extrude(CLAMP_R + 3)
                 .rotate((0, 0, 0), (0, 0, 1), ang).translate((0, 0, z)))
         hub = hub.cut(hole)

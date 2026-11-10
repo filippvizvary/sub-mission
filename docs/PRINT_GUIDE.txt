@@ -41,9 +41,11 @@ po tlaci   ABS sa da vyhladit acetonovymi parami - vonkajok 02 pod, 20 min,
 
 Kriticke rozmery po tlaci
 -------------------------
-hub D-diera            Ø5.2 + ploska na x 2.05. Hub je na hriadeli KLINOVANY
-                       ploskou (prenasa krutak) a ZALEPENY epoxidom (drzi axialne).
-                       Najprv skus nasucho, potom lep - je to trvale.
+hub D-diera            Ø5.2 + ploska na x 2.05 (ta mala 'uska' na spodku je KLIN).
+                       Na zadnej strane je Ø16 x 14 upinacie telo: 2x M3 diera Ø2.6
+                       na z 32 (180 st.) a z 38 (90 st.). Prejst zavitnikom M3 - ziadna
+                       vlozka sa tam nezmesti (stena 5.4 mm, vlozka potrebuje ~6.6).
+                       M3x8 sa dotkne hriadela; hlava zostane ~2.5 mm nad povrchom.
 hriadel                ploska po CELEJ dlzke, 0.5 mm hlboka, 3 mm siroka.
                        Pilnik + supler: cez plosku musi citat 4.50 mm (okruhla cast 5.00).
                        Stojí na tom hub (M4x30), collar aj D-diera pohara.
