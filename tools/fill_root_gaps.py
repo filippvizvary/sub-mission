@@ -109,13 +109,17 @@ def gusset_mesh(phi_c, arc_half_deg, ramp, hub_r=32.0, n=25, floor=None):
     taper = np.sin(taper) ** 2
     ramps = ramp * taper
     ramps = np.maximum(ramps, 0.25)
+    # push the gusset 0.3 mm into the existing material: the ray hit IS the blade's surface,
+    # so landing exactly on it makes faces coplanar and leaves edges shared four ways
+    tops = tops + 0.30
     verts = []
     for phi, top, rp in zip(phis, tops, ramps):
         c, s_ = np.cos(phi), np.sin(phi)
+        rin = hub_r - 0.30          # inside the hub wall, not on it
         verts += [
-            [hub_r * c, hub_r * s_, top - rp],               # A on the hub wall
-            [hub_r * c, hub_r * s_, top - 0.35],             # B tucked under the blade
-            [(hub_r + rp) * c, (hub_r + rp) * s_, top],      # C out on the underside
+            [rin * c, rin * s_, top - rp],                   # A on the hub wall
+            [rin * c, rin * s_, top - 0.10],                 # B under the blade
+            [(hub_r + rp) * c, (hub_r + rp) * s_, top],      # C inside the blade
         ]
     verts = np.array(verts, dtype=float)
     faces = []
