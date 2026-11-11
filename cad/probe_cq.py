@@ -126,8 +126,10 @@ def make_hub():
     for _i in range(3):
         _th = 2 * math.pi * _i / 3
         _cx, _cy = 32.0 * math.cos(_th), 32.0 * math.sin(_th)
+        # tall enough to reach the blade's LOWER EDGE: the void to fill is not at the
+        # base of the hub, it is under the blade at z 10..16 in the print frame
         hub = hub.union(cq.Workplane(obj=cq.Solid.makeCone(
-            10.0, 19.0, 10.0, cq.Vector(_cx, _cy, HUB_LEN - 10.0))))
+            10.0, 19.0, 17.0, cq.Vector(_cx, _cy, HUB_LEN - 17.0))))
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
