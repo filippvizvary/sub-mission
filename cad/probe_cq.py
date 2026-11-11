@@ -120,14 +120,6 @@ def make_hub():
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
            .cut(cq.Workplane("XY").circle(15.0).extrude(2.55).translate((0, 0, HUB_LEN - 2.55))))
-    # Heat-set inserts, not captive nuts. A captive nut cannot work here and the
-    # arithmetic is short: the screw enters at the hub's AFT face (z 28) and travels
-    # toward z 0, so the nut would have to sit 3 mm deeper - 22.9..20.6 - with its
-    # opening facing z 0, i.e. sealed behind 20 mm of printed hub. There is no layer at
-    # which it can be dropped in. A heat-set insert goes in from the aft face itself,
-    # which is open, and the hub is 28 mm deep, so it has room: Ø4.6 x 5.7 for a
-    # M3 x 6 x 5 insert (Ø5 OD, 6 long): hole Ø5.2 x 6.3, i.e. 0.2 over the OD because a
-    # printed hole comes out under size. M3 x 8 then gives 5.1 mm in a 6 mm insert.
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
@@ -926,6 +918,11 @@ parts["rotor"] = parts["rotor"].union(
     cq.Workplane("XY").circle(HUB_D/2).workplane(offset=-40).circle(6).loft().val(), clean=True)
 # the whole rotor moves 7 mm upstream so its hub face meets the clamp at 21 instead of
 # 28: that is the 7 mm which lets both clamps be the same 19 mm part
+# Root skirt: a cone Ø64 -> Ø74 over the last 6 mm of the hub, so the blade roots run
+# into solid material instead of leaving the sharp hanging corner that a fillet could not
+# fix (OCC refuses fillets on these lofted junctions - four attempts). The blades keep
+# their full 43.4 mm root chord; the corner is simply inside the skirt now.
+_rot = parts["rotor"].val()
 parts["rotor"] = parts["rotor"].translate((0, 0, -7.0))
 # ---- explicit axial layout (local Z, before the pod is laid horizontal) ----
 # upstream -> downstream: weed guard | rotor | carrier | wet cup | WALL | pod | adapter | cage
