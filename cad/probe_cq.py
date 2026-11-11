@@ -36,7 +36,7 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 THICKNESS = 0.24            # 24 %, not 20: the D200 chords are 9 % shorter, so the blade
                             # was 19 mm of tip deflection at 1 m/s. t^3 buys 1.7x stiffness.
 STATIONS = [(0.20, 43.4, 38.7), (0.27, 36.1, 32.7), (0.35, 27.8, 25.9), (0.50, 20.2, 19.9), (0.65, 15.8, 16.6), (0.80, 12.9, 14.5), (1.00, 10.3, 12.6)]
-MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
+MAGCUP_D = 76.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
 CUP_BODY = MAG_H + 0.2 + MEMBRANE   # pocket 5.2 + membrane = 5.65, not 10
@@ -512,7 +512,7 @@ def make_cup_cover():
     and the four M3 x 8 mount screws pass straight through it.
     """
     T = 1.5
-    cov = cq.Workplane("XY").circle(34.0).circle(14.9).extrude(T)
+    cov = cq.Workplane("XY").circle(MAGCUP_D / 2 - 1.0).circle(14.9).extrude(T)
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         cov = cov.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
