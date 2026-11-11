@@ -83,15 +83,8 @@ def make_blade():
         # the trailing edge is a knife at the 0.4 mm tip thickness, and where that knife
         # meets the hub it leaves a sharp spike - bad to print, worse as a stress riser.
         # Blunt it toward the root: 2.4 mm there, 0.4 at the tip.
-        te_mm = TE_MM
-        # Root bulb: toward the hub the section gets thicker AND is pushed down toward
-        # the hub's flat face, both fading out by r/R 0.5. That fills the wedge under the
-        # root - the sharp corner - as part of the blade itself: no extra solid to fuse,
-        # no fillet for OCC to refuse.
-        fade = min(1.0, max(0.0, (0.5 - rf)) / 0.3)
-        t_loc = THICKNESS + (0.42 - THICKNESS) * fade
-        dz = -5.0 * fade
-        n_pts = naca4_pts(64, te_half=(te_mm / 2.0) / chord, t=t_loc)
+        te_mm = TE_MM + (2.4 - TE_MM) * max(0.0, (0.65 - rf)) / 0.45
+        n_pts = naca4_pts(64, te_half=(te_mm / 2.0) / chord, t=THICKNESS)
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
@@ -104,7 +97,7 @@ def make_blade():
             y_l = u * math.cos(th) - v * math.sin(th)
             z_l = u * math.sin(th) + v * math.cos(th)
             # span along +X at this station
-            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.6 + dz))
+            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.6))
         wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
         sections.append(wire)
     blade = cq.Solid.makeLoft(sections, ruled=True)
@@ -127,6 +120,14 @@ def make_hub():
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
            .cut(cq.Workplane("XY").circle(15.0).extrude(2.55).translate((0, 0, HUB_LEN - 2.55))))
+    # Root lobes: one tapered boss per blade on the hub's rim, wide on the aft face and
+    # narrowing upward. This is Filip's idea - seen from the top the hub grows a rounded
+    # bulge at each blade instead of the blade's chord cutting across the circle.
+    for _i in range(3):
+        _th = 2 * math.pi * _i / 3
+        _cx, _cy = 32.0 * math.cos(_th), 32.0 * math.sin(_th)
+        hub = hub.union(cq.Workplane(obj=cq.Solid.makeCone(
+            10.0, 19.0, 10.0, cq.Vector(_cx, _cy, HUB_LEN - 10.0))))
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
