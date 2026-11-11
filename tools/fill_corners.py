@@ -74,30 +74,42 @@ def main():
 
     beads = []
     for centre, half in runs:
+        found = []
         for side in (-1, 1):
             # step just inside the run: the exact boundary angle misses the blade
             phi = (centre + side * (half - 1.5)) % 360.0
-            # walk a little outward so the ray clears the hub wall and hits the blade
             zlo, zhi = None, None
             for rr in (32.6, 33.2, 34.0):
                 zlo, zhi = blade_z(mesh, phi, rr)
                 if zlo is not None:
                     break
             if zlo is None:
-                print(f"  corner {phi:6.1f}: no blade material, skipping")
                 continue
-            print(f"  corner {phi:6.1f}: blade z {zlo:.2f}..{zhi:.2f}")
-            a = math.radians(phi)
-            cx, cy = 32.0 * math.cos(a), 32.0 * math.sin(a)
-            h = (zhi - zlo) + 2.0
-            bead = trimesh.creation.cylinder(radius=radius, height=h, sections=64)
-            bead.apply_translation([cx, cy, zlo - 1.0 + h / 2.0])
-            # Union the whole cylinder, do NOT subtract the rotor first: a subtracted sliver
-            # touches the rotor exactly and the union then leaves coincident faces (17 bad
-            # edges, 12 loose bodies). Half the cylinder buries itself in the hub, which is
-            # free, and the other half is the fillet.
-            beads.append(bead)
-            print(f"    bead r {radius} mm, z {zlo - 1.0:.2f}..{zhi + 1.0:.2f}")
+            found.append((phi, zlo, zhi))
+        if not found:
+            print(f"  blade {centre:.1f}: no material at either corner")
+            continue
+        # only the LOWER corner needs filling - the upper one already blends
+        phi, zlo, zhi = min(found, key=lambda t: t[1])
+        print(f"  blade {centre:6.1f}: lower corner {phi:6.1f}, blade z {zlo:.2f}..{zhi:.2f} "
+              f"(skipped {[round(f[0],1) for f in found if f[0] != phi]})")
+        a = math.radians(phi)
+        cx, cy = 32.0 * math.cos(a), 32.0 * math.sin(a)
+        # stand it ON THE BED, not next to the blade: a fill floating at z 1.4 prints in the
+        # air and needs support. From z 0 it prints flat and merges with the hub's own base.
+        h = zhi + 0.15          # flush with the blade's top at that corner, not a bump above it
+        bead = trimesh.creation.cylinder(radius=radius, height=h, sections=96)
+        bead.apply_translation([cx, cy, h / 2.0])
+        # Clip the bead to just past the blade's own tip. Unclipped it is a ball sitting on
+        # the corner and bulging past the blade - what Filip called a "gulicka". Clipped at
+        # the blade's reach it becomes a wedge that sits inside the notch and disappears
+        # into both the blade and the hub.
+        import numpy as _np
+        clip = trimesh.creation.cylinder(radius=34.6, height=80.0, sections=96)
+        clip.apply_translation([0.0, 0.0, 14.0])
+        bead = trimesh.boolean.intersection([bead, clip], engine="manifold")
+        beads.append(bead)
+        print(f"    fillet r {radius} mm, z {zlo - 1.0:.2f}..{zhi + 1.0:.2f}")
 
     if not beads:
         raise SystemExit("no beads built")
