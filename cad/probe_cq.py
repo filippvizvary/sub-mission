@@ -35,7 +35,7 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 # anyway: the thin one separates.
 THICKNESS = 0.24            # 24 %, not 20: the D200 chords are 9 % shorter, so the blade
                             # was 19 mm of tip deflection at 1 m/s. t^3 buys 1.7x stiffness.
-STATIONS = [(0.20, 35.6, 38.7), (0.35, 25.9, 25.9), (0.50, 20.2, 19.9), (0.65, 15.8, 16.6), (0.80, 12.9, 14.5), (1.00, 10.3, 12.6)]
+STATIONS = [(0.20, 43.4, 38.7), (0.27, 36.1, 32.7), (0.35, 27.8, 25.9), (0.50, 20.2, 19.9), (0.65, 15.8, 16.6), (0.80, 12.9, 14.5), (1.00, 10.3, 12.6)]
 MAGCUP_D = 70.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
