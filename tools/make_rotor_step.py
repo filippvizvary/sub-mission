@@ -41,9 +41,10 @@ def find_lower_corners(stl_path):
                 if zlo is not None:
                     break
             if zlo is not None:
-                found.append((phi, zlo))
+                found.append((phi, zlo, zhi))
         if found:
-            out.append(min(found, key=lambda t: t[1])[0])
+            phi, zlo, zhi = min(found, key=lambda t: t[1])
+            out.append((phi, zhi))
     return out
 
 
@@ -67,39 +68,31 @@ def main():
         cq.Workplane("XY").circle(mod.HUB_D / 2).workplane(offset=-40).circle(6).loft().val(),
         clean=True)
 
-    # Find the corners in THIS frame. The print STL is the model's part after an assembly
-    # placement, so its azimuths (76/196/316) do not apply here - hard-coding them put the
-    # fills 40 deg off, next to the blades instead of at their corners.
-    tmp = os.path.join(ROOT, "cad", "parts", "_scan.stl")
-    cq.exporters.export(body, tmp, tolerance=0.05, angularTolerance=0.2)
-    corners = find_lower_corners(tmp)
-    print(f"lower corners in this frame: {[round(c,1) for c in corners]}")
-    os.remove(tmp)
-
-    # corner fills: from the aft face down the hub wall to the blade's underside
-    fills = 0
-    for phi in corners:
-        a = math.radians(phi)
-        cx, cy = mod.HUB_D / 2 * math.cos(a), mod.HUB_D / 2 * math.sin(a)
-        # print z 0..4.44 is the model's 23.56..28 (the print frame is the model's, flipped)
-        h = 4.45
-        # exactly to the aft face: that IS the print's z 0, so the fill stands on the bed.
-        # Overshooting by 0.3 mm put the whole model 0.3 mm below the bed after the flip.
-        cyl = (cq.Workplane("XY").workplane(offset=HUB_AFT - h)
-               .center(cx, cy).circle(FILL_R).extrude(h))
-        clip = (cq.Workplane("XY").workplane(offset=HUB_AFT - h - 1.0)
-                .circle(FILL_OUTER).extrude(h + 3.0))
-        cyl = cyl.intersect(clip)
-        body = body.union(cyl.val(), clean=False)     # keep the cylinder's own face
-        fills += 1
-    print(f"{fills} corner fills, r {FILL_R} mm, standing on the aft face")
-
-    # frame: flip so the aft face is at z 0 (the print frame), axis on +Z
+    # ---- frame FIRST, then measure, then add the fills -------------------------------
+    # Doing it the other way round (fills placed in the model frame, then rotated) put them
+    # 63 deg off: the corners were measured in one frame and the fills landed in another.
     solid = body.val()
     part = cq.Workplane("XY").add(solid)
     part = part.rotate((0, 0, 0), (1, 0, 0), 180)
     bb = part.val().BoundingBox()
     part = part.translate((0, 0, -bb.zmin))
+
+    tmp = os.path.join(ROOT, "cad", "parts", "_scan.stl")
+    cq.exporters.export(part, tmp, tolerance=0.05, angularTolerance=0.2)
+    corners = find_lower_corners(tmp)
+    os.remove(tmp)
+    print(f"lower corners in the final frame: {[(round(c,1), round(z,1)) for c, z in corners]}")
+
+    fills = 0
+    for phi_c, z_top in corners:
+        a = math.radians(phi_c)
+        cx, cy = mod.HUB_D / 2 * math.cos(a), mod.HUB_D / 2 * math.sin(a)
+        cyl = (cq.Workplane("XY").center(cx, cy).circle(FILL_R).extrude(z_top + 0.2))
+        cyl = cyl.intersect(cq.Workplane("XY").circle(FILL_OUTER).extrude(z_top + 1.0))
+        part = part.union(cyl.val(), clean=False)     # keep the cylinder's own face
+        fills += 1
+        print(f"   fill at {phi_c:6.1f} deg, z 0..{z_top + 0.2:.2f}")
+    print(f"{fills} corner fills, r {FILL_R} mm, standing on the bed")
 
     s = part.val()
     bb = s.BoundingBox()
