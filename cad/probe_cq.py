@@ -83,8 +83,15 @@ def make_blade():
         # the trailing edge is a knife at the 0.4 mm tip thickness, and where that knife
         # meets the hub it leaves a sharp spike - bad to print, worse as a stress riser.
         # Blunt it toward the root: 2.4 mm there, 0.4 at the tip.
-        te_mm = TE_MM + (2.4 - TE_MM) * max(0.0, (0.65 - rf)) / 0.45
-        n_pts = naca4_pts(64, te_half=(te_mm / 2.0) / chord, t=THICKNESS)
+        te_mm = TE_MM
+        # Root bulb: toward the hub the section gets thicker AND is pushed down toward
+        # the hub's flat face, both fading out by r/R 0.5. That fills the wedge under the
+        # root - the sharp corner - as part of the blade itself: no extra solid to fuse,
+        # no fillet for OCC to refuse.
+        fade = min(1.0, max(0.0, (0.5 - rf)) / 0.3)
+        t_loc = THICKNESS + (0.42 - THICKNESS) * fade
+        dz = -5.0 * fade
+        n_pts = naca4_pts(64, te_half=(te_mm / 2.0) / chord, t=t_loc)
         r = ROTOR_R * rf
         qc = 0.25
         th = math.radians(twist)
@@ -97,7 +104,7 @@ def make_blade():
             y_l = u * math.cos(th) - v * math.sin(th)
             z_l = u * math.sin(th) + v * math.cos(th)
             # span along +X at this station
-            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.6))
+            pts3d.append((r, y_l, z_l + HUB_LEN/2 - 7.6 + dz))
         wire = cq.Wire.makePolygon([cq.Vector(*p) for p in pts3d + [pts3d[0]]])
         sections.append(wire)
     blade = cq.Solid.makeLoft(sections, ruled=True)
