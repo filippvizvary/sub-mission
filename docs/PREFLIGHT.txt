@@ -93,3 +93,18 @@ rameno posunieme.
 Cogging motora. Rozbeh: 2 mN.m -> 0,11 m/s | 10 mN.m -> 0,25 m/s | 20 mN.m ->
 0,32 m/s. Meranie: zavit na objimku Ø22 (r 11 mm), digitalna vaha, 12 poloh
 po 30 stupnoch, T = F x 0,011. Ak potok ide nad 0,35 m/s, aj 20 mN.m je v pohode.
+
+
+7. CAD NÁSTROJE (2026-11-11)
+----------------------------
+Systémový python nemá pip ani ensurepip. venv sa robí cez uv:
+  .cadvenv/bin/python        build123d 0.13, trimesh 5.2 + manifold3d + rtree
+  snap run freecad.cmd       FreeCAD 1.1.4, OCCT 7.8 (druhé jadro na overenie)
+  /usr/bin/openscad          OpenSCAD 2021.01
+  tools/export_part_step.py  exportuje diel v JEHO vlastnom rámci do cad/parts/
+
+Prečo všetky filéty zlyhávali: zjednotenie hubu s listami beží s clean=True, ktorý
+zlepí tangenciálne plochy do jednej BSPLINE. Rotor má 2182 plôch, z toho 2160 BSPLINE
+a NULA hrán na r=32. Na spoji list-hub teda neexistuje hrana, ktorú by sa dalo zaobliť -
+v žiadnom jadre. Riešenie je stavať ten spoj tak, aby hrana zostala, alebo pridať
+výplň ako samostatné teleso, nie filét.
