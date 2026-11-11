@@ -58,7 +58,9 @@ def blade_angles(mesh, r=36.0, step=1.0):
     if len(out) >= 2 and runs[0][0] == 0 and runs[-1][1] == len(hit):
         c0, h0 = out.pop(0)
         c1, h1 = out.pop()
-        out.append(((c1 + h1) % 360.0, h0 + h1))
+        # merged span runs from (c1 - h1) to (c1 + h1 + 2*h0), so the centre is c1 + h0.
+        # Using c1 + h1 put the third blade 15 deg off, which is why its gusset sat higher.
+        out.append(((c1 + h0) % 360.0, h0 + h1))
     return out
 
 
@@ -96,23 +98,24 @@ def gusset_mesh(phi_c, arc_half_deg, ramp, hub_r=32.0, n=25, floor=None):
         return None
     xs = np.arange(len(tops))
     tops = np.interp(xs, xs[good], tops[good])
-    k = 5
+    k = 9                       # heavier smoothing: each blade tessellates differently
     tops = np.convolve(np.pad(tops, (k // 2, k // 2), mode="edge"), np.ones(k) / k, mode="valid")
-    tops = np.maximum(tops, 3.0 + ramp)
-    if floor is None:
-        # the blade's root hangs well above the bed (11 mm at r 32), so the gusset is a
-        # corner fillet on the hub wall: its bottom edge is ramp below the blade's underside
-        floor = float(np.nanmin(tops)) - ramp - 0.5
 
+    # The ramp must fade to nothing at both ends of the chord, otherwise the gusset ends in
+    # a flat wall mid-blade and every blade looks different. Cosine taper over the outer 30 %
+    # of the chord keeps all three identical and leaves no step.
+    u = np.linspace(0.0, 1.0, len(tops))
+    taper = np.clip((np.minimum(u, 1.0 - u) / 0.30) * (np.pi / 2.0), 0.0, np.pi / 2.0)
+    taper = np.sin(taper) ** 2
+    ramps = ramp * taper
+    ramps = np.maximum(ramps, 0.25)
     verts = []
-    for phi, top in zip(phis, tops):
+    for phi, top, rp in zip(phis, tops, ramps):
         c, s_ = np.cos(phi), np.sin(phi)
-        z_a = top - ramp            # bottom of the corner, on the hub wall
-        z_b = top - 0.35            # just inside the blade, so the faces overlap
         verts += [
-            [hub_r * c, hub_r * s_, z_a],                    # A on the hub wall
-            [hub_r * c, hub_r * s_, z_b],                    # B tucked under the blade
-            [(hub_r + ramp) * c, (hub_r + ramp) * s_, top],  # C out on the underside
+            [hub_r * c, hub_r * s_, top - rp],               # A on the hub wall
+            [hub_r * c, hub_r * s_, top - 0.35],             # B tucked under the blade
+            [(hub_r + rp) * c, (hub_r + rp) * s_, top],      # C out on the underside
         ]
     verts = np.array(verts, dtype=float)
     faces = []
