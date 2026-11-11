@@ -120,22 +120,6 @@ def make_hub():
     hub = (cq.Workplane("XY").circle(HUB_D / 2).extrude(HUB_LEN)
            .cut(cq.Workplane("XY").circle(3.0).extrude(HUB_LEN + 20).translate((0, 0, -10)))
            .cut(cq.Workplane("XY").circle(15.0).extrude(2.55).translate((0, 0, HUB_LEN - 2.55))))
-    # Local thickening of the hub wall where each blade leaves it: no cones, no bumps,
-    # just the wall going from r 32 to r 35.5 over a 60 deg sector, for the height range
-    # where the blade's lower edge runs. That fills the void under that edge.
-    for _i in range(3):
-        _th = 2 * math.pi * _i / 3
-        _a = math.radians(30.0)
-        _pts = [(31.0 * math.cos(-_a), 31.0 * math.sin(-_a)),
-                (35.5 * math.cos(-_a), 35.5 * math.sin(-_a)),
-                (35.5 * math.cos(_a), 35.5 * math.sin(_a)),
-                (31.0 * math.cos(_a), 31.0 * math.sin(_a))]
-        # the corner sits right at the AFT face (z 27.8 of 28), so this is where the
-        # sector has to be, not higher up
-        sector = (cq.Workplane("XY").polyline(_pts).close().extrude(10.0)
-                  .translate((0, 0, 18.0))
-                  .rotate((0, 0, 0), (0, 0, 1), math.degrees(_th)))
-        hub = hub.union(sector)
     for ang in (45.0, 135.0, 225.0, 315.0):
         a = math.radians(ang)
         hub = hub.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
