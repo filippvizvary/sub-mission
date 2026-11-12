@@ -495,7 +495,11 @@ def make_cup(flavour="wet"):
         # cut from the BACK face (z 0) up to 5.2, leaving MEMBRANE at the magnet face.
         # The cup prints magnet-face DOWN, so that membrane is the first three layers
         # on the bed - solid and flat, no bridging, no sag.
-        cup = cup.cut(cq.Workplane("XY").circle(MAG_D / 2 + 0.1).extrude(MAG_H + 0.2)
+        # pocket Ø10.5 for a Ø10 magnet: 0.25 per side. At Ø10.2 the magnets had to be
+        # pushed in and one pocket in four refused - the print tolerance is the same
+        # order as the clearance. The magnet is potted AND clamped by the cover, so a
+        # loose fit costs nothing; a tight one ruins the membrane.
+        cup = cup.cut(cq.Workplane("XY").circle(MAG_D / 2 + 0.25).extrude(MAG_H + 0.2)
                       .translate((r * math.cos(th), r * math.sin(th), 0.0)))
     return cup
 
