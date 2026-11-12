@@ -553,7 +553,7 @@ def make_pod():
                    thinning the magnet wall
        0..5        695ZZ seat, Ø13 H7 x 5, pressed in from the dry face
        0..POD_LEN   barrel Ø110 / Ø96
-     118.2..120    O-ring groove r 50.8..53.0, 2.2 x 1.8, on the downstream face
+     118.5..120    O-ring groove r 49.9..52.9, 3.0 x 1.5, for a Ø100 x 2.0 cord
      108..120      six lugs r 48..58 with Ø4.5 holes; upstream edge rounded
                    (R6.5 cylinder) so the flow slides past instead of hitting a
                    flat block
@@ -602,13 +602,18 @@ def make_pod():
         pod = pod.cut(cq.Workplane("XY").circle(3.15).extrude(7)
                       .translate((x, y, -14)))
     # O-ring groove on the downstream face
-    # Groove for an NBR70 Ø100 x 2.5 ring: 3.0 wide x 1.8 deep. It was 2.2 wide,
+    # Groove for an NBR70 Ø100 x 2.0 ring: 3.0 wide x 1.5 deep. It was 2.2 wide,
     # which gives 2.2*1.8 = 4.0 mm2 of groove for 4.9 mm2 of cord rubber - the
     # ring would have had to extrude out of the joint. 3.0 x 1.8 = 5.4 mm2 holds
     # the displaced volume, mean Ø102.8 against a 102.5 cord mean is ~0 stretch,
     # squeeze (2.5-1.8)/2.5 = 28%, and both lands stay over 1.8 mm.
-    pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(2.8)
-                  .translate((0, 0, POD_LEN - 1.8)))
+    # Depth 1.5, not 1.8: Filip's O-rings are NBR70 Ø100 x 2.0, bought from Valive, not the
+    # 2.5 the groove was cut for. Squeeze on a 2.0 cord at 1.8 deep is only 10 % - the cord
+    # is not compressed, it just sits there and weeps. 2.0 x 0.75 = 1.5 deep gives 25 %,
+    # which is the middle of the 15-30 % band, and the 3.0 groove width holds the displaced
+    # rubber (4.5 mm2 of groove for 3.1 mm2 of cord).
+    pod = pod.cut(cq.Workplane("XY").circle(52.9).circle(49.9).extrude(2.6)
+                  .translate((0, 0, POD_LEN - 1.5)))
     # Flange, not six lugs. The lugs were at r 46..58 with their Ø4.5 holes at
     # r 52.5 - straight through the O-ring band (49.9..52.9), so the seal ran
     # round the lugs instead of a flat face, and there was nowhere for a nut.
