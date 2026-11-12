@@ -158,6 +158,14 @@ def _clamp_body(L, R_F=24.0, n_bolts=2, screw="M3", kind="head"):
     # centre and the magnet gap goes with it.
     body = body.union(cq.Workplane("XY").circle(14.8).extrude(2.5).translate((0, 0, -2.5)))
     body = body.cut(cq.Workplane("XY").circle(2.45).extrude(L + 20).translate((0, 0, -10)))
+    # FALLBACK drive: Ø2.2 cross-hole through the bore's centre, along Y (the split plane).
+    # Each half gets a half-hole, so the assembled clamp has a round hole straight through
+    # the shaft. If the friction grip on a plain Ø5 rod ever slips, drill the rod Ø2.2 and
+    # drop an M2 screw through - positive drive, 90 N of shear against ~600 N of screw.
+    # It sits in the split plane so the mating faces still close flat.
+    z_mid = (4.5 + L) / 2.0
+    body = body.cut(cq.Workplane(obj=cq.Solid.makeCylinder(
+        1.1, 40, cq.Vector(0, -20, z_mid), cq.Vector(0, 1, 0))))
     # four M3 into the cup / hub
     for ang in (45.0, 135.0):
         a = math.radians(ang)
