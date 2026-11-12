@@ -36,7 +36,7 @@ TE_MM = 0.5          # blunt trailing edge, full thickness (printable, no razor)
 THICKNESS = 0.24            # 24 %, not 20: the D200 chords are 9 % shorter, so the blade
                             # was 19 mm of tip deflection at 1 m/s. t^3 buys 1.7x stiffness.
 STATIONS = [(0.20, 43.4, 38.7), (0.27, 36.1, 32.7), (0.35, 27.8, 25.9), (0.50, 20.2, 19.9), (0.65, 15.8, 16.6), (0.80, 12.9, 14.5), (1.00, 10.3, 12.6)]
-MAGCUP_D = 76.0; MAGCUP_H = 18.0; WALL_T = 4.0
+MAGCUP_D = 82.0; MAGCUP_H = 18.0; WALL_T = 4.0
 MEMBRANE = 0.45          # 3 layers at 0.15: the magnet face, printed ON THE BED
 MAG_D = 10.0; MAG_H = 5.0; MAG_N = 12   # 12 per cup: he has exactly 24, and 12
 CUP_BODY = MAG_H + 0.2 + MEMBRANE   # pocket 5.2 + membrane = 5.65, not 10
@@ -548,7 +548,7 @@ def make_pod():
       -14..-4      four bosses at r 45 on the WET face: blind M4 heat-set
                    inserts, opened from the wet side, so no thread reaches the
                    dry volume
-       0..10       reinforcement rib r 40..48 on the dry face - it carries the
+       0..10       reinforcement rib r 43..48 on the dry face - it carries the
                    load from the four spider bosses into the barrel without
                    thinning the magnet wall
        0..5        695ZZ seat, Ø13 H7 x 5, pressed in from the dry face
@@ -570,7 +570,9 @@ def make_pod():
     # fuses the wall to the barrel without touching the dry cup (r <= 35).
     wall = (cq.Workplane("XY").circle(POD_OD / 2).extrude(WALL_T).translate((0, 0, -WALL_T))
             .union(cq.Workplane("XY").circle(POD_OD / 2).circle(POD_ID / 2).extrude(1)))
-    rib = cq.Workplane("XY").circle(POD_ID / 2).circle(40).extrude(11).translate((0, 0, -1))
+    # rib inner radius 43 (was 40) so an Ø82 cup clears it by 2 mm. Width drops
+    # from 8 to 5 mm; still braces the 4 mm magnet wall against the 56-84 N pull.
+    rib = cq.Workplane("XY").circle(POD_ID / 2).circle(43).extrude(11).translate((0, 0, -1))
     pod = tube.union(wall).union(rib)
     # NO bearing boss on the dry face. A Ø20 boss there reaches into the dry
     # cup's body (85..95) and, worse, any boss long enough to seat a 695ZZ
