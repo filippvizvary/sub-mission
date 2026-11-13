@@ -633,7 +633,16 @@ def make_pod():
     # joint outboard of the groove: 1.9 mm of land inside, 2.1 mm outside.
     flange = (cq.Workplane("XY").circle(68).circle(55).extrude(6)
               .translate((0, 0, POD_LEN - 6)))
-    pod = pod.union(flange)
+    # 52 deg conical skirt under the flange. Printed bulkhead-down the flange is
+    # the LAST feature: a 13 mm horizontal overhang 114 mm above the bed. It
+    # either droops and curls (and a curl at hour 14 is a nozzle crash) or it
+    # wants support columns standing 114 mm up around the whole barrel. A 2 mm
+    # skirt turns it into an ordinary wall. Volume cost 1.6 cm3.
+    skirt = (cq.Workplane(obj=cq.Solid.makeCone(55.0, 68.0, 10.0,
+                                                cq.Vector(0, 0, POD_LEN - 16)))
+             .cut(cq.Workplane(obj=cq.Solid.makeCone(53.0, 66.0, 10.0,
+                                                     cq.Vector(0, 0, POD_LEN - 16)))))
+    pod = pod.union(flange).union(skirt)
     # ---- mount pad on the OUTER wall, +Y side. A boss, not a collar: four blind M5
     # holes (Ø4.2 tap drill) go 12 mm in from the flat outer face and stop short of
     # the Ø96 bore, so the wall is never pierced and the dry side stays dry. The Ø10

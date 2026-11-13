@@ -49,7 +49,9 @@ PARTS = [
     # bounds - so there is no second file to keep in sync. Print it twice, both times
     # magnet face DOWN so the 0.45 membrane lands on the build plate.
     ("magcup_wet", "03_pohar.stl", True),
-    ("wet_carrier", "05_nosic_hriadela_klietka.stl", False),  # boss down
+    # flipped: ears + ring on the bed (Ø96 ring = 7000 mm2 of footprint) instead of
+    # standing on the Ø18 boss with three arms overhanging 46 mm in mid-air.
+    ("wet_carrier", "05_nosic_hriadela_klietka.stl", True),  # ring down, boss up
     ("cup_washer", "06_podlozka_pohara.stl", False),         # flat ring, print flat
     # the clamp is one geometry in two versions, because the two halves do different
     # jobs: 07a has ROUND Ø6.4 x 2.2 pockets for the screw heads, 07b has HEX 5.8 AF x

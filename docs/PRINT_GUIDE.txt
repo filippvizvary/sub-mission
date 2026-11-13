@@ -105,3 +105,21 @@ Assembly, dry side (back to front)
     flange nut pockets; the O-ring sits in the groove
 12. stuff the electronics box through the Ø94 opening, cables out through
     the two Ø8 glands at r 30
+
+Print order, 13.11.2026 (deadline Saturday evening)
+---------------------------------------------------
+02 barel   0.3 mm / 3 perimeters / 0.55 width / 10 % gyroid / supports from
+           build plate only / brim 8 / multiplier 0.95 (net 0.90). ~15 h.
+           It stands on four Ø11 pads (255 mm2): the supports are MANDATORY,
+           otherwise the 105 mm bulkhead disc is printed 10 mm in mid-air.
+           The flange has a 52 deg conical skirt, so its 13 mm overhang needs
+           no support and no 114 mm columns around the barrel.
+01 rotor   as sliced: 0.15 / 5 perimeters / supports. 12 h 22 m.
+13 frame   0.3 mm / 3 perimeters / 10 % / no supports. ~5.5 h.
+05 spider  0.2 / 4 perimeters / 15 % / supports from build plate. ~2 h.
+           Flipped: it stands on the ring (1512 mm2), boss up.
+06 washer  4 min, can go anywhere.
+
+Order: 02 -> 01 -> 13 -> 05. The rotor goes second so that a failure still
+leaves Saturday day for one retry; 13 and 05 are short and can be squeezed
+in at the end. Total ~35 h against a ~36 h window - no slack.
